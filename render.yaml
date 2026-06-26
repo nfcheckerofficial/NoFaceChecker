@@ -13,8 +13,6 @@ services:
         value: production
       - key: CLIENT_URL
         value: https://chk-no-face-clan.onrender.com
-      - key: DB_PATH
-        value: /data/payments.db
       - key: ADMIN_PASS
         value: "12345"
       - key: STRIPE_SECRET_KEY

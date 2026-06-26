@@ -17,10 +17,16 @@
 import Database from 'better-sqlite3'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
+import { mkdirSync, existsSync } from 'fs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const dbPath = process.env.DB_PATH || join(__dirname, 'payments.db')
-const db = new Database(dbPath)
+
+// Render monta un disco persistente y define RENDER_DISK_MOUNT_PATH automáticamente.
+// Si no hay disco, usa la ruta local por defecto.
+const diskPath = process.env.RENDER_DISK_MOUNT_PATH
+const dbDir = diskPath || __dirname
+if (!existsSync(dbDir)) mkdirSync(dbDir, { recursive: true })
+const db = new Database(join(dbDir, 'payments.db'))
 
 // WAL: mejor concurrencia entre el webhook y las rutas HTTP.
 db.pragma('journal_mode = WAL')
