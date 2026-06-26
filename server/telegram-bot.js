@@ -19,6 +19,13 @@ export function startBot(token) {
       console.error('[Telegram Bot] Polling error:', msg)
     }
   })
+  bot.setMyCommands([
+    { command: 'start', description: 'Register & get your Telegram ID' },
+    { command: 'id', description: 'Get your Telegram ID' },
+    { command: 'status', description: 'Check your registration status' },
+    { command: 'stop', description: 'Unsubscribe from notifications' },
+  ]).catch(() => {})
+
   console.log('[Telegram Bot] Started polling')
 
   bot.onText(/\/start/, (msg) => {
