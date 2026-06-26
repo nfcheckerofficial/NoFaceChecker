@@ -694,13 +694,12 @@ app.get('/api/charges', (req, res) => {
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
 let botActive = false
 if (TELEGRAM_BOT_TOKEN) {
-  try {
-    startBot(TELEGRAM_BOT_TOKEN)
+  startBot(TELEGRAM_BOT_TOKEN).then(() => {
     botActive = true
     console.log('[i] Telegram bot started')
-  } catch (err) {
+  }).catch((err) => {
     console.warn('[!] Failed to start Telegram bot:', err.message)
-  }
+  })
 }
 
 // Broadcast a live card to all subscribers
