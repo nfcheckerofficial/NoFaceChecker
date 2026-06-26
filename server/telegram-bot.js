@@ -7,10 +7,20 @@ export function startBot(token) {
   if (bot) return bot
 
   bot = new TelegramBot(token, { polling: { interval: 2000, params: { timeout: 10 } } })
+
+  bot.deleteWebHook().catch(() => {})
+
   bot.on('polling_error', (err) => {
     const msg = err?.message || String(err)
-    if (msg.includes('409') || msg.includes('fetch failed') || msg.includes('EFATAL')) {
-      console.warn(`[Telegram Bot] Recoverable error - restarting polling in 15s: ${msg}`)
+    if (msg.includes('409')) {
+      console.warn(`[Telegram Bot] 409 conflict - another instance detected, waiting 30s...`)
+      bot.stopPolling()
+      setTimeout(() => {
+        bot.deleteWebHook().catch(() => {})
+        setTimeout(() => { try { bot.startPolling() } catch {} }, 2000)
+      }, 30000)
+    } else if (msg.includes('fetch failed') || msg.includes('EFATAL')) {
+      console.warn(`[Telegram Bot] Network error - restarting polling in 15s: ${msg}`)
       bot.stopPolling()
       setTimeout(() => {
         try { bot.startPolling() } catch {}
@@ -70,10 +80,6 @@ export function startBot(token) {
     } else {
       bot.sendMessage(chatId, '❌ You are not registered\\. Send /start to register\\.', { parse_mode: 'MarkdownV2' })
     }
-  })
-
-  bot.on('polling_error', (err) => {
-    console.error('[Telegram Bot] Polling error:', err.message)
   })
 
   return bot
