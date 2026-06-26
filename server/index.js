@@ -749,6 +749,9 @@ app.post('/api/admin/setup', (req, res) => {
   if (key !== ADMIN_SETUP_KEY) return res.status(401).json({ error: 'Invalid setup key' })
   if (!username) return res.status(400).json({ error: 'Username required' })
   try {
+    const user = getUserByUsername(username)
+    if (!user) return res.status(404).json({ error: `User "${username}" not found. Register first.` })
+    if (user.role === 'admin') return res.json({ ok: true, message: `${username} is already admin` })
     setUserRole(username, 'admin')
     res.json({ ok: true, message: `${username} is now admin` })
   } catch (err) {
