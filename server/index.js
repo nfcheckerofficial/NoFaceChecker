@@ -865,9 +865,17 @@ async function seedAdmin() {
         setUserRole(ADMIN_USER, 'admin')
         console.log(`[seed] Admin user "${ADMIN_USER}" created`)
       }
-    } else if (existing.role !== 'admin') {
-      setUserRole(ADMIN_USER, 'admin')
-      console.log(`[seed] User "${ADMIN_USER}" promoted to admin`)
+    } else {
+      if (existing.role !== 'admin') {
+        setUserRole(ADMIN_USER, 'admin')
+        console.log(`[seed] User "${ADMIN_USER}" promoted to admin`)
+      }
+      // Actualizar password si ADMIN_PASS está definido
+      if (process.env.ADMIN_PASS) {
+        const hash = await bcrypt.hash(ADMIN_PASS, 10)
+        updateUserPassword(ADMIN_USER, hash)
+        console.log(`[seed] Admin password updated`)
+      }
     }
   } catch (err) {
     console.error('[seed] Error:', err.message)
