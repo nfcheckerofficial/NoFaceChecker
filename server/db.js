@@ -24,6 +24,11 @@ const db = new Database(join(__dirname, 'payments.db'))
 // WAL: mejor concurrencia entre el webhook y las rutas HTTP.
 db.pragma('journal_mode = WAL')
 
+// Migrations: add missing columns to existing tables
+try { db.exec(`ALTER TABLE users ADD COLUMN telegram_id TEXT`) } catch {}
+try { db.exec(`ALTER TABLE users ADD COLUMN telegram_username TEXT`) } catch {}
+try { db.exec(`ALTER TABLE users ADD COLUMN telegram_name TEXT`) } catch {}
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS payment_methods (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -42,13 +47,15 @@ db.exec(`
   );
 
   CREATE TABLE IF NOT EXISTS users (
-    id            INTEGER PRIMARY KEY AUTOINCREMENT,
-    username      TEXT NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL,
-    credits       INTEGER NOT NULL DEFAULT 0,
-    role          TEXT NOT NULL DEFAULT 'user',
-    telegram_id   TEXT,
-    created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    username        TEXT NOT NULL UNIQUE,
+    password_hash   TEXT NOT NULL,
+    credits         INTEGER NOT NULL DEFAULT 0,
+    role            TEXT NOT NULL DEFAULT 'user',
+    telegram_id     TEXT,
+    telegram_username TEXT,
+    telegram_name   TEXT,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
   CREATE TABLE IF NOT EXISTS telegram_subscribers (
