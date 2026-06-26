@@ -6,6 +6,8 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import express from 'express'
 import cors from 'cors'
+import helmet from 'helmet'
+import rateLimit from 'express-rate-limit'
 import Stripe from 'stripe'
 import dotenv from 'dotenv'
 import bcrypt from 'bcryptjs'
@@ -77,7 +79,35 @@ if (STRIPE_SECRET_KEY) {
 
 const app = express()
 
-app.use(cors({ origin: CLIENT_URL }))
+// Seguridad: headers HTTP
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  contentSecurityPolicy: false,
+}))
+
+// Seguridad: CORS restringido
+const corsOrigins = isProd ? CLIENT_URL : [CLIENT_URL, 'http://localhost:5173', 'http://localhost:5174']
+app.use(cors({ origin: corsOrigins }))
+
+// Seguridad: rate limiting global (100 req / 15 min por IP)
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas solicitudes, intenta de nuevo más tarde' },
+})
+app.use('/api/', globalLimiter)
+
+// Seguridad: rate limit estricto para login/register (5 intentos / 15 min)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiados intentos de login. Espera 15 minutos.' },
+})
+app.use('/api/auth/', authLimiter)
 
 // IMPORTANTE: el webhook necesita el body CRUDO para verificar la firma.
 // Por eso se registra ANTES de express.json() y con express.raw().
@@ -112,8 +142,8 @@ app.post(
   }
 )
 
-// El resto de rutas SÍ usan JSON parseado.
-app.use(express.json())
+// El resto de rutas SÍ usan JSON parseado con límite de tamaño
+app.use(express.json({ limit: '100kb' }))
 
 // --- JWT Middleware ---
 function authMiddleware(req, res, next) {
@@ -135,8 +165,10 @@ app.post('/api/auth/register', async (req, res) => {
   try {
     const { username, password } = req.body
     if (!username || !password) return res.status(400).json({ error: 'Username and password required' })
-    if (username.length < 3) return res.status(400).json({ error: 'Username must be at least 3 characters' })
-    if (password.length < 4) return res.status(400).json({ error: 'Password must be at least 4 characters' })
+    if (typeof username !== 'string' || typeof password !== 'string') return res.status(400).json({ error: 'Invalid input' })
+    if (username.length < 3 || username.length > 30) return res.status(400).json({ error: 'Username must be 3-30 characters' })
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) return res.status(400).json({ error: 'Username can only contain letters, numbers, underscores' })
+    if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' })
 
     const existing = getUserByUsername(username)
     if (existing) return res.status(409).json({ error: 'Username already taken' })
@@ -157,6 +189,7 @@ app.post('/api/auth/login', async (req, res) => {
   try {
     const { username, password } = req.body
     if (!username || !password) return res.status(400).json({ error: 'Username and password required' })
+    if (typeof username !== 'string' || typeof password !== 'string') return res.status(400).json({ error: 'Invalid input' })
 
     const user = getUserByUsername(username)
     if (!user) return res.status(401).json({ error: 'Invalid credentials' })
@@ -686,6 +719,15 @@ function fmtBroadcast(payload, credits) {
   }
   return lines.join('\n')
 }
+
+// --- Global error handler (no leakear stack traces) ---
+app.use((err, req, res, _next) => {
+  console.error('[error]', err.message)
+  const status = err.status || 500
+  res.status(status).json({
+    error: isProd ? 'Internal server error' : err.message,
+  })
+})
 
 // En producción, servir el frontend build desde dist/ si existe
 if (isProd) {

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 
-const SERVER_URL = `http://${window.location.hostname}:4242`
+const API_BASE = import.meta.env.VITE_PAYMENTS_API ?? ''
+const SERVER_URL = API_BASE || `http://${window.location.hostname}:4242`
 
 interface User {
   id: number

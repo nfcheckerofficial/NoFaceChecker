@@ -1,7 +1,8 @@
 import { create } from 'zustand'
 import { useAuthStore } from '@/features/auth/authStore'
 
-const SERVER_URL = `http://${typeof window !== 'undefined' ? window.location.hostname : 'localhost'}:4242`
+const API_BASE = import.meta.env.VITE_PAYMENTS_API ?? ''
+const SERVER_URL = API_BASE || `http://${typeof window !== 'undefined' ? window.location.hostname : 'localhost'}:4242`
 
 export interface UserProfile {
   username: string

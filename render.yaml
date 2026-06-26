@@ -8,7 +8,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: CLIENT_URL
-        sync: false
+        value: https://chk-no-face-clan.onrender.com
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
@@ -28,6 +28,6 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_STRIPE_PUBLISHABLE_KEY
-        sync: false
+        value: pk_test_51TmP0G6cfmpKwb4mXrdUmWd5mpyCnwommPNQrL0xiMiNo51tIuwv8mO5NN8TTNkKNg8mjI5gZvaUm8puI2JmXCtI003KKfe6U6
       - key: VITE_PAYMENTS_API
-        sync: false
+        value: https://chk-no-face-clan-api.onrender.com

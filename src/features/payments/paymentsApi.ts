@@ -3,7 +3,7 @@
  * El frontend nunca toca la clave secreta: solo llama a nuestro backend.
  */
 
-const API_BASE = import.meta.env.VITE_PAYMENTS_API ?? 'http://localhost:4242'
+const API_BASE = import.meta.env.VITE_PAYMENTS_API ?? ''
 
 export interface CreditPackage {
   id: string
