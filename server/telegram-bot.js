@@ -8,14 +8,15 @@ export function startBot(token) {
 
   bot = new TelegramBot(token, { polling: { interval: 2000, params: { timeout: 10 } } })
   bot.on('polling_error', (err) => {
-    if (err?.message?.includes('409')) {
-      console.warn('[Telegram Bot] 409 conflict - waiting 10s for old instance to shut down...')
+    const msg = err?.message || String(err)
+    if (msg.includes('409') || msg.includes('fetch failed') || msg.includes('EFATAL')) {
+      console.warn(`[Telegram Bot] Recoverable error - restarting polling in 15s: ${msg}`)
       bot.stopPolling()
       setTimeout(() => {
         try { bot.startPolling() } catch {}
-      }, 10000)
+      }, 15000)
     } else {
-      console.error('[Telegram Bot] Polling error:', err?.message || err)
+      console.error('[Telegram Bot] Polling error:', msg)
     }
   })
   console.log('[Telegram Bot] Started polling')
