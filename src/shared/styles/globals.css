@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cyber-black: #0a0a0a;
+  --color-cyber-dark: #0d0d0d;
+  --color-cyber-panel: #121218;
+  --color-cyber-panel-light: #1a1a24;
+  --color-cyber-border: #1a1a2e;
+  --color-cyber-red: #ff0040;
+  --color-cyber-red-dark: #cc0033;
+  --color-cyber-green: #00ff88;
+  --color-cyber-green-dark: #00cc6a;
+  --color-cyber-blue: #00d4ff;
+  --color-cyber-purple: #9d00ff;
+  --color-cyber-yellow: #ffcc00;
+  --color-cyber-text: #e0e0e0;
+  --color-cyber-text-muted: #666680;
+
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-orbitron: 'Orbitron', sans-serif;
+
+  --animate-glitch: glitch 0.3s infinite;
+  --animate-pulse-neon: pulseNeon 2s infinite;
+  --animate-scanline: scanline 8s linear infinite;
+  --animate-float: float 3s ease-in-out infinite;
+  --animate-flicker: flicker 0.15s infinite;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-cyber-black);
+  color: var(--color-cyber-text);
+  font-family: var(--font-mono);
+  overflow-x: hidden;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-cyber-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-cyber-red);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-cyber-red-dark);
+}
+
+::selection {
+  background-color: var(--color-cyber-red);
+  color: white;
+}
+
+input[type="text"]::placeholder,
+input[type="password"]::placeholder {
+  color: var(--color-cyber-text-muted);
+}
+
+@keyframes pulseNeon {
+  0%, 100% {
+    box-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 20px currentColor;
+  }
+  50% {
+    box-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 40px currentColor;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes typing {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes blink-caret {
+  from, to { border-color: transparent; }
+  50% { border-color: var(--color-cyber-red); }
+}
