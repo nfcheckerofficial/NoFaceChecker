@@ -18,6 +18,7 @@ import { FaqsPage } from '@/pages/dashboard/FaqsPage'
 import { SupportPage } from '@/pages/dashboard/SupportPage'
 import { CardVaultPage } from '@/pages/dashboard/CardVaultPage'
 import { MarketplacePage } from '@/pages/dashboard/MarketplacePage'
+import { TelegramSettingsPage } from '@/pages/dashboard/TelegramSettingsPage'
 import { GateDashboard } from '@/features/checker/components/GateDashboard'
 import { PlaceholderPage } from '@/pages/dashboard/PlaceholderPage'
 
@@ -61,6 +62,7 @@ export function AppRoutes() {
         <Route path="random-data" element={<RandomDataPage />} />
         <Route path="3d-checker" element={<ThreeDCheckerPage />} />
         <Route path="extrap" element={<PlaceholderPage title="Extrap Database" description="Extrapolation database" />} />
+        <Route path="telegram-bot" element={<TelegramSettingsPage />} />
         <Route path="generator" element={<GeneratorDashboardPage />} />
         <Route path="pricing" element={<PricingPage />} />
         <Route path="pay/success" element={<PaySuccessPage />} />

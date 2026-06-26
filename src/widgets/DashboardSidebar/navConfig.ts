@@ -4,7 +4,7 @@ import {
   Zap, Wallet, Star, Sparkles, Hammer, Award,
   MessageSquare, Search, Database, ScanLine, HardDrive,
   Tag, HelpCircle, LifeBuoy, LogOut, Vault,
-  Settings, Users, Network, Wrench, ChevronDown,
+  Settings, Users, Network, Wrench, ChevronDown, MessageCircle,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -111,6 +111,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: 'Random Data', icon: Database, color: 'text-cyber-green', href: '/dashboard/random-data' },
       { label: '3D Checker', icon: ScanLine, color: 'text-cyber-red', href: '/dashboard/3d-checker' },
       { label: 'Extrap Database', icon: HardDrive, color: 'text-cyber-text-muted', href: '/dashboard/extrap' },
+  { label: 'Telegram Bot', icon: MessageCircle, color: 'text-cyber-blue', href: '/dashboard/telegram-bot' },
     ],
   },
   {

