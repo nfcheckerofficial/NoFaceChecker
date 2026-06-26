@@ -6,14 +6,14 @@ let bot = null
 export function startBot(token) {
   if (bot) return bot
 
-  bot = new TelegramBot(token, { polling: true })
+  bot = new TelegramBot(token, { polling: { interval: 2000, params: { timeout: 10 } } })
   bot.on('polling_error', (err) => {
     if (err?.message?.includes('409')) {
-      console.warn('[Telegram Bot] 409 conflict detected - stopping polling and retrying in 5s...')
+      console.warn('[Telegram Bot] 409 conflict - waiting 10s for old instance to shut down...')
       bot.stopPolling()
       setTimeout(() => {
-        bot.startPolling()
-      }, 5000)
+        try { bot.startPolling() } catch {}
+      }, 10000)
     } else {
       console.error('[Telegram Bot] Polling error:', err?.message || err)
     }
