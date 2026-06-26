@@ -17,6 +17,8 @@ services:
         sync: false
       - key: JWT_SECRET
         sync: false
+      - key: ADMIN_SETUP_KEY
+        sync: false
 
   - type: static_site
     name: chk-no-face-clan

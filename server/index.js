@@ -749,7 +749,7 @@ app.post('/api/admin/setup', (req, res) => {
   if (key !== ADMIN_SETUP_KEY) return res.status(401).json({ error: 'Invalid setup key' })
   if (!username) return res.status(400).json({ error: 'Username required' })
   try {
-    db.setUserRole(username, 'admin')
+    setUserRole(username, 'admin')
     res.json({ ok: true, message: `${username} is now admin` })
   } catch (err) {
     res.status(500).json({ error: err.message })
