@@ -25,6 +25,7 @@ const SupportPage = lazy(() => import('@/pages/dashboard/SupportPage').then(m =>
 const CardVaultPage = lazy(() => import('@/pages/dashboard/CardVaultPage').then(m => ({ default: m.CardVaultPage })))
 const MarketplacePage = lazy(() => import('@/pages/dashboard/MarketplacePage').then(m => ({ default: m.MarketplacePage })))
 const TelegramSettingsPage = lazy(() => import('@/pages/dashboard/TelegramSettingsPage').then(m => ({ default: m.TelegramSettingsPage })))
+const InstaddrPage = lazy(() => import('@/pages/dashboard/InstaddrPage').then(m => ({ default: m.InstaddrPage })))
 const PlaceholderPage = lazy(() => import('@/pages/dashboard/PlaceholderPage').then(m => ({ default: m.PlaceholderPage })))
 const ControlPanelPage = lazy(() => import('@/pages/dashboard/admin/ControlPanelPage').then(m => ({ default: m.ControlPanelPage })))
 const GatesPanelPage = lazy(() => import('@/pages/dashboard/admin/GatesPanelPage').then(m => ({ default: m.GatesPanelPage })))
@@ -79,7 +80,7 @@ export function AppRoutes() {
         <Route path="3d-checker" element={<SuspenseWrapper><ThreeDCheckerPage /></SuspenseWrapper>} />
         <Route path="extrap" element={<SuspenseWrapper><PlaceholderPage title="Extrap Database" description="Extrapolation database" /></SuspenseWrapper>} />
         <Route path="telegram-bot" element={<SuspenseWrapper><TelegramSettingsPage /></SuspenseWrapper>} />
-        <Route path="instaddr" element={<SuspenseWrapper><PlaceholderPage title="Instaddr" description="Instant email addresses" /></SuspenseWrapper>} />
+        <Route path="instaddr" element={<SuspenseWrapper><InstaddrPage /></SuspenseWrapper>} />
         <Route path="generator" element={<SuspenseWrapper><GeneratorDashboardPage /></SuspenseWrapper>} />
         <Route path="pricing" element={<SuspenseWrapper><PricingPage /></SuspenseWrapper>} />
         <Route path="pay/success" element={<SuspenseWrapper><PaySuccessPage /></SuspenseWrapper>} />
