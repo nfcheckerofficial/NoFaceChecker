@@ -16,6 +16,7 @@ const GeneratorDashboardPage = lazy(() => import('@/pages/dashboard/GeneratorDas
 const BinLookupPage = lazy(() => import('@/pages/dashboard/BinLookupPage').then(m => ({ default: m.BinLookupPage })))
 const RandomDataPage = lazy(() => import('@/pages/dashboard/RandomDataPage').then(m => ({ default: m.RandomDataPage })))
 const ThreeDCheckerPage = lazy(() => import('@/pages/dashboard/ThreeDCheckerPage').then(m => ({ default: m.ThreeDCheckerPage })))
+const ExtrapPage = lazy(() => import('@/pages/dashboard/ExtrapPage').then(m => ({ default: m.ExtrapPage })))
 const PricingPage = lazy(() => import('@/pages/dashboard/PricingPage').then(m => ({ default: m.PricingPage })))
 const PaySuccessPage = lazy(() => import('@/pages/dashboard/PaySuccessPage').then(m => ({ default: m.PaySuccessPage })))
 const PayCancelPage = lazy(() => import('@/pages/dashboard/PayCancelPage').then(m => ({ default: m.PayCancelPage })))
@@ -78,7 +79,7 @@ export function AppRoutes() {
         <Route path="card-vault" element={<SuspenseWrapper><CardVaultPage /></SuspenseWrapper>} />
         <Route path="random-data" element={<SuspenseWrapper><RandomDataPage /></SuspenseWrapper>} />
         <Route path="3d-checker" element={<SuspenseWrapper><ThreeDCheckerPage /></SuspenseWrapper>} />
-        <Route path="extrap" element={<SuspenseWrapper><PlaceholderPage title="Extrap Database" description="Extrapolation database" /></SuspenseWrapper>} />
+        <Route path="extrap" element={<SuspenseWrapper><ExtrapPage /></SuspenseWrapper>} />
         <Route path="telegram-bot" element={<SuspenseWrapper><TelegramSettingsPage /></SuspenseWrapper>} />
         <Route path="instaddr" element={<SuspenseWrapper><InstaddrPage /></SuspenseWrapper>} />
         <Route path="generator" element={<SuspenseWrapper><GeneratorDashboardPage /></SuspenseWrapper>} />
