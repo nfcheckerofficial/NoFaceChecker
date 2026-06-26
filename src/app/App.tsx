@@ -6,7 +6,10 @@ import { ScanLines } from '@/shared/ui/ScanLines'
 function AdminRedirect() {
   const navigate = useNavigate()
   useEffect(() => {
-    if (window.location.hostname.startsWith('admin.')) {
+    if (
+      window.location.hostname.startsWith('admin.') &&
+      (window.location.pathname === '/' || window.location.pathname === '')
+    ) {
       navigate('/dashboard/admin/control-panel', { replace: true })
     }
   }, [navigate])
