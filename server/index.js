@@ -31,6 +31,7 @@ import {
   setUserRole,
   linkTelegramToUser,
   resetAllCredits,
+  listUsers,
 } from './db.js'
 import { startBot, stopBot } from './telegram-bot.js'
 
