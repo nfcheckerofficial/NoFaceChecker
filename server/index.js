@@ -95,6 +95,7 @@ const allowedOrigins = [
   'https://chk-no-face-clan.onrender.com',
   'https://nofacechk.com',
   'https://admin.nofacechk.com',
+  'https://api.nofacechk.com',
 ]
 const corsOrigins = isProd ? allowedOrigins : [CLIENT_URL, ...allowedOrigins]
 app.use(cors({ origin: corsOrigins }))
