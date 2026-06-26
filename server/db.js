@@ -248,6 +248,10 @@ export function updateUserCredits(username, credits) {
   db.prepare('UPDATE users SET credits = ? WHERE username = ?').run(credits, username)
 }
 
+export function resetAllCredits() {
+  db.prepare('UPDATE users SET credits = 0').run()
+}
+
 export function ensureTelegramUser(chatId, username, firstName) {
   const existing = db.prepare('SELECT id FROM users WHERE telegram_id = ?').get(chatId)
   if (existing) {

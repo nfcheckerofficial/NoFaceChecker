@@ -12,7 +12,7 @@ interface UserForm { username: string; email: string; credits: number; role: 'ad
 const emptyUser: UserForm = { username: '', email: '', credits: 0, role: 'user' }
 
 export function ControlPanelPage() {
-  const { users, fetchUsers, addUser, updateUser, deleteUser, toggleBan, addCredits, removeCredits } = useAdminStore()
+  const { users, fetchUsers, addUser, updateUser, deleteUser, toggleBan, addCredits, removeCredits, resetStats } = useAdminStore()
 
   useEffect(() => {
     fetchUsers()
@@ -135,6 +135,14 @@ export function ControlPanelPage() {
               className="px-3 py-2 bg-cyber-blue/20 border border-cyber-blue/50 rounded-lg text-sm text-cyber-blue hover:bg-cyber-blue/30 transition-colors flex items-center gap-2"
             >
               <UserPlus size={14} /> Add User
+            </button>
+            <button onClick={async () => {
+              const ok = await resetStats()
+              showNotif(ok ? 'success' : 'error', ok ? 'All stats reset to 0' : 'Failed to reset stats')
+            }}
+              className="px-3 py-2 bg-cyber-red/20 border border-cyber-red/50 rounded-lg text-sm text-cyber-red hover:bg-cyber-red/30 transition-colors flex items-center gap-2"
+            >
+              <X size={14} /> Reset Stats
             </button>
           </div>
         </div>

@@ -30,6 +30,7 @@ import {
   updateUserCredits,
   setUserRole,
   linkTelegramToUser,
+  resetAllCredits,
 } from './db.js'
 import { startBot, stopBot } from './telegram-bot.js'
 
@@ -273,6 +274,12 @@ app.get('/api/admin/users', authMiddleware, (req, res) => {
     createdAt: u.created_at ? u.created_at.split('T')[0] : '',
     lastSession: u.created_at ? u.created_at.split('T')[0] : '',
   })))
+})
+
+app.post('/api/admin/reset-credits', authMiddleware, (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' })
+  resetAllCredits()
+  res.json({ ok: true })
 })
 
 app.get('/api/auth/me', authMiddleware, (req, res) => {

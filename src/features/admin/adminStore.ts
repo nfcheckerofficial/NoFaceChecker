@@ -59,6 +59,7 @@ interface AdminState {
   toggleBan: (id: string, reason?: string) => void
   addCredits: (id: string, amount: number) => void
   removeCredits: (id: string, amount: number) => boolean
+  resetStats: () => Promise<boolean>
 
   addGate: (g: Omit<Gate, 'id'>) => void
   updateGate: (id: string, patch: Partial<Gate>) => void
@@ -98,16 +99,21 @@ export const useAdminStore = create<AdminState>((set, get) => ({
 
   fetchUsers: async () => {
     const token = useAuthStore.getState().token
-    if (!token) return
+    if (!token) { console.warn('[admin] No token for fetchUsers'); return }
     try {
-      const res = await fetch(`${SERVER_URL}/api/admin/users`, {
+      const url = `${SERVER_URL}/api/admin/users`
+      const res = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (res.ok) {
         const users = await res.json()
         set({ users })
+      } else {
+        console.warn(`[admin] fetchUsers ${res.status}: ${res.statusText}`)
       }
-    } catch {}
+    } catch (err) {
+      console.error('[admin] fetchUsers error:', err)
+    }
   },
   addUser: (u) => set((s) => ({
     users: [...s.users, { ...u, id: String(++nextUserId), createdAt: new Date().toISOString().split('T')[0], lastSession: 'Never' }],
@@ -140,6 +146,19 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     set((s) => ({ users: s.users.map((u) => (u.id === id ? { ...u, credits: u.credits - amount } : u)) }))
     syncUserCredits(user.username, user.credits - amount)
     return true
+  },
+  resetStats: async () => {
+    const token = useAuthStore.getState().token
+    if (!token) return false
+    try {
+      const res = await fetch(`${SERVER_URL}/api/admin/reset-credits`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) return false
+      set((s) => ({ users: s.users.map((u) => ({ ...u, credits: 0 })) }))
+      return true
+    } catch { return false }
   },
 
   addGate: (g) => set((s) => ({
