@@ -1,7 +1,25 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { BrowserRouter as Router, useNavigate } from 'react-router-dom'
 import { AppRoutes } from './routes'
 import { ScanLines } from '@/shared/ui/ScanLines'
+import { useAuthStore } from '@/features/auth/authStore'
+
+function AuthInit() {
+  const checkAuth = useAuthStore((s) => s.checkAuth)
+  const token = useAuthStore((s) => s.token)
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    if (token) {
+      checkAuth().finally(() => setReady(true))
+    } else {
+      setReady(true)
+    }
+  }, [])
+
+  if (!ready) return null
+  return null
+}
 
 function AdminRedirect() {
   const navigate = useNavigate()
@@ -19,6 +37,7 @@ function AdminRedirect() {
 function App() {
   return (
     <Router>
+      <AuthInit />
       <AdminRedirect />
       <div className="min-h-screen bg-cyber-black text-cyber-text font-mono relative overflow-x-hidden">
         <ScanLines />
