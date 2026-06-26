@@ -772,7 +772,30 @@ if (isProd) {
   }
 }
 
-app.listen(PORT, () => {
+// Seed: crear admin por defecto si no existe
+async function seedAdmin() {
+  const ADMIN_USER = process.env.ADMIN_USER || 'admin'
+  const ADMIN_PASS = process.env.ADMIN_PASS || 'admin123'
+  try {
+    const existing = getUserByUsername(ADMIN_USER)
+    if (!existing) {
+      const hash = await bcrypt.hash(ADMIN_PASS, 10)
+      const user = createUser(ADMIN_USER, hash)
+      if (user) {
+        setUserRole(ADMIN_USER, 'admin')
+        console.log(`[seed] Admin user "${ADMIN_USER}" created`)
+      }
+    } else if (existing.role !== 'admin') {
+      setUserRole(ADMIN_USER, 'admin')
+      console.log(`[seed] User "${ADMIN_USER}" promoted to admin`)
+    }
+  } catch (err) {
+    console.error('[seed] Error:', err.message)
+  }
+}
+
+app.listen(PORT, async () => {
+  await seedAdmin()
   console.log(`\n[✓] Payments server (${isLiveKey ? 'LIVE' : 'TEST'}) running at http://localhost:${PORT}`)
   console.log(`    Allowed client: ${CLIENT_URL}\n`)
   if (botActive) console.log(`[✓] Telegram bot active — ${getSubscriberCount()} subscribers`)
