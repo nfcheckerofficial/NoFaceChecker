@@ -28,6 +28,7 @@ import {
   getUserById,
   getUserByTelegramId,
   updateUserCredits,
+  setUserRole,
 } from './db.js'
 import { startBot, stopBot } from './telegram-bot.js'
 
@@ -732,6 +733,20 @@ app.use((err, req, res, _next) => {
   res.status(status).json({
     error: isProd ? 'Internal server error' : err.message,
   })
+})
+
+// Endpoint para promover un usuario a admin (protegido por setup key)
+const ADMIN_SETUP_KEY = process.env.ADMIN_SETUP_KEY || 'admin123'
+app.post('/api/admin/setup', (req, res) => {
+  const { username, key } = req.body
+  if (key !== ADMIN_SETUP_KEY) return res.status(401).json({ error: 'Invalid setup key' })
+  if (!username) return res.status(400).json({ error: 'Username required' })
+  try {
+    db.setUserRole(username, 'admin')
+    res.json({ ok: true, message: `${username} is now admin` })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
 })
 
 // En producción, servir el frontend build desde dist/ si existe

@@ -268,4 +268,8 @@ export function listUsers() {
   return db.prepare('SELECT id, username, credits, role, telegram_id, created_at FROM users ORDER BY created_at DESC').all()
 }
 
+export function setUserRole(username, role) {
+  db.prepare('UPDATE users SET role = ? WHERE username = ?').run(role, username)
+}
+
 export default db
