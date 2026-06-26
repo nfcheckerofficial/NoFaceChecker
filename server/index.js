@@ -87,7 +87,14 @@ app.use(helmet({
 }))
 
 // Seguridad: CORS restringido
-const corsOrigins = isProd ? CLIENT_URL : [CLIENT_URL, 'http://localhost:5173', 'http://localhost:5174']
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'https://chk-no-face-clan.onrender.com',
+  'https://nofacechk.com',
+  'https://admin.nofacechk.com',
+]
+const corsOrigins = isProd ? allowedOrigins : [CLIENT_URL, ...allowedOrigins]
 app.use(cors({ origin: corsOrigins }))
 
 // Health check (antes del rate limiter para evitar 429 en los pings de Render)
