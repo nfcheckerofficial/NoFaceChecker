@@ -4,11 +4,17 @@ services:
     env: node
     buildCommand: npm install
     startCommand: node server/index.js
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1
     envVars:
       - key: NODE_ENV
         value: production
       - key: CLIENT_URL
         value: https://chk-no-face-clan.onrender.com
+      - key: DB_PATH
+        value: /data/payments.db
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET

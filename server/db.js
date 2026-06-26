@@ -19,7 +19,8 @@ import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const db = new Database(join(__dirname, 'payments.db'))
+const dbPath = process.env.DB_PATH || join(__dirname, 'payments.db')
+const db = new Database(dbPath)
 
 // WAL: mejor concurrencia entre el webhook y las rutas HTTP.
 db.pragma('journal_mode = WAL')
