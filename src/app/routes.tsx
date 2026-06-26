@@ -25,6 +25,7 @@ import { GateDashboard } from '@/features/checker/components/GateDashboard'
 import { PlaceholderPage } from '@/pages/dashboard/PlaceholderPage'
 
 // Admin Pages
+import { AdminRoute } from '@/features/auth/components/AdminRoute'
 import { ControlPanelPage } from '@/pages/dashboard/admin/ControlPanelPage'
 import { GatesPanelPage } from '@/pages/dashboard/admin/GatesPanelPage'
 import { ToolsPanelPage } from '@/pages/dashboard/admin/ToolsPanelPage'
@@ -75,9 +76,9 @@ export function AppRoutes() {
         <Route path="support" element={<SupportPage />} />
 
         {/* Admin Routes */}
-        <Route path="admin/control-panel" element={<ControlPanelPage />} />
-        <Route path="admin/gates-panel" element={<GatesPanelPage />} />
-        <Route path="admin/tools-panel" element={<ToolsPanelPage />} />
+        <Route path="admin/control-panel" element={<AdminRoute><ControlPanelPage /></AdminRoute>} />
+        <Route path="admin/gates-panel" element={<AdminRoute><GatesPanelPage /></AdminRoute>} />
+        <Route path="admin/tools-panel" element={<AdminRoute><ToolsPanelPage /></AdminRoute>} />
       </Route>
 
       {/* Rutas legacy */}

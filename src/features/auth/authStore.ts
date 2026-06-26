@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { useUserStore } from '@/features/checker/store/userStore'
 
 const API_BASE = import.meta.env.VITE_PAYMENTS_API ?? ''
 const SERVER_URL = API_BASE || `http://${window.location.hostname}:4242`
@@ -50,6 +51,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (!res.ok) { set({ loading: false, error: data.error }); return false }
       saveToken(data.token)
       set({ token: data.token, user: data.user, loading: false })
+      useUserStore.getState().syncFromAuth(data.user)
       return true
     } catch (err) {
       set({ loading: false, error: String(err) })
@@ -69,6 +71,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (!res.ok) { set({ loading: false, error: data.error }); return false }
       saveToken(data.token)
       set({ token: data.token, user: data.user, loading: false })
+      useUserStore.getState().syncFromAuth(data.user)
       return true
     } catch (err) {
       set({ loading: false, error: String(err) })
@@ -91,6 +94,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (!res.ok) { saveToken(null); set({ token: null, user: null }); return }
       const user = await res.json()
       set({ user })
+      useUserStore.getState().syncFromAuth(user)
     } catch {
       saveToken(null)
       set({ token: null, user: null })

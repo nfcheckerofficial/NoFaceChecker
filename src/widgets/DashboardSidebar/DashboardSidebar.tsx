@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { clsx } from 'clsx'
 import { ChevronRight } from 'lucide-react'
 import { NAV_GROUPS, type NavItem } from './navConfig'
+import { useAuthStore } from '@/features/auth/authStore'
 
 /** Mapea el color de texto del icono a su círculo de relleno sólido. */
 const CIRCLE_BG: Record<string, string> = {
@@ -22,6 +23,15 @@ interface DashboardSidebarProps {
 export function DashboardSidebar({ className }: DashboardSidebarProps) {
   const location = useLocation()
   const [expanded, setExpanded] = useState<string | null>(null)
+  const { user } = useAuthStore()
+  const isAdmin = user?.role === 'admin'
+
+  const groups = useMemo(() => {
+    if (isAdmin) return NAV_GROUPS
+    return NAV_GROUPS.filter((group) =>
+      !group.items.some((item) => item.label === 'Admin Panel')
+    )
+  }, [isAdmin])
 
   const isActive = (href?: string) =>
     href && (href === '/dashboard'
@@ -37,7 +47,7 @@ export function DashboardSidebar({ className }: DashboardSidebarProps) {
       )}
     >
       <nav className="flex flex-col py-4">
-        {NAV_GROUPS.map((group, gi) => (
+        {groups.map((group, gi) => (
           <div key={gi}>
             {gi > 0 && <div className="my-3 mx-4 border-t border-cyber-border/60" />}
             <div className="flex flex-col gap-0.5 px-3">

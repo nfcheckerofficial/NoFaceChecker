@@ -6,6 +6,7 @@ import {
   User, ChevronDown, Settings, LogOut, CircleDot,
 } from 'lucide-react'
 import { useUserStore } from '@/features/checker/store/userStore'
+import { useAuthStore } from '@/features/auth/authStore'
 
 interface NotificationItem {
   id: number
@@ -35,6 +36,8 @@ type Panel = 'notifications' | 'warnings' | 'profile' | null
 
 export function DashboardHeader() {
   const { profile } = useUserStore()
+  const { user } = useAuthStore()
+  const isAdmin = user?.role === 'admin'
   const [panel, setPanel] = useState<Panel>(null)
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS)
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -210,11 +213,13 @@ export function DashboardHeader() {
               </div>
               <MenuLink to="/dashboard/profile" icon={<User size={14} />} label="Your Profile" />
               <MenuLink to="/dashboard/pricing" icon={<Zap size={14} />} label="Buy Credits" />
-              <MenuLink
-                to="/dashboard/admin/control-panel"
-                icon={<Settings size={14} />}
-                label="Admin Panel"
-              />
+              {isAdmin && (
+                <MenuLink
+                  to="/dashboard/admin/control-panel"
+                  icon={<Settings size={14} />}
+                  label="Admin Panel"
+                />
+              )}
               <Link
                 to="/"
                 className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-cyber-red hover:bg-cyber-red/10 transition-colors"
