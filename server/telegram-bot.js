@@ -3,7 +3,7 @@ import { addSubscriber, removeSubscriber, listSubscribers, ensureTelegramUser } 
 
 let bot = null
 
-export function startBot(token) {
+export async function startBot(token) {
   if (bot) return bot
 
   bot = new TelegramBot(token, { polling: false })
@@ -14,7 +14,7 @@ export function startBot(token) {
       console.warn(`[Telegram Bot] 409 conflict - another instance detected, waiting 30s...`)
       bot.stopPolling()
       setTimeout(() => {
-        bot.deleteWebHook().catch(() => {})
+        bot.deleteWebhook().catch(() => {})
         setTimeout(() => { try { bot.startPolling({ interval: 2000, params: { timeout: 10 } }) } catch {} }, 2000)
       }, 30000)
     } else if (msg.includes('fetch failed') || msg.includes('EFATAL')) {
@@ -28,13 +28,17 @@ export function startBot(token) {
     }
   })
 
-  await bot.deleteWebHook()
-  await bot.setMyCommands([
-    { command: 'start', description: 'Register & get your Telegram ID' },
-    { command: 'id', description: 'Get your Telegram ID' },
-    { command: 'status', description: 'Check your registration status' },
-    { command: 'stop', description: 'Unsubscribe from notifications' },
-  ])
+  try {
+    await bot.deleteWebhook()
+    await bot.setMyCommands([
+      { command: 'start', description: 'Register & get your Telegram ID' },
+      { command: 'id', description: 'Get your Telegram ID' },
+      { command: 'status', description: 'Check your registration status' },
+      { command: 'stop', description: 'Unsubscribe from notifications' },
+    ])
+  } catch (e) {
+    console.warn('[Telegram Bot] Setup warning:', e.message)
+  }
 
   bot.startPolling({ interval: 2000, params: { timeout: 10 } })
   console.log('[Telegram Bot] Started polling')
