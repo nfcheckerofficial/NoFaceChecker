@@ -1,5 +1,9 @@
 import { create } from 'zustand'
 import { useUserStore } from '@/features/checker/store/userStore'
+import { useAuthStore } from '@/features/auth/authStore'
+
+const API_BASE = import.meta.env.VITE_PAYMENTS_API ?? ''
+const SERVER_URL = API_BASE || `http://${typeof window !== 'undefined' ? window.location.hostname : 'localhost'}:4242`
 
 export interface User {
   id: string
@@ -47,6 +51,7 @@ interface AdminState {
   gates: Gate[]
   countries: Country[]
 
+  fetchUsers: () => Promise<void>
   addUser: (u: Omit<User, 'id' | 'createdAt' | 'lastSession'>) => void
   updateUser: (id: string, patch: Partial<User>) => void
   deleteUser: (id: string) => void
@@ -90,6 +95,19 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     { id: '8', name: 'Japan', code: 'JP', endpoint: '/api/random/jp', active: true },
   ],
 
+  fetchUsers: async () => {
+    const token = useAuthStore.getState().token
+    if (!token) return
+    try {
+      const res = await fetch(`${SERVER_URL}/api/admin/users`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.ok) {
+        const users = await res.json()
+        set({ users })
+      }
+    } catch {}
+  },
   addUser: (u) => set((s) => ({
     users: [...s.users, { ...u, id: String(++nextUserId), createdAt: new Date().toISOString().split('T')[0], lastSession: 'Never' }],
   })),

@@ -221,6 +221,21 @@ app.post('/api/auth/login', async (req, res) => {
   }
 })
 
+app.get('/api/admin/users', authMiddleware, (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' })
+  const users = listUsers()
+  res.json(users.map(u => ({
+    id: String(u.id),
+    username: u.username,
+    email: '',
+    credits: u.credits,
+    role: u.role,
+    banned: false,
+    createdAt: u.created_at ? u.created_at.split('T')[0] : '',
+    lastSession: u.created_at ? u.created_at.split('T')[0] : '',
+  })))
+})
+
 app.get('/api/auth/me', authMiddleware, (req, res) => {
   const user = getUserById(req.user.id)
   if (!user) return res.status(404).json({ error: 'User not found' })

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { clsx } from 'clsx'
 import {
   Users, UserPlus, Ban, AlertTriangle, DollarSign, Plus,
@@ -12,7 +12,9 @@ interface UserForm { username: string; email: string; credits: number; role: 'ad
 const emptyUser: UserForm = { username: '', email: '', credits: 0, role: 'user' }
 
 export function ControlPanelPage() {
-  const { users, addUser, updateUser, deleteUser, toggleBan, addCredits, removeCredits } = useAdminStore()
+  const { users, fetchUsers, addUser, updateUser, deleteUser, toggleBan, addCredits, removeCredits } = useAdminStore()
+
+  useEffect(() => { fetchUsers() }, [])
   const [search, setSearch] = useState('')
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [modal, setModal] = useState<ModalType>(null)

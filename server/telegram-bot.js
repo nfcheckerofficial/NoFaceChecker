@@ -7,6 +7,17 @@ export function startBot(token) {
   if (bot) return bot
 
   bot = new TelegramBot(token, { polling: true })
+  bot.on('polling_error', (err) => {
+    if (err?.message?.includes('409')) {
+      console.warn('[Telegram Bot] 409 conflict detected - stopping polling and retrying in 5s...')
+      bot.stopPolling()
+      setTimeout(() => {
+        bot.startPolling()
+      }, 5000)
+    } else {
+      console.error('[Telegram Bot] Polling error:', err?.message || err)
+    }
+  })
   console.log('[Telegram Bot] Started polling')
 
   bot.onText(/\/start/, (msg) => {
