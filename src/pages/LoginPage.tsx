@@ -118,8 +118,8 @@ export function LoginPage() {
               )}
 
               <p className="text-xs text-cyber-text-muted leading-relaxed">
-                Send <span className="text-cyber-green">/start</span> to{' '}
-                <span className="text-cyber-blue">@NoFaceCheckerBot</span> on Telegram to get your Telegram ID, then enter it below.
+                Send <span className="text-cyber-green">/id</span> to{' '}
+                <span className="text-cyber-blue">@NoFaceCheckerBot</span> on Telegram to get your ID, then enter it below.
               </p>
 
               <div>

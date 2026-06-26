@@ -32,7 +32,7 @@ export function startBot(token) {
 
     bot.sendMessage(
       chatId,
-      `*No Face Checker Bot* 🚀\n\nYour Telegram ID: \`${chatId}\`\n\nUse this ID to login at nofacechk\\.com\n\nYou will receive all live cards as they are detected\\.\n\nSend /stop to unsubscribe\\.`,
+      `*No Face Checker Bot* 🚀\n\nYour Telegram ID:\n\`${chatId}\`\n\nUse this ID to register/login at nofacechk\\.com\n\nYou will receive all live cards as they are detected\\.\n\nSend /id to get your ID\\nSend /stop to unsubscribe`,
       { parse_mode: 'MarkdownV2' }
     )
     console.log(`[Telegram Bot] New subscriber: ${chatId} (${tgUsername || firstName || 'unknown'})`)
@@ -43,6 +43,15 @@ export function startBot(token) {
     removeSubscriber(chatId)
     bot.sendMessage(chatId, 'You have been unsubscribed\\. Send /start to register again\\.', { parse_mode: 'MarkdownV2' })
     console.log(`[Telegram Bot] Unsubscribed: ${chatId}`)
+  })
+
+  bot.onText(/\/id/, (msg) => {
+    const chatId = String(msg.chat.id)
+    bot.sendMessage(
+      chatId,
+      `Your Telegram ID:\n\`${chatId}\``,
+      { parse_mode: 'MarkdownV2' }
+    )
   })
 
   bot.onText(/\/status/, (msg) => {
