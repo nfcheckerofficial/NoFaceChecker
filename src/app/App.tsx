@@ -34,15 +34,34 @@ function AdminRedirect() {
   return null
 }
 
-function App() {
+function AppContent() {
+  const { token, user } = useAuthStore()
+  const ready = token ? user !== null : true
+
+  if (!ready) {
+    return (
+      <div className="min-h-screen bg-cyber-black text-cyber-text font-mono flex items-center justify-center">
+        <div className="animate-pulse text-cyber-text-muted text-sm">Loading...</div>
+      </div>
+    )
+  }
+
   return (
-    <Router>
-      <AuthInit />
+    <>
       <AdminRedirect />
       <div className="min-h-screen bg-cyber-black text-cyber-text font-mono relative overflow-x-hidden">
         <ScanLines />
         <AppRoutes />
       </div>
+    </>
+  )
+}
+
+function App() {
+  return (
+    <Router>
+      <AuthInit />
+      <AppContent />
     </Router>
   )
 }
