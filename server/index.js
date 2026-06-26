@@ -261,19 +261,24 @@ app.post('/api/auth/link-telegram', authMiddleware, async (req, res) => {
 })
 
 app.get('/api/admin/users', authMiddleware, (req, res) => {
-  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' })
-  const users = listUsers()
-  res.json(users.map(u => ({
-    id: String(u.id),
-    username: u.username,
-    email: '',
-    credits: u.credits,
-    role: u.role,
-    telegram_id: u.telegram_id,
-    banned: false,
-    createdAt: u.created_at ? u.created_at.split('T')[0] : '',
-    lastSession: u.created_at ? u.created_at.split('T')[0] : '',
-  })))
+  try {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' })
+    const users = listUsers()
+    res.json(users.map(u => ({
+      id: String(u.id),
+      username: u.username,
+      email: '',
+      credits: u.credits,
+      role: u.role,
+      telegram_id: u.telegram_id,
+      banned: false,
+      createdAt: u.created_at ? u.created_at.split('T')[0] : '',
+      lastSession: u.created_at ? u.created_at.split('T')[0] : '',
+    })))
+  } catch (err) {
+    console.error('[admin] /api/admin/users error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
 })
 
 app.post('/api/admin/reset-credits', authMiddleware, (req, res) => {

@@ -25,9 +25,10 @@ const db = new Database(join(__dirname, 'payments.db'))
 db.pragma('journal_mode = WAL')
 
 // Migrations: add missing columns to existing tables
-try { db.exec(`ALTER TABLE users ADD COLUMN telegram_id TEXT`) } catch {}
-try { db.exec(`ALTER TABLE users ADD COLUMN telegram_username TEXT`) } catch {}
-try { db.exec(`ALTER TABLE users ADD COLUMN telegram_name TEXT`) } catch {}
+try { db.exec(`ALTER TABLE users ADD COLUMN telegram_id TEXT`); console.log('[migrate] Added telegram_id column') } catch {}
+try { db.exec(`ALTER TABLE users ADD COLUMN telegram_username TEXT`); console.log('[migrate] Added telegram_username column') } catch {}
+try { db.exec(`ALTER TABLE users ADD COLUMN telegram_name TEXT`); console.log('[migrate] Added telegram_name column') } catch {}
+try { db.exec(`ALTER TABLE users ADD COLUMN email TEXT`); console.log('[migrate] Added email column') } catch {}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS payment_methods (
