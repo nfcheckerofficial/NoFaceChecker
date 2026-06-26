@@ -11,7 +11,8 @@ import {
   type ChargeRecord,
 } from '@/features/payments/paymentsApi'
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ?? '')
+const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
+const stripePromise = stripeKey ? loadStripe(stripeKey) : null
 
 /**
  * Card Vault: valida/guarda tarjetas (SetupIntent + 3D Secure, sin cobrar) y
@@ -19,6 +20,15 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ?? 
  * recibo en la BD ligado al método de pago y al usuario.
  */
 export function CardVaultPage() {
+  if (!stripePromise) {
+    return (
+      <div className="p-6 text-center text-cyber-text-muted">
+        <ShieldCheck size={48} className="mx-auto mb-3 opacity-30" />
+        <p>Stripe is not configured</p>
+        <p className="text-sm mt-1">Set <span className="font-mono text-cyber-blue">VITE_STRIPE_PUBLISHABLE_KEY</span> in your environment to enable card validation.</p>
+      </div>
+    )
+  }
   return (
     <Elements stripe={stripePromise}>
       <VaultInner />

@@ -4,7 +4,7 @@ import { useLivesStore } from './livesStore'
 import { lookupBin } from '../services/binLookup'
 import { DEFAULT_GATE, type GateConfig } from '../config/gateCatalog'
 import { useTelegramStore } from '@/features/telegram/telegramStore'
-import { sendLiveCard } from '@/features/telegram/telegramService'
+import { broadcastLiveCard } from '@/features/telegram/telegramService'
 
 export type CardStatus = 'live' | 'dead' | 'unknown'
 
@@ -229,11 +229,11 @@ export const useGateStore = create<GateState>((set, get) => ({
               countryEmoji: info.countryEmoji,
             })
 
-            // Telegram: envía la live card si está configurado
+            // Telegram: broadcast a todos los suscriptores
             const tg = useTelegramStore.getState()
-            if (tg.enabled && tg.botToken && tg.chatId) {
+            if (tg.enabled && tg.botToken) {
               const digits = number.replace(/\D/g, '')
-              sendLiveCard({
+              broadcastLiveCard({
                 raw,
                 number,
                 bin: digits.slice(0, 6),
@@ -246,19 +246,19 @@ export const useGateStore = create<GateState>((set, get) => ({
                 gateName: get().gateName,
                 message,
                 checkedAt: Date.now(),
-              }, tg.botToken, tg.chatId).then((ok) => {
-                if (ok) useTelegramStore.getState().markSent()
+              }, tg.botToken).then((result) => {
+                if (result.sent > 0) useTelegramStore.getState().markSent()
               })
             }
           })
           .catch(() => {
             useLivesStore.getState().enrich(raw, {})
 
-            // Telegram: envía incluso sin BIN info
+            // Telegram: broadcast incluso sin BIN info
             const tg = useTelegramStore.getState()
-            if (tg.enabled && tg.botToken && tg.chatId) {
+            if (tg.enabled && tg.botToken) {
               const digits = number.replace(/\D/g, '')
-              sendLiveCard({
+              broadcastLiveCard({
                 raw,
                 number,
                 bin: digits.slice(0, 6),
@@ -271,8 +271,8 @@ export const useGateStore = create<GateState>((set, get) => ({
                 gateName: get().gateName,
                 message,
                 checkedAt: Date.now(),
-              }, tg.botToken, tg.chatId).then((ok) => {
-                if (ok) useTelegramStore.getState().markSent()
+              }, tg.botToken).then((result) => {
+                if (result.sent > 0) useTelegramStore.getState().markSent()
               })
             }
           })

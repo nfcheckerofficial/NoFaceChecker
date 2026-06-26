@@ -24,6 +24,7 @@ interface UserState {
   recordResult: (status: 'live' | 'dead' | 'unknown') => void
   spendCredits: (n: number) => boolean
   addCredits: (n: number) => void
+  syncFromAuth: (user: { id: number; username: string; credits: number; role: string; telegram_id: string | null; created_at: string }) => void
 }
 
 export const useUserStore = create<UserState>((set, get) => ({
@@ -71,26 +72,25 @@ export const useUserStore = create<UserState>((set, get) => ({
     const { profile } = get()
     const credits = profile.credits + n
     set({ profile: { ...profile, credits } })
-      syncAdminCredits(profile.username, credits)
+    syncAdminCredits(profile.username, credits)
+  },
+
+  syncFromAuth: (user) => {
+    set({
+      profile: {
+        username: user.username,
+        telegramId: user.telegram_id || '',
+        registeredOn: user.created_at ? user.created_at.split('T')[0] : '',
+        credits: user.credits,
+      },
+    })
   },
 }))
 
-// On first import, sync initial credits from adminStore
-const u = useUserStore.getState().profile
-syncAdminCredits(u.username, u.credits)
-
-let _adminSync: ((u: string, c: number) => void) | null = null
-
 function syncAdminCredits(username: string, credits: number) {
-  if (_adminSync) {
-    _adminSync(username, credits)
-    return
-  }
   import('@/features/admin/adminStore').then((mod) => {
-    _adminSync = (u, c) => {
-      const user = mod.useAdminStore.getState().users.find((x) => x.username === u)
-      if (user) mod.useAdminStore.getState().updateUser(user.id, { credits: c })
-    }
-    _adminSync(username, credits)
+    const user = mod.useAdminStore.getState().users.find((x) => x.username === username)
+    if (user) mod.useAdminStore.getState().updateUser(user.id, { credits })
   })
 }
+

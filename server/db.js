@@ -41,6 +41,25 @@ db.exec(`
     validated_at    TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
+  CREATE TABLE IF NOT EXISTS users (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    username      TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    credits       INTEGER NOT NULL DEFAULT 0,
+    role          TEXT NOT NULL DEFAULT 'user',
+    telegram_id   TEXT,
+    created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS telegram_subscribers (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    chat_id   TEXT NOT NULL UNIQUE,
+    username  TEXT,
+    first_name TEXT,
+    subscribed_at TEXT NOT NULL DEFAULT (datetime('now')),
+    active    INTEGER NOT NULL DEFAULT 1
+  );
+
   -- Garantiza idempotencia de webhooks: un event_id se procesa una sola vez.
   CREATE TABLE IF NOT EXISTS processed_events (
     event_id     TEXT PRIMARY KEY,
@@ -157,6 +176,76 @@ export function listValidatedCards(email) {
       .all(email)
   }
   return db.prepare('SELECT * FROM payment_methods ORDER BY validated_at DESC').all()
+}
+
+// --- Telegram subscribers ---
+
+export function addSubscriber(chatId, username, firstName) {
+  try {
+    db.prepare(`
+      INSERT INTO telegram_subscribers (chat_id, username, first_name, active)
+      VALUES (?, ?, ?, 1)
+      ON CONFLICT(chat_id) DO UPDATE SET
+        active = 1, username = excluded.username, first_name = excluded.first_name
+    `).run(chatId, username || null, firstName || null)
+    return true
+  } catch (err) {
+    console.error('[db] addSubscriber error:', err.message)
+    return false
+  }
+}
+
+export function removeSubscriber(chatId) {
+  try {
+    db.prepare('UPDATE telegram_subscribers SET active = 0 WHERE chat_id = ?').run(chatId)
+    return true
+  } catch (err) {
+    console.error('[db] removeSubscriber error:', err.message)
+    return false
+  }
+}
+
+export function listSubscribers(onlyActive = true) {
+  if (onlyActive) {
+    return db.prepare('SELECT * FROM telegram_subscribers WHERE active = 1 ORDER BY subscribed_at DESC').all()
+  }
+  return db.prepare('SELECT * FROM telegram_subscribers ORDER BY subscribed_at DESC').all()
+}
+
+export function getSubscriberCount() {
+  const row = db.prepare('SELECT COUNT(*) as count FROM telegram_subscribers WHERE active = 1').get()
+  return row.count
+}
+
+// --- Auth users ---
+
+export function createUser(username, passwordHash) {
+  try {
+    db.prepare(`
+      INSERT INTO users (username, password_hash, credits, role)
+      VALUES (?, ?, 0, 'user')
+    `).run(username, passwordHash)
+    return db.prepare('SELECT id, username, credits, role, created_at FROM users WHERE username = ?').get(username)
+  } catch (err) {
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') return null
+    throw err
+  }
+}
+
+export function getUserByUsername(username) {
+  return db.prepare('SELECT * FROM users WHERE username = ?').get(username)
+}
+
+export function getUserById(id) {
+  return db.prepare('SELECT id, username, credits, role, telegram_id, created_at FROM users WHERE id = ?').get(id)
+}
+
+export function updateUserCredits(username, credits) {
+  db.prepare('UPDATE users SET credits = ? WHERE username = ?').run(credits, username)
+}
+
+export function listUsers() {
+  return db.prepare('SELECT id, username, credits, role, telegram_id, created_at FROM users ORDER BY created_at DESC').all()
 }
 
 export default db

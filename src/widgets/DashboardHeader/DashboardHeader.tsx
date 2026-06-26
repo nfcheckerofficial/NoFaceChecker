@@ -201,7 +201,7 @@ export function DashboardHeader() {
             )}
           >
             <span className="w-8 h-8 rounded-md bg-gradient-to-br from-cyber-purple to-cyber-blue flex items-center justify-center text-white text-sm font-bold">
-              {profile.username[0].toUpperCase()}
+              {profile.username ? profile.username[0].toUpperCase() : '?'}
             </span>
             <span className="hidden lg:flex flex-col items-start leading-tight">
               <span className="text-xs font-semibold text-cyber-text truncate max-w-[100px]">

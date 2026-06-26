@@ -1,4 +1,5 @@
 const TG_API = 'https://api.telegram.org/bot'
+const SERVER_URL = `http://${window.location.hostname}:4242`
 
 export interface LiveCardPayload {
   raw: string
@@ -40,6 +41,28 @@ function fmtCard(payload: LiveCardPayload): string {
   return lines.join('\n')
 }
 
+/** Broadcast a live card to ALL subscribed users via the server */
+export async function broadcastLiveCard(payload: LiveCardPayload, botToken: string): Promise<{ sent: number; total: number }> {
+  if (!botToken) return { sent: 0, total: 0 }
+
+  try {
+    const res = await fetch(`${SERVER_URL}/api/telegram/broadcast`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ botToken, payload }),
+    })
+    if (!res.ok) {
+      console.warn('[Telegram] Broadcast failed:', res.status)
+      return { sent: 0, total: 0 }
+    }
+    return await res.json()
+  } catch (err) {
+    console.warn('[Telegram] Broadcast network error:', err)
+    return { sent: 0, total: 0 }
+  }
+}
+
+/** Direct send to a single chat (legacy) */
 export async function sendLiveCard(payload: LiveCardPayload, botToken: string, chatId: string): Promise<boolean> {
   if (!botToken || !chatId) return false
 
@@ -91,5 +114,17 @@ export async function testTelegramConnection(botToken: string, chatId: string): 
     return { ok: true }
   } catch (err) {
     return { ok: false, error: String(err) }
+  }
+}
+
+/** Fetch subscribers from the server */
+export async function fetchSubscribers(): Promise<{ chat_id: string; username: string | null; first_name: string | null; subscribed_at: string }[]> {
+  try {
+    const res = await fetch(`${SERVER_URL}/api/telegram/subscribers`)
+    if (!res.ok) return []
+    const data = await res.json()
+    return data.subscribers || []
+  } catch {
+    return []
   }
 }

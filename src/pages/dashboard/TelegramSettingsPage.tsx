@@ -1,13 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { clsx } from 'clsx'
-import { MessageCircle, Check, X, AlertTriangle, Send, Eye, EyeOff, Bot } from 'lucide-react'
+import { MessageCircle, Check, X, AlertTriangle, Send, Eye, EyeOff, Bot, Users } from 'lucide-react'
 import { useTelegramStore } from '@/features/telegram/telegramStore'
-import { testTelegramConnection } from '@/features/telegram/telegramService'
+import { testTelegramConnection, fetchSubscribers } from '@/features/telegram/telegramService'
 
 export function TelegramSettingsPage() {
   const {
-    botToken, chatId, enabled, lastSentAt,
-    setBotToken, setChatId, setEnabled,
+    botToken, chatId, enabled, lastSentAt, subscribers, subscriberCount,
+    setBotToken, setChatId, setEnabled, setSubscribers,
   } = useTelegramStore()
 
   const [showToken, setShowToken] = useState(false)
@@ -15,6 +15,14 @@ export function TelegramSettingsPage() {
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null)
   const [localToken, setLocalToken] = useState(botToken)
   const [localChatId, setLocalChatId] = useState(chatId)
+
+  useEffect(() => {
+    fetchSubscribers().then(setSubscribers)
+    const interval = setInterval(() => {
+      fetchSubscribers().then(setSubscribers)
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [setSubscribers])
 
   const handleSave = () => {
     setBotToken(localToken.trim())
@@ -48,6 +56,11 @@ export function TelegramSettingsPage() {
     setTesting(false)
   }
 
+  const handleRefresh = async () => {
+    const subs = await fetchSubscribers()
+    setSubscribers(subs)
+  }
+
   const formatDate = (ts: number | null) => {
     if (!ts) return 'Never'
     return new Date(ts).toLocaleString()
@@ -65,7 +78,6 @@ export function TelegramSettingsPage() {
         </div>
       </div>
 
-      {/* Test result notification */}
       {testResult && (
         <div className={clsx(
           'px-4 py-3 rounded-lg border text-sm flex items-center gap-2',
@@ -86,9 +98,9 @@ export function TelegramSettingsPage() {
           <li>Send <span className="font-mono text-cyber-blue">/newbot</span> and follow the prompts to create your bot</li>
           <li>Copy the <strong>bot token</strong> (looks like <span className="font-mono text-cyber-blue">123456:ABC-DEF...</span>)</li>
           <li>Paste the token below</li>
-          <li>Search for your bot on Telegram and send <span className="font-mono text-cyber-blue">/start</span></li>
-          <li>Search for <span className="font-mono text-cyber-blue">@userinfobot</span> and send <span className="font-mono text-cyber-blue">/start</span> to get your Chat ID</li>
-          <li>Paste the Chat ID below and click <strong>Test Connection</strong></li>
+          <li>Search for your bot on Telegram and send <span className="font-mono text-cyber-blue">/start</span> to register</li>
+          <li>All registered users will receive live cards automatically</li>
+          <li>Users can send <span className="font-mono text-cyber-blue">/stop</span> to unsubscribe at any time</li>
         </ol>
       </div>
 
@@ -119,7 +131,7 @@ export function TelegramSettingsPage() {
         </div>
 
         <div>
-          <label className="block text-sm text-cyber-text-muted mb-1">Chat ID</label>
+          <label className="block text-sm text-cyber-text-muted mb-1">Your Chat ID (for testing)</label>
           <input
             type="text"
             value={localChatId}
@@ -140,7 +152,7 @@ export function TelegramSettingsPage() {
             <div className="w-10 h-5 bg-cyber-dark border border-cyber-border rounded-full peer peer-checked:bg-cyber-green peer-checked:border-cyber-green/50 after:content-[''] after:absolute after:top-0.5 after:start-[3px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-[19px]" />
           </label>
           <span className="text-sm text-cyber-text-muted">
-            {enabled ? 'Notifications enabled — live cards will be sent to Telegram' : 'Notifications disabled'}
+            {enabled ? 'Notifications enabled — live cards broadcast to all subscribers' : 'Notifications disabled'}
           </span>
         </div>
 
@@ -166,59 +178,76 @@ export function TelegramSettingsPage() {
         </div>
       </div>
 
+      {/* Subscribers */}
+      <div className="rounded-lg border border-cyber-border bg-cyber-panel/70 backdrop-blur-sm p-5">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-cyber-text flex items-center gap-2">
+            <Users size={16} className="text-cyber-blue" />
+            Subscribers ({subscriberCount})
+          </h3>
+          <button
+            onClick={handleRefresh}
+            className="text-xs text-cyber-blue hover:underline"
+          >
+            Refresh
+          </button>
+        </div>
+        {subscribers.length === 0 ? (
+          <p className="text-sm text-cyber-text-muted">
+            No subscribers yet. Users can send <span className="font-mono text-cyber-blue">/start</span> to your bot to register.
+          </p>
+        ) : (
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {subscribers.map((sub) => (
+              <div key={sub.chat_id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-cyber-black/60 border border-cyber-border/40">
+                <div>
+                  <span className="text-sm text-cyber-text font-medium">
+                    {sub.first_name || sub.username || sub.chat_id}
+                  </span>
+                  {sub.username && (
+                    <span className="text-xs text-cyber-text-muted ml-2">@{sub.username}</span>
+                  )}
+                </div>
+                <span className="text-[10px] text-cyber-text-muted">
+                  {new Date(sub.subscribed_at).toLocaleDateString()}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Stats */}
       <div className="rounded-lg border border-cyber-border bg-cyber-panel/70 backdrop-blur-sm p-5">
         <h3 className="text-sm font-semibold text-cyber-text mb-3">Status</h3>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-xs text-cyber-text-muted">Connection</p>
+            <p className="text-xs text-cyber-text-muted">Status</p>
             <p className={clsx(
               'text-sm font-medium mt-0.5 flex items-center gap-1.5',
-              enabled && botToken && chatId ? 'text-cyber-green' : 'text-cyber-text-muted'
+              enabled && botToken ? 'text-cyber-green' : 'text-cyber-text-muted'
             )}>
               <span className={clsx(
                 'w-2 h-2 rounded-full inline-block',
-                enabled && botToken && chatId ? 'bg-cyber-green' : 'bg-cyber-text-muted'
+                enabled && botToken ? 'bg-cyber-green' : 'bg-cyber-text-muted'
               )} />
-              {enabled && botToken && chatId ? 'Connected' : 'Not configured'}
+              {enabled && botToken ? 'Broadcasting' : 'Disabled'}
             </p>
+          </div>
+          <div>
+            <p className="text-xs text-cyber-text-muted">Subscribers</p>
+            <p className="text-sm text-cyber-text mt-0.5">{subscriberCount}</p>
           </div>
           <div>
             <p className="text-xs text-cyber-text-muted">Last Sent</p>
             <p className="text-sm text-cyber-text mt-0.5">{formatDate(lastSentAt)}</p>
           </div>
           <div>
-            <p className="text-xs text-cyber-text-muted">Status</p>
-            <p className="text-sm text-cyber-text mt-0.5">
-              {enabled ? 'Active · sending live cards' : 'Disabled'}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-cyber-text-muted">Format</p>
-            <p className="text-sm text-cyber-text mt-0.5">Markdown · masked card</p>
+            <p className="text-xs text-cyber-text-muted">Mode</p>
+            <p className="text-sm text-cyber-text mt-0.5">Broadcast · all subscribers</p>
           </div>
         </div>
       </div>
-
-      {/* Preview */}
-      {enabled && botToken && chatId && (
-        <div className="rounded-lg border border-cyber-border bg-cyber-dark/60 p-5">
-          <h3 className="text-sm font-semibold text-cyber-text mb-3">Message Preview</h3>
-          <div className="bg-cyber-black/70 border border-cyber-border rounded-lg p-4 font-mono text-xs whitespace-pre-wrap">
-            <span className="text-cyber-green">🚀 LIVE CARD DETECTED</span>{'\n\n'}
-            <span className="text-cyber-text">5276****2801</span>{'\n\n'}
-            <span className="text-cyber-text-muted">── GATE ──</span>{'\n'}
-            <span className="text-cyber-text">Vice Gate</span>{'\n\n'}
-            <span className="text-cyber-text-muted">── BIN INFO ──</span>{'\n'}
-            <span className="text-cyber-text">BIN: </span><span className="text-cyber-blue">527601</span>{'\n'}
-            <span className="text-cyber-text">Brand: </span>MASTERCARD{'\n'}
-            <span className="text-cyber-text">Issuer: </span>Bank of America{'\n'}
-            <span className="text-cyber-text">Country: </span>{'\u{1F1FA}\u{1F1F8}'} United States{'\n'}
-            <span className="text-cyber-text">Type: </span>credit · classic{'\n\n'}
-            <span className="text-cyber-text-muted">Response: </span>Approved · CVV Match
-          </div>
-        </div>
-      )}
     </div>
   )
 }

@@ -26,9 +26,8 @@ import {
   type CardValidationResult,
 } from './paymentsApi'
 
-const stripePromise = loadStripe(
-  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ?? ''
-)
+const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
+const stripePromise = stripeKey ? loadStripe(stripeKey) : null
 
 const CARD_STYLE = {
   style: {
@@ -155,6 +154,13 @@ function ValidatorForm() {
 }
 
 export function CardValidator() {
+  if (!stripePromise) {
+    return (
+      <div className="text-center text-cyber-text-muted py-8">
+        <p className="text-sm">Stripe not configured — set VITE_STRIPE_PUBLISHABLE_KEY</p>
+      </div>
+    )
+  }
   return (
     <Elements stripe={stripePromise}>
       <ValidatorForm />
