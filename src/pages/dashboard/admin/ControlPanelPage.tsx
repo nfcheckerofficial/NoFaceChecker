@@ -1,34 +1,83 @@
 import { useState } from 'react'
 import { clsx } from 'clsx'
 import {
-  Users, UserPlus, Ban, AlertTriangle, DollarSign,
-  Search, MoreVertical, Edit, Trash2, Shield, Mail,
+  Users, UserPlus, Ban, AlertTriangle, DollarSign, Plus,
+  Search, Edit, Trash2, Shield, Minus, Check, X,
 } from 'lucide-react'
+import { useAdminStore, type User } from '@/features/admin/adminStore'
 
-interface User {
-  id: string
-  username: string
-  email: string
-  credits: number
-  role: 'admin' | 'user'
-  banned: boolean
-  createdAt: string
-  lastSession: string
-}
+type ModalType = 'add' | 'edit' | 'ban' | 'delete' | 'credits' | null
 
-const MOCK_USERS: User[] = [
-  { id: '1', username: 'kikolaquema24', email: 'kiko@example.com', credits: 827, role: 'admin', banned: false, createdAt: '2024-05-06', lastSession: '2024-12-20' },
-  { id: '2', username: 'jatin029', email: 'jatin@example.com', credits: 15420, role: 'user', banned: false, createdAt: '2024-03-15', lastSession: '2024-12-19' },
-  { id: '3', username: 'Thejacker', email: 'jacker@example.com', credits: 10400, role: 'user', banned: false, createdAt: '2024-02-20', lastSession: '2024-12-18' },
-  { id: '4', username: 'M3LECI0', email: 'm3l@example.com', credits: 9300, role: 'user', banned: true, createdAt: '2024-04-10', lastSession: '2024-11-30' },
-  { id: '5', username: 'Hector32', email: 'hector@example.com', credits: 8900, role: 'user', banned: false, createdAt: '2024-01-25', lastSession: '2024-12-20' },
-]
+interface UserForm { username: string; email: string; credits: number; role: 'admin' | 'user' }
+const emptyUser: UserForm = { username: '', email: '', credits: 0, role: 'user' }
 
 export function ControlPanelPage() {
-  const [users, setUsers] = useState(MOCK_USERS)
+  const { users, addUser, updateUser, deleteUser, toggleBan, addCredits, removeCredits } = useAdminStore()
   const [search, setSearch] = useState('')
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
-  const [showModal, setShowModal] = useState<'edit' | 'ban' | 'delete' | null>(null)
+  const [modal, setModal] = useState<ModalType>(null)
+
+  const [form, setForm] = useState(emptyUser)
+  const [banReason, setBanReason] = useState('')
+  const [deleteConfirm, setDeleteConfirm] = useState('')
+  const [creditsAmount, setCreditsAmount] = useState(10)
+  const [creditsMode, setCreditsMode] = useState<'add' | 'remove'>('add')
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
+
+  const showNotif = (type: 'success' | 'error', message: string) => {
+    setNotification({ type, message })
+    setTimeout(() => setNotification(null), 3000)
+  }
+
+  const openModal = (type: ModalType, user?: User) => {
+    setSelectedUser(user ?? null)
+    setModal(type)
+    if (type === 'add') setForm(emptyUser)
+    if (type === 'edit' && user) setForm({ username: user.username, email: user.email, credits: user.credits, role: user.role })
+    if (type === 'ban') setBanReason('')
+    if (type === 'delete') setDeleteConfirm('')
+    if (type === 'credits' && user) { setCreditsAmount(10); setCreditsMode('add') }
+  }
+
+  const handleAdd = () => {
+    if (!form.username.trim() || !form.email.trim()) return showNotif('error', 'Username and email are required')
+    addUser({ ...form, credits: form.credits || 0, banned: false })
+    showNotif('success', `User ${form.username} created`)
+    setModal(null)
+  }
+
+  const handleEdit = () => {
+    if (!selectedUser) return
+    updateUser(selectedUser.id, form)
+    showNotif('success', `User ${form.username} updated`)
+    setModal(null)
+  }
+
+  const handleBan = () => {
+    if (!selectedUser) return
+    toggleBan(selectedUser.id, banReason)
+    showNotif('success', selectedUser.banned ? `User ${selectedUser.username} unbanned` : `User ${selectedUser.username} banned`)
+    setModal(null)
+  }
+
+  const handleDelete = () => {
+    if (!selectedUser || deleteConfirm !== selectedUser.username) return showNotif('error', 'Username does not match')
+    deleteUser(selectedUser.id)
+    showNotif('success', `User ${selectedUser.username} deleted`)
+    setModal(null)
+  }
+
+  const handleCredits = () => {
+    if (!selectedUser || creditsAmount <= 0) return showNotif('error', 'Invalid amount')
+    if (creditsMode === 'add') {
+      addCredits(selectedUser.id, creditsAmount)
+      showNotif('success', `Added ${creditsAmount} credits to ${selectedUser.username}`)
+    } else {
+      if (!removeCredits(selectedUser.id, creditsAmount)) return showNotif('error', 'Insufficient credits')
+      showNotif('success', `Removed ${creditsAmount} credits from ${selectedUser.username}`)
+    }
+    setModal(null)
+  }
 
   const filteredUsers = users.filter(u =>
     u.username.toLowerCase().includes(search.toLowerCase()) ||
@@ -47,7 +96,16 @@ export function ControlPanelPage() {
         </div>
       </div>
 
-      {/* Summary Cards */}
+      {notification && (
+        <div className={clsx(
+          'px-4 py-3 rounded-lg border text-sm flex items-center gap-2',
+          notification.type === 'success' ? 'bg-cyber-green/10 border-cyber-green/40 text-cyber-green' : 'bg-cyber-red/10 border-cyber-red/40 text-cyber-red'
+        )}>
+          {notification.type === 'success' ? <Check size={16} /> : <AlertTriangle size={16} />}
+          {notification.message}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <SummaryCard icon={<Users size={20} />} label="Total Users" value={users.length} color="bg-blue-600/80" />
         <SummaryCard icon={<DollarSign size={20} />} label="Total Credits" value={totalCredits.toLocaleString()} color="bg-green-600/80" />
@@ -55,7 +113,6 @@ export function ControlPanelPage() {
         <SummaryCard icon={<Ban size={20} />} label="Banned" value={bannedCount} color="bg-red-600/80" />
       </div>
 
-      {/* Users Table */}
       <div className="rounded-lg border border-cyber-border bg-cyber-panel/70 backdrop-blur-sm">
         <div className="px-5 py-4 border-b border-cyber-border flex items-center justify-between">
           <h2 className="text-sm font-semibold text-cyber-text">Users</h2>
@@ -63,16 +120,15 @@ export function ControlPanelPage() {
             <div className="relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-cyber-text-muted" />
               <input
-                type="text"
-                placeholder="Search users..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                type="text" placeholder="Search users..."
+                value={search} onChange={(e) => setSearch(e.target.value)}
                 className="pl-9 pr-4 py-2 bg-cyber-dark border border-cyber-border rounded-lg text-sm text-cyber-text placeholder-cyber-text-muted focus:outline-none focus:border-cyber-blue"
               />
             </div>
-            <button className="px-3 py-2 bg-cyber-blue/20 border border-cyber-blue/50 rounded-lg text-sm text-cyber-blue hover:bg-cyber-blue/30 transition-colors flex items-center gap-2">
-              <UserPlus size={14} />
-              Add User
+            <button onClick={() => openModal('add')}
+              className="px-3 py-2 bg-cyber-blue/20 border border-cyber-blue/50 rounded-lg text-sm text-cyber-blue hover:bg-cyber-blue/30 transition-colors flex items-center gap-2"
+            >
+              <UserPlus size={14} /> Add User
             </button>
           </div>
         </div>
@@ -107,18 +163,12 @@ export function ControlPanelPage() {
                     <span className="text-sm text-cyber-text">{user.credits.toLocaleString()}</span>
                   </td>
                   <td className="px-5 py-4">
-                    <span className={clsx(
-                      'px-2 py-1 rounded-full text-xs font-medium',
-                      user.role === 'admin' ? 'bg-cyber-purple/20 text-cyber-purple' : 'bg-cyber-blue/20 text-cyber-blue'
-                    )}>
+                    <span className={clsx('px-2 py-1 rounded-full text-xs font-medium', user.role === 'admin' ? 'bg-cyber-purple/20 text-cyber-purple' : 'bg-cyber-blue/20 text-cyber-blue')}>
                       {user.role}
                     </span>
                   </td>
                   <td className="px-5 py-4">
-                    <span className={clsx(
-                      'px-2 py-1 rounded-full text-xs font-medium',
-                      user.banned ? 'bg-cyber-red/20 text-cyber-red' : 'bg-cyber-green/20 text-cyber-green'
-                    )}>
+                    <span className={clsx('px-2 py-1 rounded-full text-xs font-medium', user.banned ? 'bg-cyber-red/20 text-cyber-red' : 'bg-cyber-green/20 text-cyber-green')}>
                       {user.banned ? 'Banned' : 'Active'}
                     </span>
                   </td>
@@ -127,22 +177,16 @@ export function ControlPanelPage() {
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => { setSelectedUser(user); setShowModal('edit') }}
-                        className="p-2 rounded-lg hover:bg-cyber-dark text-cyber-text-muted hover:text-cyber-blue transition-colors"
-                      >
+                      <button onClick={() => openModal('credits', user)} className="p-2 rounded-lg hover:bg-cyber-dark text-cyber-text-muted hover:text-cyber-green transition-colors" title="Manage Credits">
+                        <DollarSign size={14} />
+                      </button>
+                      <button onClick={() => openModal('edit', user)} className="p-2 rounded-lg hover:bg-cyber-dark text-cyber-text-muted hover:text-cyber-blue transition-colors" title="Edit">
                         <Edit size={14} />
                       </button>
-                      <button
-                        onClick={() => { setSelectedUser(user); setShowModal('ban') }}
-                        className="p-2 rounded-lg hover:bg-cyber-dark text-cyber-text-muted hover:text-cyber-yellow transition-colors"
-                      >
+                      <button onClick={() => openModal('ban', user)} className="p-2 rounded-lg hover:bg-cyber-dark text-cyber-text-muted hover:text-cyber-yellow transition-colors" title={user.banned ? 'Unban' : 'Ban'}>
                         <Shield size={14} />
                       </button>
-                      <button
-                        onClick={() => { setSelectedUser(user); setShowModal('delete') }}
-                        className="p-2 rounded-lg hover:bg-cyber-dark text-cyber-text-muted hover:text-cyber-red transition-colors"
-                      >
+                      <button onClick={() => openModal('delete', user)} className="p-2 rounded-lg hover:bg-cyber-dark text-cyber-text-muted hover:text-cyber-red transition-colors" title="Delete">
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -154,109 +198,170 @@ export function ControlPanelPage() {
         </div>
       </div>
 
-      {/* Modal */}
-      {showModal && selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-cyber-dark border border-cyber-border rounded-xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-cyber-text">
-                {showModal === 'edit' && 'Edit User'}
-                {showModal === 'ban' && (selectedUser.banned ? 'Unban User' : 'Ban User')}
-                {showModal === 'delete' && 'Delete User'}
-              </h3>
-              <button onClick={() => setShowModal(null)} className="text-cyber-text-muted hover:text-cyber-text">
-                <span className="text-xl">&times;</span>
-              </button>
+      {/* Add User Modal */}
+      {modal === 'add' && (
+        <Modal title="Add User" onClose={() => setModal(null)}>
+          <Input label="Username" value={form.username} onChange={(v) => setForm(f => ({ ...f, username: v }))} />
+          <Input label="Email" value={form.email} onChange={(v) => setForm(f => ({ ...f, email: v }))} />
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="Credits" type="number" value={String(form.credits)} onChange={(v) => setForm(f => ({ ...f, credits: Number(v) || 0 }))} />
+            <div>
+              <label className="block text-sm text-cyber-text-muted mb-1">Role</label>
+              <select value={form.role} onChange={(e) => setForm(f => ({ ...f, role: e.target.value as 'admin' | 'user' }))}
+                className="w-full px-3 py-2 bg-cyber-black border border-cyber-border rounded-lg text-cyber-text focus:outline-none focus:border-cyber-blue">
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+              </select>
             </div>
-
-            {showModal === 'edit' && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-cyber-text-muted mb-1">Username</label>
-                  <input
-                    type="text"
-                    defaultValue={selectedUser.username}
-                    className="w-full px-3 py-2 bg-cyber-black border border-cyber-border rounded-lg text-cyber-text focus:outline-none focus:border-cyber-blue"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-cyber-text-muted mb-1">Credits</label>
-                  <input
-                    type="number"
-                    defaultValue={selectedUser.credits}
-                    className="w-full px-3 py-2 bg-cyber-black border border-cyber-border rounded-lg text-cyber-text focus:outline-none focus:border-cyber-blue"
-                  />
-                </div>
-                <div className="flex justify-end gap-3 mt-6">
-                  <button onClick={() => setShowModal(null)} className="px-4 py-2 border border-cyber-border rounded-lg text-cyber-text-muted hover:text-cyber-text transition-colors">
-                    Cancel
-                  </button>
-                  <button className="px-4 py-2 bg-cyber-blue/20 border border-cyber-blue/50 rounded-lg text-cyber-blue hover:bg-cyber-blue/30 transition-colors">
-                    Save Changes
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {showModal === 'ban' && (
-              <div className="space-y-4">
-                <p className="text-sm text-cyber-text-muted">
-                  {selectedUser.banned
-                    ? `Are you sure you want to unban ${selectedUser.username}?`
-                    : `Are you sure you want to ban ${selectedUser.username}?`
-                  }
-                </p>
-                <div>
-                  <label className="block text-sm text-cyber-text-muted mb-1">Reason</label>
-                  <textarea
-                    className="w-full px-3 py-2 bg-cyber-black border border-cyber-border rounded-lg text-cyber-text focus:outline-none focus:border-cyber-blue h-20 resize-none"
-                    placeholder="Enter reason..."
-                  />
-                </div>
-                <div className="flex justify-end gap-3 mt-6">
-                  <button onClick={() => setShowModal(null)} className="px-4 py-2 border border-cyber-border rounded-lg text-cyber-text-muted hover:text-cyber-text transition-colors">
-                    Cancel
-                  </button>
-                  <button className={clsx(
-                    'px-4 py-2 rounded-lg transition-colors',
-                    selectedUser.banned
-                      ? 'bg-cyber-green/20 border border-cyber-green/50 text-cyber-green hover:bg-cyber-green/30'
-                      : 'bg-cyber-yellow/20 border border-cyber-yellow/50 text-cyber-yellow hover:bg-cyber-yellow/30'
-                  )}>
-                    {selectedUser.banned ? 'Unban' : 'Ban'}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {showModal === 'delete' && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 p-3 bg-cyber-red/10 border border-cyber-red/30 rounded-lg">
-                  <AlertTriangle size={18} className="text-cyber-red shrink-0" />
-                  <p className="text-sm text-cyber-text">This action cannot be undone. All user data will be permanently deleted.</p>
-                </div>
-                <p className="text-sm text-cyber-text-muted">
-                  Type <span className="font-mono text-cyber-red">{selectedUser.username}</span> to confirm deletion.
-                </p>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 bg-cyber-black border border-cyber-border rounded-lg text-cyber-text focus:outline-none focus:border-cyber-red"
-                  placeholder="Type username..."
-                />
-                <div className="flex justify-end gap-3 mt-6">
-                  <button onClick={() => setShowModal(null)} className="px-4 py-2 border border-cyber-border rounded-lg text-cyber-text-muted hover:text-cyber-text transition-colors">
-                    Cancel
-                  </button>
-                  <button className="px-4 py-2 bg-cyber-red/20 border border-cyber-red/50 rounded-lg text-cyber-red hover:bg-cyber-red/30 transition-colors">
-                    Delete User
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
-        </div>
+          <ModalActions>
+            <ModalBtn label="Cancel" onClick={() => setModal(null)} variant="ghost" />
+            <ModalBtn label="Create User" onClick={handleAdd} variant="primary" />
+          </ModalActions>
+        </Modal>
+      )}
+
+      {/* Edit User Modal */}
+      {modal === 'edit' && selectedUser && (
+        <Modal title="Edit User" onClose={() => setModal(null)}>
+          <Input label="Username" value={form.username} onChange={(v) => setForm(f => ({ ...f, username: v }))} />
+          <Input label="Email" value={form.email} onChange={(v) => setForm(f => ({ ...f, email: v }))} />
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="Credits" type="number" value={String(form.credits)} onChange={(v) => setForm(f => ({ ...f, credits: Number(v) || 0 }))} />
+            <div>
+              <label className="block text-sm text-cyber-text-muted mb-1">Role</label>
+              <select value={form.role} onChange={(e) => setForm(f => ({ ...f, role: e.target.value as 'admin' | 'user' }))}
+                className="w-full px-3 py-2 bg-cyber-black border border-cyber-border rounded-lg text-cyber-text focus:outline-none focus:border-cyber-blue">
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+          </div>
+          <ModalActions>
+            <ModalBtn label="Cancel" onClick={() => setModal(null)} variant="ghost" />
+            <ModalBtn label="Save Changes" onClick={handleEdit} variant="primary" />
+          </ModalActions>
+        </Modal>
+      )}
+
+      {/* Ban/Unban Modal */}
+      {modal === 'ban' && selectedUser && (
+        <Modal title={selectedUser.banned ? 'Unban User' : 'Ban User'} onClose={() => setModal(null)}>
+          <p className="text-sm text-cyber-text-muted mb-4">
+            {selectedUser.banned
+              ? `Are you sure you want to unban ${selectedUser.username}?`
+              : `Are you sure you want to ban ${selectedUser.username}?`}
+          </p>
+          {!selectedUser.banned && (
+            <div>
+              <label className="block text-sm text-cyber-text-muted mb-1">Reason</label>
+              <textarea value={banReason} onChange={(e) => setBanReason(e.target.value)}
+                className="w-full px-3 py-2 bg-cyber-black border border-cyber-border rounded-lg text-cyber-text focus:outline-none focus:border-cyber-blue h-20 resize-none"
+                placeholder="Enter reason..." />
+            </div>
+          )}
+          <ModalActions>
+            <ModalBtn label="Cancel" onClick={() => setModal(null)} variant="ghost" />
+            <ModalBtn label={selectedUser.banned ? 'Unban' : 'Ban'} onClick={handleBan}
+              variant={selectedUser.banned ? 'success' : 'warning'} />
+          </ModalActions>
+        </Modal>
+      )}
+
+      {/* Delete User Modal */}
+      {modal === 'delete' && selectedUser && (
+        <Modal title="Delete User" onClose={() => setModal(null)}>
+          <div className="flex items-center gap-3 p-3 bg-cyber-red/10 border border-cyber-red/30 rounded-lg mb-4">
+            <AlertTriangle size={18} className="text-cyber-red shrink-0" />
+            <p className="text-sm text-cyber-text">This action cannot be undone.</p>
+          </div>
+          <p className="text-sm text-cyber-text-muted mb-3">
+            Type <span className="font-mono text-cyber-red font-bold">{selectedUser.username}</span> to confirm:
+          </p>
+          <input type="text" value={deleteConfirm} onChange={(e) => setDeleteConfirm(e.target.value)}
+            className="w-full px-3 py-2 bg-cyber-black border border-cyber-border rounded-lg text-cyber-text focus:outline-none focus:border-cyber-red"
+            placeholder="Type username..." />
+          <ModalActions>
+            <ModalBtn label="Cancel" onClick={() => setModal(null)} variant="ghost" />
+            <ModalBtn label="Delete" onClick={handleDelete} variant="danger" disabled={deleteConfirm !== selectedUser.username} />
+          </ModalActions>
+        </Modal>
+      )}
+
+      {/* Credits Modal */}
+      {modal === 'credits' && selectedUser && (
+        <Modal title="Manage Credits" onClose={() => setModal(null)}>
+          <div className="p-3 bg-cyber-panel rounded-lg border border-cyber-border mb-4">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-cyber-text-muted">{selectedUser.username}</span>
+              <span className="text-cyber-text font-bold">{selectedUser.credits} credits</span>
+            </div>
+          </div>
+          <div className="flex gap-2 mb-4">
+            <button onClick={() => setCreditsMode('add')}
+              className={clsx('flex-1 py-2 rounded-lg text-sm font-medium border transition-colors',
+                creditsMode === 'add' ? 'bg-cyber-green/20 border-cyber-green/50 text-cyber-green' : 'border-cyber-border text-cyber-text-muted hover:text-cyber-text')}>
+              <Plus size={14} className="inline mr-1" /> Add
+            </button>
+            <button onClick={() => setCreditsMode('remove')}
+              className={clsx('flex-1 py-2 rounded-lg text-sm font-medium border transition-colors',
+                creditsMode === 'remove' ? 'bg-cyber-red/20 border-cyber-red/50 text-cyber-red' : 'border-cyber-border text-cyber-text-muted hover:text-cyber-text')}>
+              <Minus size={14} className="inline mr-1" /> Remove
+            </button>
+          </div>
+          <Input label="Amount" type="number" value={String(creditsAmount)} onChange={(v) => setCreditsAmount(Number(v) || 0)} />
+          <ModalActions>
+            <ModalBtn label="Cancel" onClick={() => setModal(null)} variant="ghost" />
+            <ModalBtn label={creditsMode === 'add' ? 'Add Credits' : 'Remove Credits'} onClick={handleCredits}
+              variant={creditsMode === 'add' ? 'success' : 'danger'} />
+          </ModalActions>
+        </Modal>
       )}
     </div>
+  )
+}
+
+function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="w-full max-w-md bg-cyber-dark border border-cyber-border rounded-xl p-6 animate-fade-in" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-cyber-text">{title}</h3>
+          <button onClick={onClose} className="text-cyber-text-muted hover:text-cyber-text"><X size={18} /></button>
+        </div>
+        <div className="space-y-4">{children}</div>
+      </div>
+    </div>
+  )
+}
+
+function Input({ label, value, onChange, type = 'text' }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
+  return (
+    <div>
+      <label className="block text-sm text-cyber-text-muted mb-1">{label}</label>
+      <input type={type} value={value} onChange={(e) => onChange(e.target.value)}
+        className="w-full px-3 py-2 bg-cyber-black border border-cyber-border rounded-lg text-cyber-text placeholder-cyber-text-muted focus:outline-none focus:border-cyber-blue" />
+    </div>
+  )
+}
+
+function ModalActions({ children }: { children: React.ReactNode }) {
+  return <div className="flex justify-end gap-3 mt-6">{children}</div>
+}
+
+function ModalBtn({ label, onClick, variant = 'primary', disabled }: { label: string; onClick: () => void; variant?: 'primary' | 'danger' | 'warning' | 'success' | 'ghost'; disabled?: boolean }) {
+  const variants = {
+    primary: 'bg-cyber-blue/20 border-cyber-blue/50 text-cyber-blue hover:bg-cyber-blue/30',
+    danger: 'bg-cyber-red/20 border-cyber-red/50 text-cyber-red hover:bg-cyber-red/30',
+    warning: 'bg-cyber-yellow/20 border-cyber-yellow/50 text-cyber-yellow hover:bg-cyber-yellow/30',
+    success: 'bg-cyber-green/20 border-cyber-green/50 text-cyber-green hover:bg-cyber-green/30',
+    ghost: 'border-cyber-border text-cyber-text-muted hover:text-cyber-text',
+  }
+  return (
+    <button onClick={onClick} disabled={disabled}
+      className={clsx('px-4 py-2 rounded-lg text-sm font-medium border transition-colors disabled:opacity-40 disabled:cursor-not-allowed', variants[variant])}>
+      {label}
+    </button>
   )
 }
 
@@ -264,9 +369,7 @@ function SummaryCard({ icon, label, value, color }: { icon: React.ReactNode; lab
   return (
     <div className="rounded-lg border border-cyber-border bg-cyber-panel/70 backdrop-blur-sm px-4 py-4">
       <div className="flex items-center gap-3">
-        <span className={clsx('w-11 h-11 rounded-md flex items-center justify-center text-white shrink-0', color)}>
-          {icon}
-        </span>
+        <span className={clsx('w-11 h-11 rounded-md flex items-center justify-center text-white shrink-0', color)}>{icon}</span>
         <div>
           <p className="text-2xl font-bold text-cyber-text">{value}</p>
           <p className="text-xs text-cyber-text-muted">{label}</p>
