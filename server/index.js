@@ -181,7 +181,7 @@ app.post('/api/auth/register', async (req, res) => {
     if (typeof username !== 'string' || typeof password !== 'string') return res.status(400).json({ error: 'Invalid input' })
     if (username.length < 3 || username.length > 30) return res.status(400).json({ error: 'Username must be 3-30 characters' })
     if (!/^[a-zA-Z0-9_]+$/.test(username)) return res.status(400).json({ error: 'Username can only contain letters, numbers, underscores' })
-    if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' })
+    if (password.length < 4) return res.status(400).json({ error: 'Password must be at least 4 characters' })
 
     const existing = getUserByUsername(username)
     if (existing) return res.status(409).json({ error: 'Username already taken' })
