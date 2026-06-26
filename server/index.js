@@ -89,6 +89,11 @@ app.use(helmet({
 const corsOrigins = isProd ? CLIENT_URL : [CLIENT_URL, 'http://localhost:5173', 'http://localhost:5174']
 app.use(cors({ origin: corsOrigins }))
 
+// Health check (antes del rate limiter para evitar 429 en los pings de Render)
+app.get('/health', (_req, res) => {
+  res.json({ ok: true, mode: isLiveKey ? 'live' : 'test' })
+})
+
 // Seguridad: rate limiting global (100 req / 15 min por IP)
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
