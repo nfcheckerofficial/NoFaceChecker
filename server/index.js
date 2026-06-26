@@ -1,6 +1,7 @@
 // Servidor de pagos (Stripe). Modo TEST o LIVE según la clave + NODE_ENV.
 // La clave secreta SOLO vive aquí, nunca en el frontend.
 
+import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import express from 'express'
@@ -686,12 +687,17 @@ function fmtBroadcast(payload, credits) {
   return lines.join('\n')
 }
 
-// En producción, servir el frontend build desde dist/
+// En producción, servir el frontend build desde dist/ si existe
 if (isProd) {
-  app.use(express.static(path.join(__dirname, '../dist')))
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../dist/index.html'))
-  })
+  const distPath = path.join(__dirname, '../dist')
+  if (fs.existsSync(distPath)) {
+    app.use(express.static(distPath))
+    app.get('/{*path}', (req, res) => {
+      const indexFile = path.join(distPath, 'index.html')
+      if (fs.existsSync(indexFile)) return res.sendFile(indexFile)
+      res.status(404).json({ error: 'Not found' })
+    })
+  }
 }
 
 app.listen(PORT, () => {
