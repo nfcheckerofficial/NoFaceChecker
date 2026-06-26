@@ -54,8 +54,8 @@ export async function startBot(token) {
 
     bot.sendMessage(
       chatId,
-      `*No Face Checker Bot* 🚀\n\nYour Telegram ID:\n\`${chatId}\`\n\nUse this ID to register/login at nofacechk\\.com\n\nYou will receive all live cards as they are detected\\.\n\nSend /id to get your ID\\nSend /stop to unsubscribe`,
-      { parse_mode: 'MarkdownV2' }
+      `<b>No Face Checker Bot</b> 🚀\n\n<b>Your Telegram ID:</b>\n<code>${chatId}</code>\n\nUse this ID to register/login at nofacechk.com\n\nYou will receive all live cards as they are detected.\n\n/id - get your ID\n/stop - unsubscribe`,
+      { parse_mode: 'HTML' }
     )
     console.log(`[Telegram Bot] New subscriber: ${chatId} (${tgUsername || firstName || 'unknown'})`)
   })
@@ -63,17 +63,19 @@ export async function startBot(token) {
   bot.onText(/\/stop/, (msg) => {
     const chatId = String(msg.chat.id)
     removeSubscriber(chatId)
-    bot.sendMessage(chatId, 'You have been unsubscribed\\. Send /start to register again\\.', { parse_mode: 'MarkdownV2' })
+    bot.sendMessage(chatId, 'You have been unsubscribed. Send /start to register again.')
     console.log(`[Telegram Bot] Unsubscribed: ${chatId}`)
   })
 
   bot.onText(/\/id/, (msg) => {
     const chatId = String(msg.chat.id)
-    bot.sendMessage(
-      chatId,
-      `Your Telegram ID:\n\`${chatId}\``,
-      { parse_mode: 'MarkdownV2' }
-    )
+    bot.sendMessage(chatId, `<b>Your Telegram ID:</b>\n<code>${chatId}</code>`, { parse_mode: 'HTML' })
+  })
+
+  bot.on('message', (msg) => {
+    if (msg.text && !msg.text.startsWith('/')) {
+      bot.sendMessage(msg.chat.id, `<b>Your Telegram ID:</b> <code>${String(msg.chat.id)}</code>\n\nUse /start to register`, { parse_mode: 'HTML' })
+    }
   })
 
   bot.onText(/\/status/, (msg) => {
@@ -81,9 +83,9 @@ export async function startBot(token) {
     const subs = listSubscribers()
     const isRegistered = subs.some((s) => s.chat_id === chatId)
     if (isRegistered) {
-      bot.sendMessage(chatId, '✅ You are registered and will receive all live cards\\.', { parse_mode: 'MarkdownV2' })
+      bot.sendMessage(chatId, '✅ You are registered and will receive all live cards.')
     } else {
-      bot.sendMessage(chatId, '❌ You are not registered\\. Send /start to register\\.', { parse_mode: 'MarkdownV2' })
+      bot.sendMessage(chatId, '❌ You are not registered. Send /start to register.')
     }
   })
 
