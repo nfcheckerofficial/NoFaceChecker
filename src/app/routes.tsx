@@ -25,6 +25,7 @@ import { GateDashboard } from '@/features/checker/components/GateDashboard'
 import { PlaceholderPage } from '@/pages/dashboard/PlaceholderPage'
 
 // Admin Pages
+import { ProtectedRoute } from '@/features/auth/components/ProtectedRoute'
 import { AdminRoute } from '@/features/auth/components/AdminRoute'
 import { ControlPanelPage } from '@/pages/dashboard/admin/ControlPanelPage'
 import { GatesPanelPage } from '@/pages/dashboard/admin/GatesPanelPage'
@@ -44,8 +45,8 @@ export function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
-      {/* Dashboard con sidebar */}
-      <Route path="/dashboard" element={<DashboardLayout />}>
+      {/* Dashboard con sidebar (requiere login) */}
+      <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
         <Route index element={<OverviewPage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="marketplace" element={<MarketplacePage />} />
