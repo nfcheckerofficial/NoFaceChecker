@@ -1,3 +1,4 @@
+import { MatrixRain } from '@/shared/ui/MatrixRain'
 import { Header } from '@/widgets/Header/Header'
 import { SidebarIntel } from '@/widgets/SidebarIntel/SidebarIntel'
 import { SidebarProtocol } from '@/widgets/SidebarProtocol/SidebarProtocol'
@@ -7,6 +8,7 @@ import { Footer } from '@/widgets/Footer/Footer'
 export function LandingPage() {
   return (
     <div className="min-h-screen flex flex-col">
+      <MatrixRain opacity={0.08} />
       <Header />
 
       <main className="flex-1 pt-20 pb-12">

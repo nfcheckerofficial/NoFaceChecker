@@ -17,10 +17,12 @@ const CIRCLE_BG: Record<string, string> = {
 }
 
 interface DashboardSidebarProps {
+  open?: boolean
+  onClose?: () => void
   className?: string
 }
 
-export function DashboardSidebar({ className }: DashboardSidebarProps) {
+export function DashboardSidebar({ open, onClose, className }: DashboardSidebarProps) {
   const location = useLocation()
   const [expanded, setExpanded] = useState<string | null>(null)
   const { user } = useAuthStore()
@@ -38,11 +40,20 @@ export function DashboardSidebar({ className }: DashboardSidebarProps) {
       ? location.pathname === '/dashboard'
       : location.pathname.startsWith(href))
 
+  const handleNav = () => onClose?.()
+
   return (
     <aside
       className={clsx(
-        'flex flex-col w-[260px] shrink-0 h-screen sticky top-0',
-        'bg-gradient-to-b from-cyber-dark to-cyber-black border-r border-cyber-border overflow-y-auto',
+        'flex flex-col w-[260px] shrink-0 h-screen overflow-y-auto',
+        // Desktop: sticky sidebar
+        'hidden lg:flex sticky top-0',
+        // Mobile: fixed overlay sidebar
+        open
+          ? 'fixed inset-y-0 left-0 z-50 flex'
+          : 'hidden',
+        'bg-gradient-to-b from-cyber-dark to-cyber-black border-r border-cyber-border',
+        'transition-transform duration-200',
         className
       )}
     >
@@ -61,6 +72,7 @@ export function DashboardSidebar({ className }: DashboardSidebarProps) {
                     setExpanded(prev => (prev === item.label ? null : item.label))
                   }
                   childActive={(href) => location.pathname === href}
+                  onClick={handleNav}
                 />
               ))}
             </div>
@@ -72,13 +84,14 @@ export function DashboardSidebar({ className }: DashboardSidebarProps) {
 }
 
 function SidebarRow({
-  item, active, isOpen, onToggle, childActive,
+  item, active, isOpen, onToggle, childActive, onClick,
 }: {
   item: NavItem
   active: boolean
   isOpen: boolean
   onToggle: () => void
   childActive: (href: string) => boolean
+  onClick?: () => void
 }) {
   const Icon = item.icon
   const hasChildren = !!item.children?.length
@@ -123,6 +136,7 @@ function SidebarRow({
               <Link
                 key={child.href}
                 to={child.href}
+                onClick={onClick}
                 className={clsx(
                   'px-2 py-1.5 rounded text-[13px] transition-colors',
                   childActive(child.href)
@@ -140,7 +154,7 @@ function SidebarRow({
   }
 
   return (
-    <Link to={item.href ?? '#'} className={baseClasses}>
+    <Link to={item.href ?? '#'} onClick={onClick} className={baseClasses}>
       {content}
     </Link>
   )

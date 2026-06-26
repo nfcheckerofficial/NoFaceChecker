@@ -45,6 +45,8 @@ export function HeroSection({ className }: HeroSectionProps) {
             <img
               src="/hooded-figure.webp"
               alt="Operative"
+              loading="lazy"
+              decoding="async"
               className="w-full h-auto object-cover opacity-80"
               onError={(e) => {
                 const target = e.target as HTMLImageElement

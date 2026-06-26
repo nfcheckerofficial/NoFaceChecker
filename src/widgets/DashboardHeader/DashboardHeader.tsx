@@ -3,10 +3,14 @@ import { Link } from 'react-router-dom'
 import { clsx } from 'clsx'
 import {
   Bell, AlertTriangle, Zap, X, Check,
-  User, ChevronDown, Settings, LogOut, CircleDot,
+  User, ChevronDown, Settings, LogOut, CircleDot, Menu,
 } from 'lucide-react'
 import { useUserStore } from '@/features/checker/store/userStore'
 import { useAuthStore } from '@/features/auth/authStore'
+
+interface DashboardHeaderProps {
+  onMenuClick?: () => void
+}
 
 interface NotificationItem {
   id: number
@@ -34,7 +38,7 @@ const WARNINGS: WarningItem[] = [
 
 type Panel = 'notifications' | 'warnings' | 'profile' | null
 
-export function DashboardHeader() {
+export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
   const { profile } = useUserStore()
   const { user } = useAuthStore()
   const isAdmin = user?.role === 'admin'
@@ -62,8 +66,16 @@ export function DashboardHeader() {
 
   return (
     <header className="h-16 shrink-0 sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 border-b border-cyber-border bg-cyber-dark/80 backdrop-blur-md">
-      {/* Left spacer (empty) */}
-      <div className="w-0 sm:w-40" />
+      {/* Left: hamburger (mobile) + spacer (desktop) */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onMenuClick}
+          className="lg:hidden p-2 text-cyber-text-muted hover:text-cyber-text transition-colors"
+        >
+          <Menu size={20} />
+        </button>
+        <div className="hidden lg:block w-40" />
+      </div>
 
       {/* Center: Brand */}
       <div className="flex items-center gap-2 absolute left-1/2 -translate-x-1/2">

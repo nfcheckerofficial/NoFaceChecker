@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { Route, Routes, useParams } from 'react-router-dom'
 import { LandingPage } from '@/pages/LandingPage'
 import { LoginPage } from '@/pages/LoginPage'
@@ -6,36 +7,41 @@ import { CheckerPage } from '@/pages/CheckerPage'
 import { BulkCheckerPage } from '@/pages/BulkCheckerPage'
 import { GeneratorPage } from '@/pages/GeneratorPage'
 import { DashboardLayout } from '@/widgets/DashboardLayout/DashboardLayout'
-import { OverviewPage } from '@/pages/dashboard/OverviewPage'
-import { GeneratorDashboardPage } from '@/pages/dashboard/GeneratorDashboardPage'
-import { BinLookupPage } from '@/pages/dashboard/BinLookupPage'
-import { RandomDataPage } from '@/pages/dashboard/RandomDataPage'
-import { ThreeDCheckerPage } from '@/pages/dashboard/ThreeDCheckerPage'
-
-import { PricingPage } from '@/pages/dashboard/PricingPage'
-import { PaySuccessPage } from '@/pages/dashboard/PaySuccessPage'
-import { PayCancelPage } from '@/pages/dashboard/PayCancelPage'
-import { ProfilePage } from '@/pages/dashboard/ProfilePage'
-import { FaqsPage } from '@/pages/dashboard/FaqsPage'
-import { SupportPage } from '@/pages/dashboard/SupportPage'
-import { CardVaultPage } from '@/pages/dashboard/CardVaultPage'
-import { MarketplacePage } from '@/pages/dashboard/MarketplacePage'
-import { TelegramSettingsPage } from '@/pages/dashboard/TelegramSettingsPage'
-import { GateDashboard } from '@/features/checker/components/GateDashboard'
-import { PlaceholderPage } from '@/pages/dashboard/PlaceholderPage'
-
-// Admin Pages
 import { ProtectedRoute } from '@/features/auth/components/ProtectedRoute'
 import { AdminRoute } from '@/features/auth/components/AdminRoute'
-import { ControlPanelPage } from '@/pages/dashboard/admin/ControlPanelPage'
-import { GatesPanelPage } from '@/pages/dashboard/admin/GatesPanelPage'
-import { ToolsPanelPage } from '@/pages/dashboard/admin/ToolsPanelPage'
+import { GateDashboard } from '@/features/checker/components/GateDashboard'
 
-/** Resuelve un gate parametrizado: usa `prefix-<param>` como gateId. */
+const OverviewPage = lazy(() => import('@/pages/dashboard/OverviewPage').then(m => ({ default: m.OverviewPage })))
+const GeneratorDashboardPage = lazy(() => import('@/pages/dashboard/GeneratorDashboardPage').then(m => ({ default: m.GeneratorDashboardPage })))
+const BinLookupPage = lazy(() => import('@/pages/dashboard/BinLookupPage').then(m => ({ default: m.BinLookupPage })))
+const RandomDataPage = lazy(() => import('@/pages/dashboard/RandomDataPage').then(m => ({ default: m.RandomDataPage })))
+const ThreeDCheckerPage = lazy(() => import('@/pages/dashboard/ThreeDCheckerPage').then(m => ({ default: m.ThreeDCheckerPage })))
+const PricingPage = lazy(() => import('@/pages/dashboard/PricingPage').then(m => ({ default: m.PricingPage })))
+const PaySuccessPage = lazy(() => import('@/pages/dashboard/PaySuccessPage').then(m => ({ default: m.PaySuccessPage })))
+const PayCancelPage = lazy(() => import('@/pages/dashboard/PayCancelPage').then(m => ({ default: m.PayCancelPage })))
+const ProfilePage = lazy(() => import('@/pages/dashboard/ProfilePage').then(m => ({ default: m.ProfilePage })))
+const FaqsPage = lazy(() => import('@/pages/dashboard/FaqsPage').then(m => ({ default: m.FaqsPage })))
+const SupportPage = lazy(() => import('@/pages/dashboard/SupportPage').then(m => ({ default: m.SupportPage })))
+const CardVaultPage = lazy(() => import('@/pages/dashboard/CardVaultPage').then(m => ({ default: m.CardVaultPage })))
+const MarketplacePage = lazy(() => import('@/pages/dashboard/MarketplacePage').then(m => ({ default: m.MarketplacePage })))
+const TelegramSettingsPage = lazy(() => import('@/pages/dashboard/TelegramSettingsPage').then(m => ({ default: m.TelegramSettingsPage })))
+const PlaceholderPage = lazy(() => import('@/pages/dashboard/PlaceholderPage').then(m => ({ default: m.PlaceholderPage })))
+const ControlPanelPage = lazy(() => import('@/pages/dashboard/admin/ControlPanelPage').then(m => ({ default: m.ControlPanelPage })))
+const GatesPanelPage = lazy(() => import('@/pages/dashboard/admin/GatesPanelPage').then(m => ({ default: m.GatesPanelPage })))
+const ToolsPanelPage = lazy(() => import('@/pages/dashboard/admin/ToolsPanelPage').then(m => ({ default: m.ToolsPanelPage })))
+
 function ParamGate({ prefix, param }: { prefix: string; param: string }) {
   const params = useParams()
   const value = params[param]
   return <GateDashboard gateId={value ? `${prefix}-${value}` : prefix} />
+}
+
+function SuspenseWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-full text-cyber-text-muted text-sm py-20">Loading...</div>}>
+      {children}
+    </Suspense>
+  )
 }
 
 export function AppRoutes() {
@@ -45,13 +51,17 @@ export function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
-      {/* Dashboard con sidebar (requiere login) */}
-      <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-        <Route index element={<OverviewPage />} />
-        <Route path="profile" element={<ProfilePage />} />
-        <Route path="marketplace" element={<MarketplacePage />} />
+      {/* Rutas legacy (sin sidebar) */}
+      <Route path="/checker" element={<CheckerPage />} />
+      <Route path="/checker/bulk" element={<BulkCheckerPage />} />
+      <Route path="/generator" element={<GeneratorPage />} />
 
-        {/* Gates conectados al motor real */}
+      {/* Dashboard (requiere login) */}
+      <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+        <Route index element={<SuspenseWrapper><OverviewPage /></SuspenseWrapper>} />
+        <Route path="profile" element={<SuspenseWrapper><ProfilePage /></SuspenseWrapper>} />
+        <Route path="marketplace" element={<SuspenseWrapper><MarketplacePage /></SuspenseWrapper>} />
+
         <Route path="stripe-ccn/:id" element={<ParamGate prefix="stripe-ccn" param="id" />} />
         <Route path="stripe-auth/:id" element={<ParamGate prefix="stripe-auth" param="id" />} />
         <Route path="amazon/:mode" element={<ParamGate prefix="amazon" param="mode" />} />
@@ -62,30 +72,24 @@ export function AppRoutes() {
         <Route path="brute/:id" element={<ParamGate prefix="brute" param="id" />} />
         <Route path="achievers" element={<GateDashboard gateId="achievers" />} />
 
-        <Route path="verification/:id" element={<PlaceholderPage title="Temporary Verification" description="SMS / number pool" />} />
-        <Route path="bin-lookup" element={<BinLookupPage />} />
-        <Route path="card-vault" element={<CardVaultPage />} />
-        <Route path="random-data" element={<RandomDataPage />} />
-        <Route path="3d-checker" element={<ThreeDCheckerPage />} />
-        <Route path="extrap" element={<PlaceholderPage title="Extrap Database" description="Extrapolation database" />} />
-        <Route path="telegram-bot" element={<TelegramSettingsPage />} />
-        <Route path="generator" element={<GeneratorDashboardPage />} />
-        <Route path="pricing" element={<PricingPage />} />
-        <Route path="pay/success" element={<PaySuccessPage />} />
-        <Route path="pay/cancel" element={<PayCancelPage />} />
-        <Route path="faqs" element={<FaqsPage />} />
-        <Route path="support" element={<SupportPage />} />
+        <Route path="verification/:id" element={<SuspenseWrapper><PlaceholderPage title="Temporary Verification" description="SMS / number pool" /></SuspenseWrapper>} />
+        <Route path="bin-lookup" element={<SuspenseWrapper><BinLookupPage /></SuspenseWrapper>} />
+        <Route path="card-vault" element={<SuspenseWrapper><CardVaultPage /></SuspenseWrapper>} />
+        <Route path="random-data" element={<SuspenseWrapper><RandomDataPage /></SuspenseWrapper>} />
+        <Route path="3d-checker" element={<SuspenseWrapper><ThreeDCheckerPage /></SuspenseWrapper>} />
+        <Route path="extrap" element={<SuspenseWrapper><PlaceholderPage title="Extrap Database" description="Extrapolation database" /></SuspenseWrapper>} />
+        <Route path="telegram-bot" element={<SuspenseWrapper><TelegramSettingsPage /></SuspenseWrapper>} />
+        <Route path="generator" element={<SuspenseWrapper><GeneratorDashboardPage /></SuspenseWrapper>} />
+        <Route path="pricing" element={<SuspenseWrapper><PricingPage /></SuspenseWrapper>} />
+        <Route path="pay/success" element={<SuspenseWrapper><PaySuccessPage /></SuspenseWrapper>} />
+        <Route path="pay/cancel" element={<SuspenseWrapper><PayCancelPage /></SuspenseWrapper>} />
+        <Route path="faqs" element={<SuspenseWrapper><FaqsPage /></SuspenseWrapper>} />
+        <Route path="support" element={<SuspenseWrapper><SupportPage /></SuspenseWrapper>} />
 
-        {/* Admin Routes */}
-        <Route path="admin/control-panel" element={<AdminRoute><ControlPanelPage /></AdminRoute>} />
-        <Route path="admin/gates-panel" element={<AdminRoute><GatesPanelPage /></AdminRoute>} />
-        <Route path="admin/tools-panel" element={<AdminRoute><ToolsPanelPage /></AdminRoute>} />
+        <Route path="admin/control-panel" element={<AdminRoute><SuspenseWrapper><ControlPanelPage /></SuspenseWrapper></AdminRoute>} />
+        <Route path="admin/gates-panel" element={<AdminRoute><SuspenseWrapper><GatesPanelPage /></SuspenseWrapper></AdminRoute>} />
+        <Route path="admin/tools-panel" element={<AdminRoute><SuspenseWrapper><ToolsPanelPage /></SuspenseWrapper></AdminRoute>} />
       </Route>
-
-      {/* Rutas legacy */}
-      <Route path="/checker" element={<CheckerPage />} />
-      <Route path="/checker/bulk" element={<BulkCheckerPage />} />
-      <Route path="/generator" element={<GeneratorPage />} />
     </Routes>
   )
 }
