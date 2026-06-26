@@ -32,7 +32,10 @@ export function DashboardSidebar({ open, onClose, className }: DashboardSidebarP
     if (isAdmin) return NAV_GROUPS
     return NAV_GROUPS.filter((group) =>
       !group.items.some((item) => item.label === 'Admin Panel')
-    )
+    ).map((group) => ({
+      ...group,
+      items: group.items.filter((item) => !item.adminOnly),
+    }))
   }, [isAdmin])
 
   const isActive = (href?: string) =>

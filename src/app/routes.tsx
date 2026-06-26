@@ -79,6 +79,7 @@ export function AppRoutes() {
         <Route path="3d-checker" element={<SuspenseWrapper><ThreeDCheckerPage /></SuspenseWrapper>} />
         <Route path="extrap" element={<SuspenseWrapper><PlaceholderPage title="Extrap Database" description="Extrapolation database" /></SuspenseWrapper>} />
         <Route path="telegram-bot" element={<SuspenseWrapper><TelegramSettingsPage /></SuspenseWrapper>} />
+        <Route path="instaddr" element={<SuspenseWrapper><PlaceholderPage title="Instaddr" description="Instant email addresses" /></SuspenseWrapper>} />
         <Route path="generator" element={<SuspenseWrapper><GeneratorDashboardPage /></SuspenseWrapper>} />
         <Route path="pricing" element={<SuspenseWrapper><PricingPage /></SuspenseWrapper>} />
         <Route path="pay/success" element={<SuspenseWrapper><PaySuccessPage /></SuspenseWrapper>} />
