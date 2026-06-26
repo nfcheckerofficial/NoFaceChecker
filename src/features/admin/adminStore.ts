@@ -58,7 +58,7 @@ interface AdminState {
   deleteUser: (id: string) => void
   toggleBan: (id: string, reason?: string) => void
   addCredits: (id: string, amount: number) => void
-  removeCredits: (id: string, amount: number) => boolean
+  removeCredits: (id: string, amount: number) => Promise<boolean>
   resetStats: () => Promise<boolean>
 
   addGate: (g: Omit<Gate, 'id'>) => void
@@ -133,18 +133,35 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   toggleBan: (id, reason) => set((s) => ({
     users: s.users.map((u) => (u.id === id ? { ...u, banned: !u.banned, banReason: u.banned ? undefined : (reason || 'No reason provided') } : u)),
   })),
-  addCredits: (id, amount) => {
+  addCredits: async (id, amount) => {
     const user = get().users.find((u) => u.id === id)
-    set((s) => ({
-      users: s.users.map((u) => (u.id === id ? { ...u, credits: u.credits + amount } : u)),
-    }))
-    if (user) syncUserCredits(user.username, user.credits + amount)
+    if (!user) return
+    const newCredits = user.credits + amount
+    const token = useAuthStore.getState().token
+    try {
+      await fetch(`${SERVER_URL}/api/admin/set-credits`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ username: user.username, credits: newCredits }),
+      })
+    } catch {}
+    set((s) => ({ users: s.users.map((u) => (u.id === id ? { ...u, credits: newCredits } : u)) }))
+    syncUserCredits(user.username, newCredits)
   },
-  removeCredits: (id, amount) => {
+  removeCredits: async (id, amount) => {
     const user = get().users.find((u) => u.id === id)
     if (!user || user.credits < amount) return false
-    set((s) => ({ users: s.users.map((u) => (u.id === id ? { ...u, credits: u.credits - amount } : u)) }))
-    syncUserCredits(user.username, user.credits - amount)
+    const newCredits = user.credits - amount
+    const token = useAuthStore.getState().token
+    try {
+      await fetch(`${SERVER_URL}/api/admin/set-credits`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ username: user.username, credits: newCredits }),
+      })
+    } catch {}
+    set((s) => ({ users: s.users.map((u) => (u.id === id ? { ...u, credits: newCredits } : u)) }))
+    syncUserCredits(user.username, newCredits)
     return true
   },
   resetStats: async () => {

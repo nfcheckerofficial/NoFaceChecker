@@ -289,6 +289,19 @@ app.post('/api/admin/reset-credits', authMiddleware, (req, res) => {
   res.json({ ok: true })
 })
 
+app.post('/api/admin/set-credits', authMiddleware, (req, res) => {
+  try {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' })
+    const { username, credits } = req.body
+    if (!username || typeof credits !== 'number' || credits < 0) return res.status(400).json({ error: 'Invalid data' })
+    updateUserCredits(username, credits)
+    res.json({ ok: true, username, credits })
+  } catch (err) {
+    console.error('[admin] set-credits error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
 app.get('/api/auth/me', authMiddleware, (req, res) => {
   const user = getUserById(req.user.id)
   if (!user) return res.status(404).json({ error: 'User not found' })
