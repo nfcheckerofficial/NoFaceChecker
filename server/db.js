@@ -219,13 +219,13 @@ export function getSubscriberCount() {
 
 // --- Auth users ---
 
-export function createUser(username, passwordHash) {
+export function createUser(username, passwordHash, telegramId) {
   try {
     db.prepare(`
-      INSERT INTO users (username, password_hash, credits, role)
-      VALUES (?, ?, 0, 'user')
-    `).run(username, passwordHash)
-    return db.prepare('SELECT id, username, credits, role, created_at FROM users WHERE username = ?').get(username)
+      INSERT INTO users (username, password_hash, credits, role, telegram_id)
+      VALUES (?, ?, 0, 'user', ?)
+    `).run(username, passwordHash, telegramId || null)
+    return db.prepare('SELECT id, username, credits, role, telegram_id, created_at FROM users WHERE username = ?').get(username)
   } catch (err) {
     if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') return null
     throw err

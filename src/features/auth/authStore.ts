@@ -21,7 +21,7 @@ interface AuthState {
 
   login: (username: string, password: string) => Promise<boolean>
   loginWithTelegram: (telegram_id: string) => Promise<boolean>
-  register: (username: string, password: string) => Promise<boolean>
+  register: (username: string, password: string, telegram_id: string) => Promise<boolean>
   logout: () => void
   checkAuth: () => Promise<void>
   linkTelegram: (telegram_id: string) => Promise<boolean>
@@ -61,13 +61,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  register: async (username, password) => {
+  register: async (username, password, telegram_id) => {
     set({ loading: true, error: null })
     try {
       const res = await fetch(`${SERVER_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, telegram_id }),
       })
       const data = await res.json()
       if (!res.ok) { set({ loading: false, error: data.error }); return false }

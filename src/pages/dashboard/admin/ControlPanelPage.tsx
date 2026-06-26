@@ -14,7 +14,11 @@ const emptyUser: UserForm = { username: '', email: '', credits: 0, role: 'user' 
 export function ControlPanelPage() {
   const { users, fetchUsers, addUser, updateUser, deleteUser, toggleBan, addCredits, removeCredits } = useAdminStore()
 
-  useEffect(() => { fetchUsers() }, [])
+  useEffect(() => {
+    fetchUsers()
+    const interval = setInterval(fetchUsers, 3000)
+    return () => clearInterval(interval)
+  }, [])
   const [search, setSearch] = useState('')
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [modal, setModal] = useState<ModalType>(null)

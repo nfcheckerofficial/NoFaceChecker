@@ -177,18 +177,23 @@ function authMiddleware(req, res, next) {
 // --- Auth Routes ---
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { username, password } = req.body
+    const { username, password, telegram_id } = req.body
     if (!username || !password) return res.status(400).json({ error: 'Username and password required' })
+    if (!telegram_id) return res.status(400).json({ error: 'Telegram ID is required. Send /start to @NoFaceCheckerBot' })
     if (typeof username !== 'string' || typeof password !== 'string') return res.status(400).json({ error: 'Invalid input' })
     if (username.length < 3 || username.length > 30) return res.status(400).json({ error: 'Username must be 3-30 characters' })
     if (!/^[a-zA-Z0-9_]+$/.test(username)) return res.status(400).json({ error: 'Username can only contain letters, numbers, underscores' })
     if (password.length < 4) return res.status(400).json({ error: 'Password must be at least 4 characters' })
+    if (!/^\d+$/.test(telegram_id)) return res.status(400).json({ error: 'Invalid Telegram ID format' })
 
     const existing = getUserByUsername(username)
     if (existing) return res.status(409).json({ error: 'Username already taken' })
 
+    const existingTg = getUserByTelegramId(telegram_id)
+    if (existingTg) return res.status(409).json({ error: 'Telegram ID already linked to another account' })
+
     const passwordHash = await bcrypt.hash(password, 10)
-    const user = createUser(username, passwordHash)
+    const user = createUser(username, passwordHash, telegram_id)
     if (!user) return res.status(500).json({ error: 'Failed to create user' })
 
     const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' })

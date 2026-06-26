@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/features/auth/authStore'
 import { MatrixRain } from '@/shared/ui/MatrixRain'
 import { ScanLines } from '@/shared/ui/ScanLines'
-import { Eye, EyeOff, UserPlus, AlertTriangle } from 'lucide-react'
+import { Eye, EyeOff, UserPlus, AlertTriangle, MessageCircle } from 'lucide-react'
 
 export function RegisterPage() {
   const { register, loading, error, clearError } = useAuthStore()
@@ -12,6 +12,7 @@ export function RegisterPage() {
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [showPw, setShowPw] = useState(false)
+  const [telegramId, setTelegramId] = useState('')
   const [localErr, setLocalErr] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -21,7 +22,8 @@ export function RegisterPage() {
     if (password !== confirm) { setLocalErr('Passwords do not match'); return }
     if (username.length < 3) { setLocalErr('Username must be at least 3 characters'); return }
     if (password.length < 4) { setLocalErr('Password must be at least 4 characters'); return }
-    const ok = await register(username, password)
+    if (!telegramId.trim() || !/^\d+$/.test(telegramId.trim())) { setLocalErr('Valid Telegram ID is required'); return }
+    const ok = await register(username, password, telegramId.trim())
     if (ok) navigate('/dashboard')
   }
 
@@ -53,6 +55,26 @@ export function RegisterPage() {
             </div>
           )}
 
+          <p className="text-xs text-cyber-text-muted leading-relaxed">
+            Send <span className="text-cyber-green">/start</span> to{' '}
+            <span className="text-cyber-blue">@NoFaceCheckerBot</span> on Telegram to get your Telegram ID, then enter it below.
+          </p>
+
+          <div>
+            <label className="block text-xs text-cyber-text-muted mb-1 flex items-center gap-1">
+              <MessageCircle size={12} className="text-cyber-blue" />
+              Telegram ID <span className="text-cyber-red">*</span>
+            </label>
+            <input
+              type="text"
+              value={telegramId}
+              onChange={(e) => setTelegramId(e.target.value)}
+              className="w-full px-3 py-2 bg-cyber-black border border-cyber-border rounded-lg text-sm text-cyber-text placeholder-cyber-text-muted focus:outline-none focus:border-cyber-blue"
+              placeholder="Enter your Telegram ID"
+              autoFocus
+            />
+          </div>
+
           <div>
             <label className="block text-xs text-cyber-text-muted mb-1">Username</label>
             <input
@@ -61,7 +83,6 @@ export function RegisterPage() {
               onChange={(e) => setUsername(e.target.value)}
               className="w-full px-3 py-2 bg-cyber-black border border-cyber-border rounded-lg text-sm text-cyber-text placeholder-cyber-text-muted focus:outline-none focus:border-cyber-blue"
               placeholder="Choose a username"
-              autoFocus
             />
           </div>
 
@@ -94,7 +115,7 @@ export function RegisterPage() {
 
           <button
             type="submit"
-            disabled={loading || !username || !password || !confirm}
+            disabled={loading || !username || !password || !confirm || !telegramId.trim()}
             className="w-full py-2.5 bg-cyber-green/20 border border-cyber-green/50 rounded-lg text-sm text-cyber-green hover:bg-cyber-green/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? <span className="animate-spin w-4 h-4 border-2 border-cyber-green border-t-transparent rounded-full" /> : <UserPlus size={14} />}
