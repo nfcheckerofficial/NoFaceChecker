@@ -29,6 +29,7 @@ import {
   getUserByTelegramId,
   updateUserCredits,
   setUserRole,
+  linkTelegramToUser,
 } from './db.js'
 import { startBot, stopBot } from './telegram-bot.js'
 
@@ -221,6 +222,38 @@ app.post('/api/auth/login', async (req, res) => {
   }
 })
 
+app.post('/api/auth/telegram-login', async (req, res) => {
+  try {
+    const { telegram_id } = req.body
+    if (!telegram_id) return res.status(400).json({ error: 'Telegram ID required' })
+    const user = getUserByTelegramId(telegram_id)
+    if (!user) return res.status(404).json({ error: 'Telegram ID not linked. Send /start to @NoFaceCheckerBot' })
+    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' })
+    res.json({
+      token,
+      user: { id: user.id, username: user.username, credits: user.credits, role: user.role, telegram_id: user.telegram_id, created_at: user.created_at },
+    })
+  } catch (err) {
+    console.error('[auth] telegram-login error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.post('/api/auth/link-telegram', authMiddleware, async (req, res) => {
+  try {
+    const { telegram_id } = req.body
+    if (!telegram_id) return res.status(400).json({ error: 'Telegram ID required' })
+    const existing = getUserByTelegramId(telegram_id)
+    if (existing && existing.id !== req.user.id) return res.status(409).json({ error: 'Telegram ID already linked to another account' })
+    linkTelegramToUser(req.user.id, telegram_id)
+    const user = getUserById(req.user.id)
+    res.json({ user: { id: user.id, username: user.username, credits: user.credits, role: user.role, telegram_id: user.telegram_id, created_at: user.created_at } })
+  } catch (err) {
+    console.error('[auth] link-telegram error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
 app.get('/api/admin/users', authMiddleware, (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' })
   const users = listUsers()
@@ -230,6 +263,7 @@ app.get('/api/admin/users', authMiddleware, (req, res) => {
     email: '',
     credits: u.credits,
     role: u.role,
+    telegram_id: u.telegram_id,
     banned: false,
     createdAt: u.created_at ? u.created_at.split('T')[0] : '',
     lastSession: u.created_at ? u.created_at.split('T')[0] : '',

@@ -20,9 +20,11 @@ interface AuthState {
   error: string | null
 
   login: (username: string, password: string) => Promise<boolean>
+  loginWithTelegram: (telegram_id: string) => Promise<boolean>
   register: (username: string, password: string) => Promise<boolean>
   logout: () => void
   checkAuth: () => Promise<void>
+  linkTelegram: (telegram_id: string) => Promise<boolean>
   clearError: () => void
 }
 
@@ -75,6 +77,45 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return true
     } catch (err) {
       set({ loading: false, error: String(err) })
+      return false
+    }
+  },
+
+  loginWithTelegram: async (telegram_id) => {
+    set({ loading: true, error: null })
+    try {
+      const res = await fetch(`${SERVER_URL}/api/auth/telegram-login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telegram_id }),
+      })
+      const data = await res.json()
+      if (!res.ok) { set({ loading: false, error: data.error }); return false }
+      saveToken(data.token)
+      set({ token: data.token, user: data.user, loading: false })
+      useUserStore.getState().syncFromAuth(data.user)
+      return true
+    } catch (err) {
+      set({ loading: false, error: String(err) })
+      return false
+    }
+  },
+
+  linkTelegram: async (telegram_id) => {
+    try {
+      const token = get().token
+      const res = await fetch(`${SERVER_URL}/api/auth/link-telegram`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ telegram_id }),
+      })
+      const data = await res.json()
+      if (!res.ok) { set({ error: data.error }); return false }
+      set({ user: data.user })
+      useUserStore.getState().syncFromAuth(data.user)
+      return true
+    } catch (err) {
+      set({ error: String(err) })
       return false
     }
   },

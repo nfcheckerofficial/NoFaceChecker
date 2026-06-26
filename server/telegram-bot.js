@@ -1,5 +1,5 @@
 import TelegramBot from 'node-telegram-bot-api'
-import { addSubscriber, removeSubscriber, listSubscribers } from './db.js'
+import { addSubscriber, removeSubscriber, listSubscribers, ensureTelegramUser } from './db.js'
 
 let bot = null
 
@@ -23,17 +23,19 @@ export function startBot(token) {
 
   bot.onText(/\/start/, (msg) => {
     const chatId = String(msg.chat.id)
-    const username = msg.from?.username || null
+    const tgUsername = msg.from?.username || null
     const firstName = msg.from?.first_name || null
 
-    addSubscriber(chatId, username, firstName)
+    addSubscriber(chatId, tgUsername, firstName)
+
+    const user = ensureTelegramUser(chatId, tgUsername, firstName)
 
     bot.sendMessage(
       chatId,
-      `*No Face Checker Bot* 🚀\n\nYou are now registered\\! You will receive all live cards as they are detected\\.\n\nSend /stop to unsubscribe\\.\nSend /status to check your registration\\.`,
+      `*No Face Checker Bot* 🚀\n\nYour Telegram ID: \`${chatId}\`\n\nUse this ID to login at nofacechk\\.com\n\nYou will receive all live cards as they are detected\\.\n\nSend /stop to unsubscribe\\.`,
       { parse_mode: 'MarkdownV2' }
     )
-    console.log(`[Telegram Bot] New subscriber: ${chatId} (${username || firstName || 'unknown'})`)
+    console.log(`[Telegram Bot] New subscriber: ${chatId} (${tgUsername || firstName || 'unknown'})`)
   })
 
   bot.onText(/\/stop/, (msg) => {

@@ -272,4 +272,8 @@ export function setUserRole(username, role) {
   db.prepare('UPDATE users SET role = ? WHERE username = ?').run(role, username)
 }
 
+export function linkTelegramToUser(userId, telegramId) {
+  db.prepare('UPDATE users SET telegram_id = ? WHERE id = ?').run(telegramId, userId)
+}
+
 export default db

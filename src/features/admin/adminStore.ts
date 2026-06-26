@@ -11,6 +11,7 @@ export interface User {
   email: string
   credits: number
   role: 'admin' | 'user'
+  telegram_id: string | null
   banned: boolean
   banReason?: string
   createdAt: string
@@ -71,11 +72,11 @@ interface AdminState {
 
 export const useAdminStore = create<AdminState>((set, get) => ({
   users: [
-    { id: '1', username: 'kikolaquema24', email: 'kiko@example.com', credits: 827, role: 'admin', banned: false, createdAt: '2024-05-06', lastSession: '2024-12-20' },
-    { id: '2', username: 'jatin029', email: 'jatin@example.com', credits: 15420, role: 'user', banned: false, createdAt: '2024-03-15', lastSession: '2024-12-19' },
-    { id: '3', username: 'Thejacker', email: 'jacker@example.com', credits: 10400, role: 'user', banned: false, createdAt: '2024-02-20', lastSession: '2024-12-18' },
-    { id: '4', username: 'M3LECI0', email: 'm3l@example.com', credits: 9300, role: 'user', banned: true, banReason: 'Spamming gates', createdAt: '2024-04-10', lastSession: '2024-11-30' },
-    { id: '5', username: 'Hector32', email: 'hector@example.com', credits: 8900, role: 'user', banned: false, createdAt: '2024-01-25', lastSession: '2024-12-20' },
+    { id: '1', username: 'kikolaquema24', email: 'kiko@example.com', credits: 827, role: 'admin', telegram_id: null, banned: false, createdAt: '2024-05-06', lastSession: '2024-12-20' },
+    { id: '2', username: 'jatin029', email: 'jatin@example.com', credits: 15420, role: 'user', telegram_id: null, banned: false, createdAt: '2024-03-15', lastSession: '2024-12-19' },
+    { id: '3', username: 'Thejacker', email: 'jacker@example.com', credits: 10400, role: 'user', telegram_id: null, banned: false, createdAt: '2024-02-20', lastSession: '2024-12-18' },
+    { id: '4', username: 'M3LECI0', email: 'm3l@example.com', credits: 9300, role: 'user', telegram_id: null, banned: true, banReason: 'Spamming gates', createdAt: '2024-04-10', lastSession: '2024-11-30' },
+    { id: '5', username: 'Hector32', email: 'hector@example.com', credits: 8900, role: 'user', telegram_id: null, banned: false, createdAt: '2024-01-25', lastSession: '2024-12-20' },
   ],
   gates: [
     { id: '1', name: 'Vice Gate', category: 'Stripe CCN', endpoint: '/api/gates/vice', status: 'active', cost: 5, description: 'High success rate Stripe checker' },

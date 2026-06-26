@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { clsx } from 'clsx'
-import { MessageCircle, Check, X, AlertTriangle, Send, Eye, EyeOff, Bot, Users } from 'lucide-react'
+import { MessageCircle, Check, X, AlertTriangle, Send, Eye, EyeOff, Bot, Users, Link, Unlink } from 'lucide-react'
 import { useTelegramStore } from '@/features/telegram/telegramStore'
+import { useAuthStore } from '@/features/auth/authStore'
 import { testTelegramConnection, fetchSubscribers } from '@/features/telegram/telegramService'
 
 export function TelegramSettingsPage() {
+  const { user, linkTelegram, error } = useAuthStore()
   const {
     botToken, chatId, enabled, lastSentAt, subscribers, subscriberCount,
     setBotToken, setChatId, setEnabled, setSubscribers,
@@ -15,6 +17,8 @@ export function TelegramSettingsPage() {
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null)
   const [localToken, setLocalToken] = useState(botToken)
   const [localChatId, setLocalChatId] = useState(chatId)
+  const [linkTgId, setLinkTgId] = useState('')
+  const [linkResult, setLinkResult] = useState<{ ok: boolean; message: string } | null>(null)
 
   useEffect(() => {
     fetchSubscribers().then(setSubscribers)
@@ -213,6 +217,62 @@ export function TelegramSettingsPage() {
                 </span>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* Link your Telegram */}
+      <div className="rounded-lg border border-cyber-border bg-cyber-panel/70 backdrop-blur-sm p-5">
+        <h3 className="text-sm font-semibold text-cyber-text flex items-center gap-2 mb-3">
+          <Link size={16} className="text-cyber-blue" />
+          Link Telegram Account
+        </h3>
+        {user?.telegram_id ? (
+          <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-cyber-green/10 border border-cyber-green/40">
+            <div>
+              <p className="text-sm text-cyber-green">Telegram linked</p>
+              <p className="text-xs text-cyber-text-muted mt-0.5">ID: {user.telegram_id}</p>
+            </div>
+            <Check size={16} className="text-cyber-green" />
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-xs text-cyber-text-muted leading-relaxed">
+              Send <span className="text-cyber-green">/start</span> to{' '}
+              <span className="text-cyber-blue">@NoFaceCheckerBot</span> on Telegram to get your Telegram ID, then enter it below to link it to your account. You can then login with your Telegram ID.
+            </p>
+            {linkResult && (
+              <div className={clsx(
+                'flex items-center gap-2 px-3 py-2 rounded-lg border text-xs',
+                linkResult.ok
+                  ? 'bg-cyber-green/10 border-cyber-green/40 text-cyber-green'
+                  : 'bg-cyber-red/10 border-cyber-red/40 text-cyber-red'
+              )}>
+                {linkResult.ok ? <Check size={12} /> : <AlertTriangle size={12} />}
+                {linkResult.message}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={linkTgId}
+                onChange={(e) => setLinkTgId(e.target.value)}
+                className="flex-1 px-3 py-2 bg-cyber-black border border-cyber-border rounded-lg text-sm text-cyber-text placeholder-cyber-text-muted focus:outline-none focus:border-cyber-blue"
+                placeholder="Enter your Telegram ID"
+              />
+              <button
+                onClick={async () => {
+                  setLinkResult(null)
+                  const ok = await linkTelegram(linkTgId.trim())
+                  setLinkResult({ ok, message: ok ? 'Telegram linked successfully!' : error || 'Failed to link Telegram' })
+                  if (ok) setLinkTgId('')
+                }}
+                disabled={!linkTgId.trim()}
+                className="px-4 py-2 bg-cyber-blue/20 border border-cyber-blue/50 rounded-lg text-sm text-cyber-blue hover:bg-cyber-blue/30 transition-colors disabled:opacity-40 flex items-center gap-2"
+              >
+                <Link size={14} /> Link
+              </button>
+            </div>
           </div>
         )}
       </div>

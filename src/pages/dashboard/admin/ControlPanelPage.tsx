@@ -43,7 +43,7 @@ export function ControlPanelPage() {
 
   const handleAdd = () => {
     if (!form.username.trim() || !form.email.trim()) return showNotif('error', 'Username and email are required')
-    addUser({ ...form, credits: form.credits || 0, banned: false })
+    addUser({ ...form, telegram_id: null, credits: form.credits || 0, banned: false })
     showNotif('success', `User ${form.username} created`)
     setModal(null)
   }
@@ -142,6 +142,7 @@ export function ControlPanelPage() {
                 <th className="px-5 py-3 text-left text-xs font-medium text-cyber-text-muted uppercase tracking-wider">User</th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-cyber-text-muted uppercase tracking-wider">Credits</th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-cyber-text-muted uppercase tracking-wider">Role</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-cyber-text-muted uppercase tracking-wider">Telegram</th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-cyber-text-muted uppercase tracking-wider">Status</th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-cyber-text-muted uppercase tracking-wider">Last Session</th>
                 <th className="px-5 py-3 text-right text-xs font-medium text-cyber-text-muted uppercase tracking-wider">Actions</th>
@@ -168,6 +169,13 @@ export function ControlPanelPage() {
                     <span className={clsx('px-2 py-1 rounded-full text-xs font-medium', user.role === 'admin' ? 'bg-cyber-purple/20 text-cyber-purple' : 'bg-cyber-blue/20 text-cyber-blue')}>
                       {user.role}
                     </span>
+                  </td>
+                  <td className="px-5 py-4">
+                    {user.telegram_id ? (
+                      <span className="text-xs text-cyber-green font-mono">{user.telegram_id}</span>
+                    ) : (
+                      <span className="text-xs text-cyber-text-muted">—</span>
+                    )}
                   </td>
                   <td className="px-5 py-4">
                     <span className={clsx('px-2 py-1 rounded-full text-xs font-medium', user.banned ? 'bg-cyber-red/20 text-cyber-red' : 'bg-cyber-green/20 text-cyber-green')}>
