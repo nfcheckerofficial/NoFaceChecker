@@ -112,13 +112,13 @@ const globalLimiter = rateLimit({
 })
 app.use('/api/', globalLimiter)
 
-// Seguridad: rate limit para login/register (10 intentos / 5 min)
+// Seguridad: rate limit para login/register (20 intentos / 1 min)
 const authLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000,
-  max: 10,
+  windowMs: 60 * 1000,
+  max: 20,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Demasiados intentos. Espera 5 minutos.' },
+  message: { error: 'Demasiados intentos. Espera 1 minuto.' },
 })
 app.use('/api/auth/', authLimiter)
 
