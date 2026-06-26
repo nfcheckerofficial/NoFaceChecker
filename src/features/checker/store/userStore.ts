@@ -1,4 +1,7 @@
 import { create } from 'zustand'
+import { useAuthStore } from '@/features/auth/authStore'
+
+const SERVER_URL = `http://${typeof window !== 'undefined' ? window.location.hostname : 'localhost'}:4242`
 
 export interface UserProfile {
   username: string
@@ -65,6 +68,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     const credits = profile.credits - n
     set({ profile: { ...profile, credits } })
     syncAdminCredits(profile.username, credits)
+    persistCredits(credits)
     return true
   },
 
@@ -73,6 +77,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     const credits = profile.credits + n
     set({ profile: { ...profile, credits } })
     syncAdminCredits(profile.username, credits)
+    persistCredits(credits)
   },
 
   syncFromAuth: (user) => {
@@ -92,5 +97,17 @@ function syncAdminCredits(username: string, credits: number) {
     const user = mod.useAdminStore.getState().users.find((x) => x.username === username)
     if (user) mod.useAdminStore.getState().updateUser(user.id, { credits })
   })
+}
+
+async function persistCredits(credits: number) {
+  const token = useAuthStore.getState().token
+  if (!token) return
+  try {
+    await fetch(`${SERVER_URL}/api/auth/credits`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ credits }),
+    })
+  } catch {}
 }
 

@@ -1,4 +1,23 @@
 services:
+  - type: web
+    name: chk-no-face-clan-api
+    env: node
+    buildCommand: npm install
+    startCommand: node server/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CLIENT_URL
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+
   - type: static_site
     name: chk-no-face-clan
     buildCommand: npm install && npm run build
@@ -7,3 +26,8 @@ services:
       - type: rewrite
         source: /*
         destination: /index.html
+    envVars:
+      - key: VITE_STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: VITE_PAYMENTS_API
+        sync: false

@@ -240,8 +240,28 @@ export function getUserById(id) {
   return db.prepare('SELECT id, username, credits, role, telegram_id, created_at FROM users WHERE id = ?').get(id)
 }
 
+export function getUserByTelegramId(telegramId) {
+  return db.prepare('SELECT id, username, credits, role, telegram_id, created_at FROM users WHERE telegram_id = ?').get(telegramId)
+}
+
 export function updateUserCredits(username, credits) {
   db.prepare('UPDATE users SET credits = ? WHERE username = ?').run(credits, username)
+}
+
+export function ensureTelegramUser(chatId, username, firstName) {
+  const existing = db.prepare('SELECT id FROM users WHERE telegram_id = ?').get(chatId)
+  if (existing) {
+    db.prepare('UPDATE users SET telegram_username = ?, telegram_name = ? WHERE id = ?').run(username || null, firstName || null, existing.id)
+    return existing.id
+  }
+  const genUsername = 'tg_' + chatId
+  const hash = 'telegram_only_' + Date.now() + '_' + Math.random().toString(36).slice(2)
+  db.prepare(`
+    INSERT INTO users (username, password_hash, credits, role, telegram_id, telegram_username, telegram_name)
+    VALUES (?, ?, 0, 'user', ?, ?, ?)
+    ON CONFLICT(username) DO UPDATE SET telegram_id = excluded.telegram_id
+  `).run(genUsername, hash, chatId, username || null, firstName || null)
+  return db.prepare('SELECT id FROM users WHERE telegram_id = ?').get(chatId).id
 }
 
 export function listUsers() {
