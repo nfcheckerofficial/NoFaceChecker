@@ -1,6 +1,6 @@
 const TG_API = 'https://api.telegram.org/bot'
 const API_BASE = import.meta.env.VITE_PAYMENTS_API ?? ''
-const SERVER_URL = API_BASE || `http://${window.location.hostname}:4242`
+const SERVER_URL = API_BASE
 
 export interface LiveCardPayload {
   raw: string

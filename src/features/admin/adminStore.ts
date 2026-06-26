@@ -3,7 +3,7 @@ import { useUserStore } from '@/features/checker/store/userStore'
 import { useAuthStore } from '@/features/auth/authStore'
 
 const API_BASE = import.meta.env.VITE_PAYMENTS_API ?? ''
-const SERVER_URL = API_BASE || `http://${typeof window !== 'undefined' ? window.location.hostname : 'localhost'}:4242`
+const SERVER_URL = API_BASE
 
 export interface User {
   id: string

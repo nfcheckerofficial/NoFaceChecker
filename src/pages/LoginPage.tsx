@@ -6,7 +6,7 @@ import { ScanLines } from '@/shared/ui/ScanLines'
 import { Eye, EyeOff, LogIn, UserPlus, AlertTriangle, MessageCircle, Terminal, Shield, Activity, Users, Zap } from 'lucide-react'
 
 const API_BASE = import.meta.env.VITE_PAYMENTS_API ?? ''
-const SERVER_URL = API_BASE || `http://${window.location.hostname}:4242`
+const SERVER_URL = API_BASE
 
 const tabClass = (active: boolean) =>
   `flex-1 py-3 flex items-center justify-center gap-2 text-xs uppercase tracking-widest font-semibold transition-all duration-300 ${
