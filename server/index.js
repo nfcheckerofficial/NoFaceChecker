@@ -276,8 +276,8 @@ app.get('/api/admin/users', authMiddleware, (req, res) => {
       lastSession: u.created_at ? u.created_at.split('T')[0] : '',
     })))
   } catch (err) {
-    console.error('[admin] /api/admin/users error:', err.message)
-    res.status(500).json({ error: err.message })
+    console.error('[admin] /api/admin/users error:', err.message, err.stack)
+    res.status(500).json({ error: err.message, stack: err.stack?.split('\n').slice(0, 3).join(' | ') })
   }
 })
 
