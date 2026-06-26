@@ -24,6 +24,8 @@
   --animate-scanline: scanline 8s linear infinite;
   --animate-float: float 3s ease-in-out infinite;
   --animate-flicker: flicker 0.15s infinite;
+  --animate-gradient: gradient 4s ease infinite;
+  --animate-pulse-glow: pulseGlow 2s ease-in-out infinite;
 }
 
 * {
@@ -101,4 +103,15 @@ input[type="password"]::placeholder {
 @keyframes blink-caret {
   from, to { border-color: transparent; }
   50% { border-color: var(--color-cyber-red); }
+}
+
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
 }

@@ -218,7 +218,7 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
             />
           </button>
           {panel === 'profile' && (
-            <DropdownPanel title="" accent="purple" onClose={() => setPanel(null)} width="w-56">
+            <DropdownPanel title="" accent="purple" onClose={() => setPanel(null)}>
               <div className="px-4 py-3 border-b border-cyber-border/40">
                 <p className="text-sm font-semibold text-cyber-text">{profile.username}</p>
                 <p className="text-xs text-cyber-text-muted">TG: {profile.telegramId}</p>
@@ -301,21 +301,19 @@ function DropdownPanel({
   onClose,
   action,
   children,
-  width = 'w-80',
 }: {
   title: string
   accent: keyof typeof ACCENT_BORDER
   onClose: () => void
   action?: React.ReactNode
   children: React.ReactNode
-  width?: string
 }) {
   return (
     <div
       className={clsx(
-        'absolute right-0 top-full mt-2 bg-cyber-dark border border-cyber-border border-t-2 rounded-lg shadow-2xl shadow-black/50 overflow-hidden animate-fade-in z-50',
+        'absolute right-0 sm:right-0 -right-3 sm:-right-0 top-full mt-2 bg-cyber-dark border border-cyber-border border-t-2 rounded-lg shadow-2xl shadow-black/50 overflow-hidden animate-fade-in z-50',
         ACCENT_BORDER[accent],
-        width
+        'w-[calc(100vw-24px)] sm:w-80'
       )}
     >
       {title && (

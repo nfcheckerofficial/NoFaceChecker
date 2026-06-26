@@ -302,7 +302,7 @@ export function setUserRole(username, role) {
 }
 
 export function updateUserPassword(username, hash) {
-  db.prepare('UPDATE users SET password = ? WHERE username = ?').run(hash, username)
+  db.prepare('UPDATE users SET password_hash = ? WHERE username = ?').run(hash, username)
 }
 
 export function recordCheck(userId, status) {

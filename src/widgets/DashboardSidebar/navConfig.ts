@@ -1,10 +1,10 @@
 import type { LucideIcon } from 'lucide-react'
 import {
-  Home, ShoppingCart, CreditCard, ShieldCheck, Package,
-  Zap, Wallet, Star, Sparkles, Hammer, Award,
+  Home, ShoppingCart, CreditCard, Shield, ShieldCheck, Package,
+  Swords, Zap, Wallet, Gem, Sparkles, Fingerprint, Skull, Award,
   MessageSquare, Search, Database, ScanLine, HardDrive,
   Tag, HelpCircle, LifeBuoy, LogOut, Vault,
-  Settings, Users, Network, Wrench, ChevronDown, MessageCircle, Mail,
+  Settings, Users, Network, Wrench, ChevronDown, MessageCircle, Mail, Key, Lock, Crosshair, Terminal, Bug,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -47,7 +47,7 @@ export const NAV_GROUPS: NavGroup[] = [
         ],
       },
       {
-        label: 'Stripe Auth', icon: ShieldCheck, color: 'text-orange-500',
+        label: 'Stripe Auth', icon: Shield, color: 'text-orange-500',
         children: [
           { label: 'Auth Gate', href: '/dashboard/stripe-auth/auth' },
           { label: 'Inferno Gate', href: '/dashboard/stripe-auth/inferno' },
@@ -59,7 +59,7 @@ export const NAV_GROUPS: NavGroup[] = [
         children: [],
       },
       {
-        label: 'Charge Gates', icon: Zap, color: 'text-orange-500',
+        label: 'Charge Gates', icon: Swords, color: 'text-orange-500',
         children: [
           { label: 'Horus Gate (Paypal)', href: '/dashboard/charge/horus' },
           { label: 'Payflow 3', href: '/dashboard/charge/payflow3' },
@@ -79,7 +79,7 @@ export const NAV_GROUPS: NavGroup[] = [
         ],
       },
       {
-        label: 'Gates Especiales', icon: Star, color: 'text-orange-500',
+        label: 'Gates Especiales', icon: Gem, color: 'text-orange-500',
         children: [
           { label: 'AllBirds', href: '/dashboard/special/allbirds' },
           { label: 'MisShopifyCVV', href: '/dashboard/special/misshopifycvv' },
@@ -91,11 +91,11 @@ export const NAV_GROUPS: NavGroup[] = [
         ],
       },
       {
-        label: 'Auth Gates', icon: Sparkles, color: 'text-cyber-green',
+        label: 'Auth Gates', icon: Fingerprint, color: 'text-cyber-green',
         children: [],
       },
       {
-        label: 'BruteGates', icon: Hammer, color: 'text-cyber-red',
+        label: 'BruteGates', icon: Skull, color: 'text-cyber-red',
         children: [],
       },
       { label: "Achiever's Gate", icon: Award, color: 'text-cyber-purple', href: '/dashboard/achievers' },
@@ -111,7 +111,7 @@ export const NAV_GROUPS: NavGroup[] = [
       },
       { label: 'Bin Lookup', icon: Search, color: 'text-cyber-blue', href: '/dashboard/bin-lookup' },
       { label: 'Random Data', icon: Database, color: 'text-cyber-green', href: '/dashboard/random-data' },
-      { label: '3D Checker', icon: ScanLine, color: 'text-cyber-red', href: '/dashboard/3d-checker' },
+      { label: '3D Checker', icon: Crosshair, color: 'text-cyber-red', href: '/dashboard/3d-checker' },
       { label: 'Extrap Database', icon: HardDrive, color: 'text-cyber-text-muted', href: '/dashboard/extrap' },
       { label: 'Telegram Bot', icon: MessageCircle, color: 'text-cyber-blue', href: '/dashboard/telegram-bot', adminOnly: true },
       { label: 'Instaddr', icon: Mail, color: 'text-cyber-yellow', href: '/dashboard/instaddr' },
