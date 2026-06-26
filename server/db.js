@@ -24,19 +24,6 @@ const db = new Database(join(__dirname, 'payments.db'))
 // WAL: mejor concurrencia entre el webhook y las rutas HTTP.
 db.pragma('journal_mode = WAL')
 
-// Migrations: add missing columns to existing tables
-const existingCols = db.prepare(`PRAGMA table_info(users)`).all().map(c => c.name)
-const addCol = (col, type) => {
-  if (!existingCols.includes(col)) {
-    db.exec(`ALTER TABLE users ADD COLUMN ${col} ${type}`)
-    console.log(`[migrate] Added column: ${col}`)
-  }
-}
-addCol('telegram_id', 'TEXT')
-addCol('telegram_username', 'TEXT')
-addCol('telegram_name', 'TEXT')
-addCol('email', 'TEXT')
-
 db.exec(`
   CREATE TABLE IF NOT EXISTS payment_methods (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -99,6 +86,18 @@ db.exec(`
     created_at      TEXT NOT NULL DEFAULT (datetime('now'))
   );
 `)
+
+// Migrations: add missing columns to existing tables
+const existingCols = db.prepare(`PRAGMA table_info(users)`).all().map(c => c.name)
+const addCol = (col, type) => {
+  if (!existingCols.includes(col)) {
+    db.exec(`ALTER TABLE users ADD COLUMN ${col} ${type}`)
+    console.log(`[migrate] Added column: ${col}`)
+  }
+}
+addCol('telegram_id', 'TEXT')
+addCol('telegram_username', 'TEXT')
+addCol('telegram_name', 'TEXT')
 
 /** Marca un evento como procesado. Devuelve false si ya lo estaba (idempotencia). */
 export function markEventProcessed(eventId) {
