@@ -25,28 +25,23 @@ interface UserState {
 
   setProfile: (patch: Partial<UserProfile>) => void
   addLives: (n?: number) => void
-  recordResult: (status: 'live' | 'dead' | 'unknown') => void
+  recordResult: (status: 'live' | 'dead' | 'unknown') => Promise<void>
   spendCredits: (n: number) => boolean
   addCredits: (n: number) => void
   syncFromAuth: (user: { id: number; username: string; credits: number; role: string; telegram_id: string | null; created_at: string }) => void
+  fetchStats: () => Promise<void>
 }
 
 export const useUserStore = create<UserState>((set, get) => ({
   profile: {
-    username: 'kikolaquema24',
-    telegramId: '1766132134',
-    registeredOn: '06-05-2024',
-    credits: 827,
+    username: '',
+    telegramId: '',
+    registeredOn: '',
+    credits: 0,
   },
-  myStats: { lives: 1400, dead: 32000, unknown: 1400 },
-  globalStats: { lives: 2_800_000, dead: 84_000_000, unknown: 87_000_000 },
-  rankers: [
-    { label: 'jatin029', value: 11000 },
-    { label: 'Thejacker', value: 10400 },
-    { label: 'M3LECI0', value: 9300 },
-    { label: 'Hector32', value: 8900 },
-    { label: 'Cialbon', value: 8700 },
-  ],
+  myStats: { lives: 0, dead: 0, unknown: 0 },
+  globalStats: { lives: 0, dead: 0, unknown: 0 },
+  rankers: [],
 
   setProfile: (patch) =>
     set((s) => ({ profile: { ...s.profile, ...patch } })),
@@ -54,14 +49,52 @@ export const useUserStore = create<UserState>((set, get) => ({
   addLives: (n = 1) =>
     set((s) => ({ myStats: { ...s.myStats, lives: s.myStats.lives + n } })),
 
-  recordResult: (status) =>
+  recordResult: async (status) => {
+    const token = useAuthStore.getState().token
+    if (token) {
+      try {
+        const res = await fetch(`${SERVER_URL}/api/stats/record`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ status }),
+        })
+        if (res.ok) {
+          const data = await res.json()
+          set({ myStats: data.stats })
+          return
+        }
+      } catch {}
+    }
     set((s) => ({
       myStats: {
         lives: s.myStats.lives + (status === 'live' ? 1 : 0),
         dead: s.myStats.dead + (status === 'dead' ? 1 : 0),
         unknown: s.myStats.unknown + (status === 'unknown' ? 1 : 0),
       },
-    })),
+    }))
+  },
+
+  fetchStats: async () => {
+    const token = useAuthStore.getState().token
+    if (!token) return
+    try {
+      const [meRes, globalRes] = await Promise.all([
+        fetch(`${SERVER_URL}/api/stats/me`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${SERVER_URL}/api/stats/global`),
+      ])
+      if (meRes.ok) {
+        const me = await meRes.json()
+        set({ myStats: { lives: me.checks_live, dead: me.checks_dead, unknown: me.checks_unknown } })
+      }
+      if (globalRes.ok) {
+        const global = await globalRes.json()
+        set({
+          globalStats: { lives: global.checks_live, dead: global.checks_dead, unknown: global.checks_unknown },
+          rankers: (global.rankers || []).map((r: { username: string; value: number }) => ({ label: r.username, value: r.value })),
+        })
+      }
+    } catch {}
+  },
 
   spendCredits: (n) => {
     const { profile } = get()
@@ -90,6 +123,7 @@ export const useUserStore = create<UserState>((set, get) => ({
         credits: user.credits,
       },
     })
+    get().fetchStats()
   },
 }))
 

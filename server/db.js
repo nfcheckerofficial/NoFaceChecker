@@ -99,6 +99,10 @@ const addCol = (col, type) => {
 addCol('telegram_id', 'TEXT')
 addCol('telegram_username', 'TEXT')
 addCol('telegram_name', 'TEXT')
+addCol('checks_total', 'INTEGER NOT NULL DEFAULT 0')
+addCol('checks_live', 'INTEGER NOT NULL DEFAULT 0')
+addCol('checks_dead', 'INTEGER NOT NULL DEFAULT 0')
+addCol('checks_unknown', 'INTEGER NOT NULL DEFAULT 0')
 
 /** Marca un evento como procesado. Devuelve false si ya lo estaba (idempotencia). */
 export function markEventProcessed(eventId) {
@@ -293,6 +297,49 @@ export function setUserRole(username, role) {
 
 export function updateUserPassword(username, hash) {
   db.prepare('UPDATE users SET password = ? WHERE username = ?').run(hash, username)
+}
+
+export function recordCheck(userId, status) {
+  db.prepare(`
+    UPDATE users SET
+      checks_total = checks_total + 1,
+      checks_live  = checks_live  + CASE WHEN ? = 'live'    THEN 1 ELSE 0 END,
+      checks_dead  = checks_dead  + CASE WHEN ? = 'dead'    THEN 1 ELSE 0 END,
+      checks_unknown = checks_unknown + CASE WHEN ? = 'unknown' THEN 1 ELSE 0 END
+    WHERE id = ?
+  `).run(status, status, status, userId)
+}
+
+export function getUserStats(userId) {
+  return db.prepare(`
+    SELECT checks_total, checks_live, checks_dead, checks_unknown
+    FROM users WHERE id = ?
+  `).get(userId)
+}
+
+export function getGlobalStats() {
+  return db.prepare(`
+    SELECT
+      COALESCE(SUM(checks_total), 0) AS checks_total,
+      COALESCE(SUM(checks_live), 0) AS checks_live,
+      COALESCE(SUM(checks_dead), 0) AS checks_dead,
+      COALESCE(SUM(checks_unknown), 0) AS checks_unknown
+    FROM users
+  `).get()
+}
+
+export function getTopRankers(limit = 5) {
+  return db.prepare(`
+    SELECT username, checks_live AS value
+    FROM users WHERE checks_live > 0
+    ORDER BY checks_live DESC LIMIT ?
+  `).all(limit)
+}
+
+export function resetAllStats() {
+  db.exec(`
+    UPDATE users SET checks_total = 0, checks_live = 0, checks_dead = 0, checks_unknown = 0
+  `)
 }
 
 export function linkTelegramToUser(userId, telegramId) {

@@ -24,11 +24,12 @@ function fmtCompact(n: number): string {
 }
 
 export function OverviewPage() {
-  const { profile, myStats, globalStats, rankers } = useUserStore()
+  const { profile, myStats, globalStats, rankers, fetchStats } = useUserStore()
   const [currentTip, setCurrentTip] = useState(0)
   const tips = ['Use proxies to avoid rate limits', 'Rotate user agents every 10 requests', 'Check BIN before running gates', 'Keep your API keys secure']
 
   useEffect(() => {
+    fetchStats()
     const interval = setInterval(() => setCurrentTip(p => (p + 1) % tips.length), 6000)
     return () => clearInterval(interval)
   }, [])
@@ -102,9 +103,9 @@ export function OverviewPage() {
       {/* Quick Stats Row */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <QuickStat icon={<TrendingUp size={18} />} label="Total Checked" value={fmtCompact(myStats.lives + myStats.dead + myStats.unknown)} color="text-cyber-blue" />
-        <QuickStat icon={<Activity size={18} />} label="Success Rate" value={`${((myStats.lives / (myStats.lives + myStats.dead + myStats.unknown)) * 100).toFixed(1)}%`} color="text-cyber-green" />
-        <QuickStat icon={<Trophy size={18} />} label="Your Rank" value="#12" color="text-cyber-yellow" />
-        <QuickStat icon={<Crown size={18} />} label="Lives Today" value="47" color="text-cyber-purple" />
+        <QuickStat icon={<Activity size={18} />} label="Success Rate" value={myStats.lives + myStats.dead + myStats.unknown > 0 ? `${((myStats.lives / (myStats.lives + myStats.dead + myStats.unknown)) * 100).toFixed(1)}%` : '0%'} color="text-cyber-green" />
+        <QuickStat icon={<Trophy size={18} />} label="Your Rank" value={rankers.findIndex(r => r.label === profile.username) >= 0 ? `#${rankers.findIndex(r => r.label === profile.username) + 1}` : '-'} color="text-cyber-yellow" />
+        <QuickStat icon={<Crown size={18} />} label="Lives" value={fmtCompact(myStats.lives)} color="text-cyber-purple" />
       </section>
 
       {/* Achievements */}

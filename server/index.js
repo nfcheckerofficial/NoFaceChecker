@@ -32,6 +32,12 @@ import {
   linkTelegramToUser,
   resetAllCredits,
   listUsers,
+  recordCheck,
+  getUserStats,
+  getGlobalStats,
+  getTopRankers,
+  resetAllStats,
+  updateUserPassword,
 } from './db.js'
 import { startBot, stopBot } from './telegram-bot.js'
 
@@ -834,6 +840,49 @@ app.post('/api/admin/setup', (req, res) => {
     if (user.role === 'admin') return res.json({ ok: true, message: `${username} is already admin` })
     setUserRole(username, 'admin')
     res.json({ ok: true, message: `${username} is now admin` })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// --- Stats endpoints ---
+
+app.post('/api/stats/record', authMiddleware, (req, res) => {
+  try {
+    const { status } = req.body
+    if (!['live', 'dead', 'unknown'].includes(status)) return res.status(400).json({ error: 'Invalid status' })
+    recordCheck(req.user.id, status)
+    const stats = getUserStats(req.user.id)
+    res.json({ ok: true, stats })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.get('/api/stats/me', authMiddleware, (req, res) => {
+  try {
+    const stats = getUserStats(req.user.id)
+    res.json(stats)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.get('/api/stats/global', (req, res) => {
+  try {
+    const stats = getGlobalStats()
+    const rankers = getTopRankers()
+    res.json({ ...stats, rankers })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.post('/api/admin/reset-stats', authMiddleware, (req, res) => {
+  try {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Forbidden' })
+    resetAllStats()
+    res.json({ ok: true, message: 'All stats reset to 0' })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
