@@ -15,9 +15,7 @@ export interface SessionStats {
 
 interface UserState {
   profile: UserProfile
-  /** Estadísticas del usuario (sesión). */
   myStats: SessionStats
-  /** Estadísticas globales (mock). */
   globalStats: SessionStats
   rankers: { label: string; value: number }[]
 
@@ -63,10 +61,36 @@ export const useUserStore = create<UserState>((set, get) => ({
   spendCredits: (n) => {
     const { profile } = get()
     if (profile.credits < n) return false
-    set({ profile: { ...profile, credits: profile.credits - n } })
+    const credits = profile.credits - n
+    set({ profile: { ...profile, credits } })
+    syncAdminCredits(profile.username, credits)
     return true
   },
 
-  addCredits: (n) =>
-    set((s) => ({ profile: { ...s.profile, credits: s.profile.credits + n } })),
+  addCredits: (n) => {
+    const { profile } = get()
+    const credits = profile.credits + n
+    set({ profile: { ...profile, credits } })
+      syncAdminCredits(profile.username, credits)
+  },
 }))
+
+// On first import, sync initial credits from adminStore
+const u = useUserStore.getState().profile
+syncAdminCredits(u.username, u.credits)
+
+let _adminSync: ((u: string, c: number) => void) | null = null
+
+function syncAdminCredits(username: string, credits: number) {
+  if (_adminSync) {
+    _adminSync(username, credits)
+    return
+  }
+  import('@/features/admin/adminStore').then((mod) => {
+    _adminSync = (u, c) => {
+      const user = mod.useAdminStore.getState().users.find((x) => x.username === u)
+      if (user) mod.useAdminStore.getState().updateUser(user.id, { credits: c })
+    }
+    _adminSync(username, credits)
+  })
+}

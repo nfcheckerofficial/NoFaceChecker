@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { useUserStore } from '@/features/checker/store/userStore'
 
 export interface User {
   id: string
@@ -33,6 +34,13 @@ export interface Country {
 let nextUserId = 100
 let nextGateId = 100
 let nextCountryId = 100
+
+function syncUserCredits(username: string, credits: number) {
+  const { profile, setProfile } = useUserStore.getState()
+  if (profile.username === username) {
+    setProfile({ credits })
+  }
+}
 
 interface AdminState {
   users: User[]
@@ -85,22 +93,33 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   addUser: (u) => set((s) => ({
     users: [...s.users, { ...u, id: String(++nextUserId), createdAt: new Date().toISOString().split('T')[0], lastSession: 'Never' }],
   })),
-  updateUser: (id, patch) => set((s) => ({
-    users: s.users.map((u) => (u.id === id ? { ...u, ...patch } : u)),
-  })),
+  updateUser: (id, patch) => {
+    const prev = get().users.find((u) => u.id === id)
+    set((s) => ({
+      users: s.users.map((u) => (u.id === id ? { ...u, ...patch } : u)),
+    }))
+    if (patch.credits !== undefined && prev) {
+      syncUserCredits(prev.username, patch.credits)
+    }
+  },
   deleteUser: (id) => set((s) => ({
     users: s.users.filter((u) => u.id !== id),
   })),
   toggleBan: (id, reason) => set((s) => ({
     users: s.users.map((u) => (u.id === id ? { ...u, banned: !u.banned, banReason: u.banned ? undefined : (reason || 'No reason provided') } : u)),
   })),
-  addCredits: (id, amount) => set((s) => ({
-    users: s.users.map((u) => (u.id === id ? { ...u, credits: u.credits + amount } : u)),
-  })),
+  addCredits: (id, amount) => {
+    const user = get().users.find((u) => u.id === id)
+    set((s) => ({
+      users: s.users.map((u) => (u.id === id ? { ...u, credits: u.credits + amount } : u)),
+    }))
+    if (user) syncUserCredits(user.username, user.credits + amount)
+  },
   removeCredits: (id, amount) => {
     const user = get().users.find((u) => u.id === id)
     if (!user || user.credits < amount) return false
     set((s) => ({ users: s.users.map((u) => (u.id === id ? { ...u, credits: u.credits - amount } : u)) }))
+    syncUserCredits(user.username, user.credits - amount)
     return true
   },
 
