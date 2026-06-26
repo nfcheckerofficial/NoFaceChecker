@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { clsx } from 'clsx'
 import {
-  Bell, AlertTriangle, Search, Zap, X, Check,
+  Bell, AlertTriangle, Zap, X, Check,
   User, ChevronDown, Settings, LogOut, CircleDot,
 } from 'lucide-react'
 import { useUserStore } from '@/features/checker/store/userStore'
@@ -58,38 +58,23 @@ export function DashboardHeader() {
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
 
   return (
-    <header className="h-16 shrink-0 sticky top-0 z-30 flex items-center gap-4 px-4 sm:px-6 border-b border-cyber-border bg-cyber-dark/80 backdrop-blur-md">
-      {/* Status indicator + Brand */}
-      <div className="flex items-center gap-2.5 shrink-0">
+    <header className="h-16 shrink-0 sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 border-b border-cyber-border bg-cyber-dark/80 backdrop-blur-md">
+      {/* Left spacer (empty) */}
+      <div className="w-0 sm:w-40" />
+
+      {/* Center: Brand */}
+      <div className="flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
         <span className="relative flex h-2.5 w-2.5">
           <span className="absolute inline-flex h-full w-full rounded-full bg-cyber-green opacity-75 animate-ping" />
           <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyber-green" />
         </span>
-        <span className="hidden sm:inline font-orbitron font-bold text-cyber-text tracking-wider text-sm">
-          NO FACE<span className="text-cyber-red"> // </span>CONSOLE
+        <span className="font-orbitron font-bold text-cyber-text tracking-wider text-sm">
+          NO FACE<span className="text-cyber-red"> // </span>CHECKER
         </span>
       </div>
 
-      {/* Global search */}
-      <div className="flex-1 max-w-md mx-auto hidden md:block">
-        <div className="relative group">
-          <Search
-            size={15}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-cyber-text-muted group-focus-within:text-cyber-blue transition-colors"
-          />
-          <input
-            type="text"
-            placeholder="Search gates, tools, cards..."
-            className="w-full pl-9 pr-12 py-2 rounded-lg bg-cyber-black/60 border border-cyber-border text-sm text-cyber-text placeholder-cyber-text-muted/60 focus:outline-none focus:border-cyber-blue/60 transition-colors"
-          />
-          <kbd className="absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded bg-cyber-panel border border-cyber-border text-[10px] font-mono text-cyber-text-muted">
-            /
-          </kbd>
-        </div>
-      </div>
-
-      {/* Right cluster */}
-      <div ref={wrapRef} className="flex items-center gap-1.5 sm:gap-2 ml-auto md:ml-0 shrink-0">
+      {/* Right: Credits + icons */}
+      <div ref={wrapRef} className="flex items-center gap-4 sm:gap-6">
         {/* Credits pill */}
         <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyber-panel/70 border border-cyber-yellow/30">
           <Zap size={14} className="text-cyber-yellow" />

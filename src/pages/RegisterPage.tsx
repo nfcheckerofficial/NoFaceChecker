@@ -35,7 +35,7 @@ export function RegisterPage() {
       <div className="relative z-10 w-full max-w-sm">
         <div className="text-center mb-8">
           <h1 className="font-orbitron font-bold text-2xl tracking-wider text-cyber-text">
-            NO FACE<span className="text-cyber-red"> // </span>CONSOLE
+            NO FACE<span className="text-cyber-red"> // </span>CHECKER
           </h1>
           <p className="text-sm text-cyber-text-muted mt-2">Create your account</p>
         </div>

@@ -1,20 +1,20 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { clsx } from 'clsx'
 import {
-  CreditCard, ThumbsUp, ThumbsDown, User, MessageCircle,
+  User, MessageCircle,
   CalendarClock, DollarSign, BadgeCheck, PieChart, BarChart3,
-  Trophy, TrendingUp, Activity, Crown,
+  Trophy, TrendingUp, Activity, Crown, Sparkles,
 } from 'lucide-react'
-import { DonutChart } from '@/shared/ui/DonutChart'
-import { BarChart } from '@/shared/ui/BarChart'
+import { HoloStat } from '@/shared/ui/HoloStat'
+import { StreamRank } from '@/shared/ui/StreamRank'
 import { CodeRain } from '@/shared/ui/CodeRain'
 import { useUserStore } from '@/features/checker/store/userStore'
 
-const DROPPER_CARDS = [
-  { num: '5276015007382801|10|2030|844', tag: 'CREDIT', cc: 'AR', active: true, likes: 12, dislikes: 2 },
-  { num: '2630328107120291722', tag: 'CREDIT', cc: 'US', active: false, likes: 8, dislikes: 1 },
-  { num: '5168414018707745103120291543', tag: 'DEBIT', cc: 'TR', active: false, likes: 5, dislikes: 3 },
-  { num: '5218532722700464111120', tag: '', cc: '', active: false, likes: 2, dislikes: 0 },
+const EXTRA_BASES = [
+  { label: 'BIN Pool', value: '527601, 492937, 453201', color: 'text-cyber-blue' },
+  { label: 'Proxy List', value: '24 active · 12 dead', color: 'text-cyber-green' },
+  { label: 'User Agents', value: '142 freshly scraped', color: 'text-cyber-purple' },
+  { label: 'DNS Records', value: '36 resolved', color: 'text-cyber-yellow' },
 ]
 
 function fmtCompact(n: number): string {
@@ -25,22 +25,13 @@ function fmtCompact(n: number): string {
 
 export function OverviewPage() {
   const { profile, myStats, globalStats, rankers } = useUserStore()
-  const [votes, setVotes] = useState(DROPPER_CARDS.map(c => ({ likes: c.likes, dislikes: c.dislikes, userVote: null as 'like' | 'dislike' | null })))
+  const [currentTip, setCurrentTip] = useState(0)
+  const tips = ['Use proxies to avoid rate limits', 'Rotate user agents every 10 requests', 'Check BIN before running gates', 'Keep your API keys secure']
 
-  const handleVote = (index: number, type: 'like' | 'dislike') => {
-    setVotes(prev => prev.map((v, i) => {
-      if (i !== index) return v
-      if (v.userVote === type) {
-        return { ...v, [type === 'like' ? 'likes' : 'dislikes']: v[type === 'like' ? 'likes' : 'dislikes'] - 1, userVote: null }
-      }
-      const updated = { ...v }
-      if (v.userVote === 'like') updated.likes--
-      if (v.userVote === 'dislike') updated.dislikes--
-      updated[type === 'like' ? 'likes' : 'dislikes']++
-      updated.userVote = type
-      return updated
-    }))
-  }
+  useEffect(() => {
+    const interval = setInterval(() => setCurrentTip(p => (p + 1) % tips.length), 6000)
+    return () => clearInterval(interval)
+  }, [])
 
   return (
     <div className="relative min-h-[calc(100vh-4rem)] -m-5 sm:-m-6">
@@ -64,9 +55,9 @@ export function OverviewPage() {
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: 'url(/noface-hero.png)' }}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-cyber-black via-cyber-black/70 to-transparent" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_left,rgba(255,0,64,0.18),transparent_55%)]" />
-        <div className="relative h-full flex flex-col justify-center pl-7 pr-4 max-w-[60%]">
+        <div className="absolute inset-0 bg-gradient-to-r from-cyber-black/50 via-cyber-black/30 to-cyber-black/50" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(157,0,255,0.12),transparent_60%)]" />
+        <div className="relative h-full flex flex-col justify-center items-center text-center px-4">
           <p className="text-[11px] uppercase tracking-[0.3em] text-cyber-blue/80 mb-1">
             Welcome back, {profile.username}
           </p>
@@ -79,55 +70,20 @@ export function OverviewPage() {
         </div>
       </section>
 
-      {/* Card From Dropper with Voting */}
-      <section className="relative rounded-lg border border-cyber-border bg-cyber-panel/70 backdrop-blur-sm pl-5 pr-4 py-4">
-        <span className="absolute left-0 top-3 bottom-3 w-1 rounded-full bg-cyber-green" />
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 mb-2.5">
-              <CreditCard size={18} className="text-cyber-text-muted" />
-              <h2 className="text-sm font-semibold text-cyber-text">Card From Dropper</h2>
+      {/* Extra Base Aleatorio */}
+      <section className="relative rounded-lg border border-cyber-border bg-cyber-panel/70 backdrop-blur-sm px-5 py-4">
+        <span className="absolute left-0 top-3 bottom-3 w-1 rounded-full bg-cyber-purple" />
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles size={16} className="text-cyber-purple" />
+          <h2 className="text-sm font-semibold text-cyber-text">Extra Base Aleatorio</h2>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {EXTRA_BASES.map((item, i) => (
+            <div key={i} className="bg-cyber-black/60 border border-cyber-border/40 rounded-lg p-3">
+              <p className="text-[10px] uppercase tracking-wider text-cyber-text-muted mb-1">{item.label}</p>
+              <p className={clsx('text-xs font-mono font-medium', item.color)}>{item.value}</p>
             </div>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[13px]">
-              {DROPPER_CARDS.map((c, i) => (
-                <span key={i} className={clsx('flex items-center gap-1.5', c.active ? 'text-cyber-text' : 'text-cyber-text-muted/50')}>
-                  {c.num}
-                  {c.tag && <span className="text-[11px]">- {c.tag}</span>}
-                  {c.cc && <span className="text-[10px] uppercase opacity-70">{c.cc}</span>}
-                </span>
-              ))}
-            </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {DROPPER_CARDS.map((_, i) => (
-              <div key={i} className="flex items-center gap-1">
-                <button
-                  onClick={() => handleVote(i, 'like')}
-                  className={clsx(
-                    'w-8 h-8 rounded-md border flex items-center justify-center transition-all',
-                    votes[i].userVote === 'like'
-                      ? 'bg-cyber-green/20 border-cyber-green text-cyber-green'
-                      : 'bg-cyber-dark border-cyber-border text-cyber-text-muted hover:text-cyber-green'
-                  )}
-                >
-                  <ThumbsUp size={13} />
-                </button>
-                <span className="text-[10px] text-cyber-text-muted w-4 text-center">{votes[i].likes}</span>
-                <button
-                  onClick={() => handleVote(i, 'dislike')}
-                  className={clsx(
-                    'w-8 h-8 rounded-md border flex items-center justify-center transition-all',
-                    votes[i].userVote === 'dislike'
-                      ? 'bg-cyber-red/20 border-cyber-red text-cyber-red'
-                      : 'bg-cyber-dark border-cyber-border text-cyber-text-muted hover:text-cyber-red'
-                  )}
-                >
-                  <ThumbsDown size={13} />
-                </button>
-                <span className="text-[10px] text-cyber-text-muted w-4 text-center">{votes[i].dislikes}</span>
-              </div>
-            ))}
-          </div>
+          ))}
         </div>
       </section>
 
@@ -169,42 +125,30 @@ export function OverviewPage() {
         </div>
       </section>
 
-      {/* Charts */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      {/* System Monitor */}
+      <section className="flex flex-col gap-5">
         <ChartCard icon={<PieChart size={18} className="text-cyber-green" />} title="Global Statistics">
-          <div className="flex justify-center py-4">
-            <DonutChart
-              segments={[
-                { value: globalStats.dead, color: 'var(--color-cyber-red)' },
-                { value: globalStats.lives, color: 'var(--color-cyber-green)' },
-                { value: globalStats.unknown, color: 'var(--color-cyber-blue)' },
-              ]}
-              topLabel={fmtCompact(globalStats.dead)}
-              bottomLabel={fmtCompact(globalStats.unknown)}
-              rightLabel={fmtCompact(globalStats.lives)}
-              size={220}
-            />
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3">
+            <HoloStat label="Total Checks" value={fmtCompact(globalStats.dead + globalStats.lives + globalStats.unknown)} accent="#22c55e" />
+            <HoloStat label="Lives" value={fmtCompact(globalStats.lives)} sublabel={`${((globalStats.lives / (globalStats.dead + globalStats.lives + globalStats.unknown)) * 100).toFixed(1)}%`} accent="#3b82f6" />
+            <HoloStat label="Dead" value={fmtCompact(globalStats.dead)} accent="#ef4444" />
+            <HoloStat label="Unknown" value={fmtCompact(globalStats.unknown)} accent="#a855f7" />
           </div>
         </ChartCard>
 
         <ChartCard icon={<PieChart size={18} className="text-cyber-blue" />} title="Your Statistics">
-          <div className="flex justify-center py-4">
-            <DonutChart
-              segments={[
-                { value: myStats.dead, color: 'var(--color-cyber-red)' },
-                { value: myStats.lives, color: 'var(--color-cyber-green)' },
-                { value: myStats.unknown, color: 'var(--color-cyber-blue)' },
-              ]}
-              topLabel={fmtCompact(myStats.dead)}
-              bottomLabel={fmtCompact(myStats.unknown)}
-              rightLabel={fmtCompact(myStats.lives)}
-              size={220}
-            />
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3">
+            <HoloStat label="Your Checks" value={fmtCompact(myStats.dead + myStats.lives + myStats.unknown)} accent="#3b82f6" />
+            <HoloStat label="Your Lives" value={fmtCompact(myStats.lives)} sublabel={`${((myStats.lives / (myStats.dead + myStats.lives + myStats.unknown)) * 100).toFixed(1)}%`} accent="#22c55e" />
+            <HoloStat label="Your Dead" value={fmtCompact(myStats.dead)} accent="#ef4444" />
+            <HoloStat label="Your Unknown" value={fmtCompact(myStats.unknown)} accent="#a855f7" />
           </div>
         </ChartCard>
 
         <ChartCard icon={<BarChart3 size={18} className="text-cyber-green" />} title="Top Rankers">
-          <BarChart data={rankers} height={260} />
+          <div className="px-2 py-3">
+            <StreamRank data={rankers} />
+          </div>
         </ChartCard>
       </section>
         </div>
