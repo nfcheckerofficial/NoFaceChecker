@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { BrowserRouter as Router, useNavigate } from 'react-router-dom'
 import { AppRoutes } from './routes'
 import { ScanLines } from '@/shared/ui/ScanLines'
+import { ErrorBoundary } from '@/shared/ui/ErrorBoundary'
 import { useAuthStore } from '@/features/auth/authStore'
 
 function AuthInit() {
@@ -60,8 +61,10 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <AuthInit />
-      <AppContent />
+      <ErrorBoundary>
+        <AuthInit />
+        <AppContent />
+      </ErrorBoundary>
     </Router>
   )
 }
