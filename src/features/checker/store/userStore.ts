@@ -4,6 +4,28 @@ import { useAuthStore } from '@/features/auth/authStore'
 const API_BASE = import.meta.env.VITE_PAYMENTS_API ?? ''
 const SERVER_URL = API_BASE
 
+const CREDITS_KEY = 'chk_user_credits'
+const STATS_KEY = 'chk_user_stats'
+
+function loadCredits(): number {
+  try {
+    const v = localStorage.getItem(CREDITS_KEY)
+    return v ? Number(v) : -1
+  } catch { return -1 }
+}
+function saveCredits(n: number) {
+  try { localStorage.setItem(CREDITS_KEY, String(n)) } catch {}
+}
+function loadStats(): SessionStats | null {
+  try {
+    const v = localStorage.getItem(STATS_KEY)
+    return v ? JSON.parse(v) : null
+  } catch { return null }
+}
+function saveStats(s: SessionStats) {
+  try { localStorage.setItem(STATS_KEY, JSON.stringify(s)) } catch {}
+}
+
 export interface UserProfile {
   username: string
   telegramId: string
@@ -44,7 +66,11 @@ export const useUserStore = create<UserState>((set, get) => ({
   rankers: [],
 
   setProfile: (patch) =>
-    set((s) => ({ profile: { ...s.profile, ...patch } })),
+    set((s) => {
+      const profile = { ...s.profile, ...patch }
+      if ('credits' in patch) saveCredits(profile.credits)
+      return { profile }
+    }),
 
   addLives: (n = 1) =>
     set((s) => ({ myStats: { ...s.myStats, lives: s.myStats.lives + n } })),
@@ -61,17 +87,20 @@ export const useUserStore = create<UserState>((set, get) => ({
         if (res.ok) {
           const data = await res.json()
           set({ myStats: data.stats })
+          saveStats(data.stats)
           return
         }
       } catch {}
     }
-    set((s) => ({
-      myStats: {
+    set((s) => {
+      const myStats = {
         lives: s.myStats.lives + (status === 'live' ? 1 : 0),
         dead: s.myStats.dead + (status === 'dead' ? 1 : 0),
         unknown: s.myStats.unknown + (status === 'unknown' ? 1 : 0),
-      },
-    }))
+      }
+      saveStats(myStats)
+      return { myStats }
+    })
   },
 
   fetchStats: async () => {
@@ -84,7 +113,9 @@ export const useUserStore = create<UserState>((set, get) => ({
       ])
       if (meRes.ok) {
         const me = await meRes.json()
-        set({ myStats: { lives: me.checks_live, dead: me.checks_dead, unknown: me.checks_unknown } })
+        const myStats = { lives: me.checks_live, dead: me.checks_dead, unknown: me.checks_unknown }
+        set({ myStats })
+        saveStats(myStats)
       }
       if (globalRes.ok) {
         const global = await globalRes.json()
@@ -101,6 +132,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     if (profile.credits < n) return false
     const credits = profile.credits - n
     set({ profile: { ...profile, credits } })
+    saveCredits(credits)
     syncAdminCredits(profile.username, credits)
     persistCredits(credits)
     return true
@@ -110,18 +142,23 @@ export const useUserStore = create<UserState>((set, get) => ({
     const { profile } = get()
     const credits = profile.credits + n
     set({ profile: { ...profile, credits } })
+    saveCredits(credits)
     syncAdminCredits(profile.username, credits)
     persistCredits(credits)
   },
 
   syncFromAuth: (user) => {
+    const localCredits = loadCredits()
+    const credits = localCredits >= 0 ? localCredits : user.credits
+    const localSt = loadStats()
     set({
       profile: {
         username: user.username,
         telegramId: user.telegram_id || '',
         registeredOn: user.created_at ? user.created_at.split('T')[0] : '',
-        credits: user.credits,
+        credits,
       },
+      myStats: localSt ?? { lives: 0, dead: 0, unknown: 0 },
     })
     get().fetchStats()
   },
