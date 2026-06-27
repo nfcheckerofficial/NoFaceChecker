@@ -21,19 +21,27 @@ interface CheckerState {
     dead: number
   }
   check: (cardData: CardData) => Promise<void>
-  addResult: (status: 'live' | 'dead', cardNumber: string) => void
+  addResult: (status: 'live' | 'dead' | 'unknown', cardNumber: string) => void
   reset: () => void
+}
+
+function computeStats(history: CheckResult[]) {
+  return history.reduce(
+    (acc, r) => {
+      acc.total++
+      if (r.status === 'live') acc.live++
+      else acc.dead++
+      return acc
+    },
+    { total: 0, live: 0, dead: 0 }
+  )
 }
 
 export const useCheckerStore = create<CheckerState>((set, get) => ({
   isChecking: false,
   currentResult: null,
   history: loadHist(),
-  stats: {
-    total: 0,
-    live: 0,
-    dead: 0,
-  },
+  stats: computeStats(loadHist()),
 
   check: async (cardData: CardData) => {
     set({ isChecking: true, currentResult: null })
@@ -64,7 +72,7 @@ export const useCheckerStore = create<CheckerState>((set, get) => ({
   addResult: (status, cardNumber) => {
     set((state) => {
       const result: CheckResult = {
-        status,
+        status: status === 'unknown' ? 'dead' as const : status,
         cardNumber,
         cardType: 'unknown',
         brand: '',
@@ -76,7 +84,7 @@ export const useCheckerStore = create<CheckerState>((set, get) => ({
         checks: [],
         binSource: 'fallback',
         timestamp: new Date(),
-        message: status === 'live' ? 'APPROVED' : 'DECLINED',
+        message: status === 'live' ? 'APPROVED' : status === 'unknown' ? 'UNKNOWN' : 'DECLINED',
       }
       const history = [result, ...state.history].slice(0, 50)
       saveHist(history)
@@ -85,7 +93,7 @@ export const useCheckerStore = create<CheckerState>((set, get) => ({
         stats: {
           total: state.stats.total + 1,
           live: state.stats.live + (status === 'live' ? 1 : 0),
-          dead: state.stats.dead + (status === 'dead' ? 1 : 0),
+          dead: state.stats.dead + (status === 'dead' || status === 'unknown' ? 1 : 0),
         },
       }
     })

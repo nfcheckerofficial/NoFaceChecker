@@ -203,7 +203,7 @@ export function OverviewPage() {
         <ChartCard icon={<PieChart size={18} className="text-cyber-green" />} title="Global Statistics">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3">
             <HoloStat label="Total Checks" value={fmtCompact(globalStats.dead + globalStats.lives + globalStats.unknown)} accent="#22c55e" />
-            <HoloStat label="Lives" value={fmtCompact(globalStats.lives)} sublabel={`${((globalStats.lives / (globalStats.dead + globalStats.lives + globalStats.unknown)) * 100).toFixed(1)}%`} accent="#3b82f6" />
+            <HoloStat label="Lives" value={fmtCompact(globalStats.lives)} sublabel={globalStats.dead + globalStats.lives + globalStats.unknown > 0 ? `${((globalStats.lives / (globalStats.dead + globalStats.lives + globalStats.unknown)) * 100).toFixed(1)}%` : '0%'} accent="#3b82f6" />
             <HoloStat label="Dead" value={fmtCompact(globalStats.dead)} accent="#ef4444" />
             <HoloStat label="Unknown" value={fmtCompact(globalStats.unknown)} accent="#a855f7" />
           </div>
@@ -228,23 +228,23 @@ export function OverviewPage() {
             ) : (
               <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
                 {recentActivity.map((result, i) => (
-                  <div key={i} className="flex items-center justify-between py-2 px-3 rounded bg-cyber-black/40 border border-cyber-border/30">
-                    <div className="flex items-center gap-2.5">
+                    <div key={i} className="flex items-center justify-between py-2 px-3 rounded bg-cyber-black/40 border border-cyber-border/30">
+                      <div className="flex items-center gap-2.5">
+                        <span className={clsx(
+                          'w-2 h-2 rounded-full',
+                          result.status === 'live' ? 'bg-cyber-green shadow-[0_0_6px_rgba(0,255,136,0.6)]' : result.message === 'UNKNOWN' ? 'bg-cyber-yellow shadow-[0_0_6px_rgba(255,200,0,0.6)]' : 'bg-cyber-red shadow-[0_0_6px_rgba(255,0,64,0.6)]'
+                        )} />
+                        <span className="text-[11px] font-mono text-cyber-text-muted">
+                          ****{result.cardNumber.slice(-7)}
+                        </span>
+                      </div>
                       <span className={clsx(
-                        'w-2 h-2 rounded-full',
-                        result.status === 'live' ? 'bg-cyber-green shadow-[0_0_6px_rgba(0,255,136,0.6)]' : 'bg-cyber-red shadow-[0_0_6px_rgba(255,0,64,0.6)]'
-                      )} />
-                      <span className="text-[11px] font-mono text-cyber-text-muted">
-                        ****{result.cardNumber.slice(-7)}
+                        'text-[10px] font-bold uppercase tracking-wider',
+                        result.status === 'live' ? 'text-cyber-green' : result.message === 'UNKNOWN' ? 'text-cyber-yellow' : 'text-cyber-red'
+                      )}>
+                        {result.message === 'UNKNOWN' ? 'UNKNOWN' : result.status}
                       </span>
                     </div>
-                    <span className={clsx(
-                      'text-[10px] font-bold uppercase tracking-wider',
-                      result.status === 'live' ? 'text-cyber-green' : 'text-cyber-red'
-                    )}>
-                      {result.status}
-                    </span>
-                  </div>
                 ))}
               </div>
             )}

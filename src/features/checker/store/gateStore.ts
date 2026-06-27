@@ -238,7 +238,7 @@ export const useGateStore = create<GateState>((set, get) => ({
 
       // Refleja el resultado en las estadísticas del usuario.
       useUserStore.getState().recordResult(status)
-      useCheckerStore.getState().addResult(status === 'live' ? 'live' : 'dead', number)
+      useCheckerStore.getState().addResult(status, number)
 
       // Guarda las lives en la bóveda central y resuelve su BIN (banco / debit-credit).
       if (status === 'live') {
