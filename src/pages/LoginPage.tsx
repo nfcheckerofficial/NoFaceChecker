@@ -137,19 +137,24 @@ export function LoginPage() {
       </div>
 
       <div className="relative z-10 w-full max-w-sm mt-8 sm:mt-8">
-        {/* Brand section */}
+        {/* Brand section - animated logo */}
         <div className="text-center mb-6 sm:mb-8">
-          <div className="relative inline-flex mb-3 sm:mb-5">
+          <div className="relative inline-flex mb-3 sm:mb-5 motion-safe:animate-[float_4s_ease-in-out_infinite]">
+            {/* Outer rotating gradient ring */}
+            <div className="absolute -inset-2 sm:-inset-3 rounded-full bg-gradient-to-r from-cyber-red via-cyber-purple via-cyber-blue to-cyber-red bg-[length:200%_200%] motion-safe:animate-[spin_3s_linear_infinite] opacity-80" />
+            <div className="absolute -inset-2 sm:-inset-3 rounded-full bg-gradient-to-r from-cyber-red via-cyber-purple via-cyber-blue to-cyber-red bg-[length:200%_200%] motion-safe:animate-[spin_3s_linear_infinite] opacity-30 blur-lg" />
+            {/* Inner glow */}
             <div className="absolute inset-0 bg-gradient-to-r from-cyber-red via-cyber-purple to-cyber-blue rounded-full blur-xl sm:blur-2xl opacity-60 motion-safe:animate-pulse" />
-            <div className="relative inline-flex items-center justify-center w-14 h-14 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-cyber-red/30 via-cyber-purple/20 to-cyber-blue/20 border-2 border-cyber-red/40 shadow-[0_0_20px_rgba(255,0,64,0.25)] sm:shadow-[0_0_40px_rgba(255,0,64,0.3)]">
-              <Shield size={22} className="sm:hidden text-cyber-red drop-shadow-[0_0_8px_rgba(157,0,255,0.4)]" />
-              <Shield size={34} className="hidden sm:block text-cyber-red drop-shadow-[0_0_12px_rgba(157,0,255,0.4)]" />
+            {/* Shield container */}
+            <div className="relative inline-flex items-center justify-center w-14 h-14 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-cyber-red/30 via-cyber-purple/20 to-cyber-blue/20 border-2 border-cyber-red/40 shadow-[0_0_20px_rgba(255,0,64,0.25)] sm:shadow-[0_0_40px_rgba(255,0,64,0.3)] group">
+              <Shield size={22} className="sm:hidden text-cyber-red drop-shadow-[0_0_8px_rgba(157,0,255,0.4)] motion-safe:animate-[flicker_2s_ease-in-out_infinite]" />
+              <Shield size={34} className="hidden sm:block text-cyber-red drop-shadow-[0_0_12px_rgba(157,0,255,0.4)] motion-safe:animate-[flicker_2s_ease-in-out_infinite]" />
             </div>
           </div>
-          <h1 className="font-orbitron font-black text-2xl sm:text-3xl tracking-[0.1em] sm:tracking-[0.15em] text-transparent bg-clip-text bg-gradient-to-r from-cyber-red via-cyber-purple to-cyber-blue">
+          <h1 className="font-orbitron font-black text-2xl sm:text-3xl tracking-[0.1em] sm:tracking-[0.15em] text-transparent bg-clip-text bg-gradient-to-r from-cyber-red via-cyber-purple to-cyber-blue bg-[length:200%_auto] motion-safe:animate-[gradient_3s_ease_infinite]">
             NO FACE
           </h1>
-          <p className="font-orbitron text-[10px] sm:text-xs tracking-[0.25em] sm:tracking-[0.3em] text-cyber-red/90 mt-1.5 sm:mt-2">
+          <p className="font-orbitron text-[10px] sm:text-xs tracking-[0.25em] sm:tracking-[0.3em] text-cyber-red/90 mt-1.5 sm:mt-2 motion-safe:animate-pulse">
             // CHECKER
           </p>
           <p className="text-[10px] sm:text-xs text-cyber-text-muted/60 mt-3 sm:mt-4 tracking-wide flex items-center justify-center gap-1.5 sm:gap-2">

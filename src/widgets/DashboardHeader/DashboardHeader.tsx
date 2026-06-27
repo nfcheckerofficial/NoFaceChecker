@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { clsx } from 'clsx'
 import {
   Bell, AlertTriangle, Zap, X, Check,
-  User, ChevronDown, Settings, LogOut, CircleDot, Menu,
+  User, ChevronDown, Settings, LogOut, CircleDot, Menu, Shield,
 } from 'lucide-react'
 import { useUserStore } from '@/features/checker/store/userStore'
 import { useAuthStore } from '@/features/auth/authStore'
@@ -40,7 +40,8 @@ type Panel = 'notifications' | 'warnings' | 'profile' | null
 
 export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
   const { profile } = useUserStore()
-  const { user } = useAuthStore()
+  const { user, logout } = useAuthStore()
+  const navigate = useNavigate()
   const isAdmin = user?.role === 'admin'
   const [panel, setPanel] = useState<Panel>(null)
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS)
@@ -77,15 +78,21 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
         <div className="hidden lg:block w-40" />
       </div>
 
-      {/* Center: Brand */}
-      <div className="flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
-        <span className="relative flex h-2.5 w-2.5">
-          <span className="absolute inline-flex h-full w-full rounded-full bg-cyber-green opacity-75 animate-ping" />
-          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyber-green" />
-        </span>
-        <span className="font-orbitron font-bold text-cyber-text tracking-wider text-sm">
-          NO FACE<span className="text-cyber-red"> // </span>CHECKER
-        </span>
+      {/* Center: Brand with animated logo */}
+      <div className="flex items-center gap-3 absolute left-1/2 -translate-x-1/2">
+        <div className="relative flex items-center justify-center motion-safe:animate-[float_3s_ease-in-out_infinite]">
+          <div className="absolute w-7 h-7 rounded-full bg-gradient-to-r from-cyber-red via-cyber-purple to-cyber-blue motion-safe:animate-[spin_3s_linear_infinite] opacity-70" />
+          <div className="absolute w-7 h-7 rounded-full bg-gradient-to-r from-cyber-red via-cyber-purple to-cyber-blue motion-safe:animate-[spin_3s_linear_infinite] opacity-30 blur-sm" />
+          <Shield size={14} className="relative text-cyber-red motion-safe:animate-[flicker_2s_ease-in-out_infinite]" />
+        </div>
+        <div className="flex flex-col leading-tight">
+          <span className="font-orbitron font-bold text-cyber-text tracking-wider text-sm bg-gradient-to-r from-cyber-red via-cyber-purple to-cyber-blue bg-clip-text text-transparent bg-[length:200%_auto] motion-safe:animate-[gradient_3s_ease_infinite]">
+            NO FACE
+          </span>
+          <span className="text-[10px] text-cyber-red/70 tracking-[0.2em] font-orbitron motion-safe:animate-pulse">
+            // CHECKER
+          </span>
+        </div>
       </div>
 
       {/* Right: Credits + icons */}
@@ -232,13 +239,17 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
                   label="Admin Panel"
                 />
               )}
-              <Link
-                to="/"
-                className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-cyber-red hover:bg-cyber-red/10 transition-colors"
+              <button
+                onClick={(e) => {
+                  e.preventDefault()
+                  logout()
+                  window.location.href = '/login'
+                }}
+                className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-cyber-red hover:bg-cyber-red/10 transition-colors"
               >
                 <LogOut size={14} />
                 Logout
-              </Link>
+              </button>
             </DropdownPanel>
           )}
         </div>

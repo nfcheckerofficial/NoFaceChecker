@@ -1,5 +1,6 @@
-import { lazy, Suspense } from 'react'
-import { Route, Routes, useParams } from 'react-router-dom'
+import { lazy, Suspense, useEffect } from 'react'
+import { Route, Routes, useParams, useNavigation } from 'react-router-dom'
+import NProgress from 'nprogress'
 import { LandingPage } from '@/pages/LandingPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { RegisterPage } from '@/pages/RegisterPage'
@@ -39,11 +40,24 @@ function ParamGate({ prefix, param }: { prefix: string; param: string }) {
 }
 
 function SuspenseWrapper({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    NProgress.start()
+    return () => { NProgress.done() }
+  }, [])
   return (
     <Suspense fallback={<div className="flex items-center justify-center h-full text-cyber-text-muted text-sm py-20">Loading...</div>}>
       {children}
     </Suspense>
   )
+}
+
+function RouteChangeTracker() {
+  const navigation = useNavigation()
+  useEffect(() => {
+    if (navigation.state === 'loading') NProgress.start()
+    if (navigation.state === 'idle') { NProgress.done() }
+  }, [navigation.state])
+  return null
 }
 
 export function AppRoutes() {
@@ -64,15 +78,15 @@ export function AppRoutes() {
         <Route path="profile" element={<SuspenseWrapper><ProfilePage /></SuspenseWrapper>} />
         <Route path="marketplace" element={<SuspenseWrapper><MarketplacePage /></SuspenseWrapper>} />
 
-        <Route path="stripe-ccn/:id" element={<ParamGate prefix="stripe-ccn" param="id" />} />
-        <Route path="stripe-auth/:id" element={<ParamGate prefix="stripe-auth" param="id" />} />
-        <Route path="amazon/:mode" element={<ParamGate prefix="amazon" param="mode" />} />
-        <Route path="charge/:id" element={<ParamGate prefix="charge" param="id" />} />
-        <Route path="paypal/:id" element={<ParamGate prefix="paypal" param="id" />} />
-        <Route path="special/:id" element={<ParamGate prefix="special" param="id" />} />
-        <Route path="auth-gates/:id" element={<GateDashboard gateId="auth-gates-pool" />} />
-        <Route path="brute/:id" element={<ParamGate prefix="brute" param="id" />} />
-        <Route path="achievers" element={<GateDashboard gateId="achievers" />} />
+        <Route path="stripe-ccn/:id" element={<><RouteChangeTracker /><ParamGate prefix="stripe-ccn" param="id" /></>} />
+        <Route path="stripe-auth/:id" element={<><RouteChangeTracker /><ParamGate prefix="stripe-auth" param="id" /></>} />
+        <Route path="amazon/:mode" element={<><RouteChangeTracker /><ParamGate prefix="amazon" param="mode" /></>} />
+        <Route path="charge/:id" element={<><RouteChangeTracker /><ParamGate prefix="charge" param="id" /></>} />
+        <Route path="paypal/:id" element={<><RouteChangeTracker /><ParamGate prefix="paypal" param="id" /></>} />
+        <Route path="special/:id" element={<><RouteChangeTracker /><ParamGate prefix="special" param="id" /></>} />
+        <Route path="auth-gates/:id" element={<><RouteChangeTracker /><GateDashboard gateId="auth-gates-pool" /></>} />
+        <Route path="brute/:id" element={<><RouteChangeTracker /><ParamGate prefix="brute" param="id" /></>} />
+        <Route path="achievers" element={<><RouteChangeTracker /><GateDashboard gateId="achievers" /></>} />
 
         <Route path="verification/:id" element={<SuspenseWrapper><PlaceholderPage title="Temporary Verification" description="SMS / number pool" /></SuspenseWrapper>} />
         <Route path="bin-lookup" element={<SuspenseWrapper><BinLookupPage /></SuspenseWrapper>} />
