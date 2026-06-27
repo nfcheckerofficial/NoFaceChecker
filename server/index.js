@@ -23,6 +23,7 @@ import {
   listCharges,
   listSubscribers,
   getSubscriberCount,
+  addSubscriber,
   createUser,
   getUserByUsername,
   getUserById,
@@ -205,6 +206,8 @@ app.post('/api/auth/register', async (req, res) => {
     const user = createUser(username, passwordHash, telegram_id)
     if (!user) return res.status(500).json({ error: 'Failed to create user' })
 
+    addSubscriber(telegram_id, username, username)
+
     const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' })
     res.status(201).json({ token, user })
   } catch (err) {
@@ -260,6 +263,7 @@ app.post('/api/auth/link-telegram', authMiddleware, async (req, res) => {
     const existing = getUserByTelegramId(telegram_id)
     if (existing && existing.id !== req.user.id) return res.status(409).json({ error: 'Telegram ID already linked to another account' })
     linkTelegramToUser(req.user.id, telegram_id)
+    addSubscriber(telegram_id, req.user.username, req.user.username)
     const user = getUserById(req.user.id)
     res.json({ user: { id: user.id, username: user.username, credits: user.credits, role: user.role, telegram_id: user.telegram_id, created_at: user.created_at } })
   } catch (err) {
