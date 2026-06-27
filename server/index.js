@@ -39,6 +39,10 @@ import {
   getTopRankers,
   resetAllStats,
   updateUserPassword,
+  saveLive,
+  listLives,
+  deleteLive,
+  clearLives,
 } from './db.js'
 import { startBot, stopBot } from './telegram-bot.js'
 
@@ -916,6 +920,61 @@ function fmtBroadcast(payload, credits) {
   }
   return lines.join('\n')
 }
+
+// --- Lives API (persistencia servidor) ---
+
+app.get('/api/lives', authMiddleware, (req, res) => {
+  try {
+    const lives = listLives(req.user.id)
+    res.json({ lives })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.post('/api/lives/save', authMiddleware, (req, res) => {
+  try {
+    const { live } = req.body
+    if (!live || !live.raw) return res.status(400).json({ error: 'Live data required' })
+    saveLive(req.user.id, live)
+    res.json({ ok: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.post('/api/lives/save-batch', authMiddleware, (req, res) => {
+  try {
+    const { lives } = req.body
+    if (!Array.isArray(lives)) return res.status(400).json({ error: 'Array of lives required' })
+    for (const live of lives) {
+      if (live.raw) saveLive(req.user.id, live)
+    }
+    res.json({ ok: true, saved: lives.length })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.post('/api/lives/delete', authMiddleware, (req, res) => {
+  try {
+    const { raw } = req.body
+    if (!raw) return res.status(400).json({ error: 'raw required' })
+    deleteLive(req.user.id, raw)
+    res.json({ ok: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.post('/api/lives/clear', authMiddleware, (req, res) => {
+  try {
+    clearLives(req.user.id)
+    res.json({ ok: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
 
 // --- Global error handler (no leakear stack traces) ---
 app.use((err, req, res, _next) => {

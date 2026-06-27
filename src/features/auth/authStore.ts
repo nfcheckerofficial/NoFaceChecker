@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { useUserStore } from '@/features/checker/store/userStore'
+import { useLivesStore } from '@/features/checker/store/livesStore'
 
 const API_BASE = import.meta.env.VITE_PAYMENTS_API ?? ''
 const SERVER_URL = API_BASE
@@ -54,6 +55,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       saveToken(data.token)
       set({ token: data.token, user: data.user, loading: false })
       useUserStore.getState().syncFromAuth(data.user)
+      useLivesStore.getState().loadFromServer()
       fetch(`${SERVER_URL}/api/telegram/subscribe-me`, {
         method: 'POST', headers: { Authorization: `Bearer ${data.token}` },
       }).catch(() => {})
@@ -77,6 +79,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       saveToken(data.token)
       set({ token: data.token, user: data.user, loading: false })
       useUserStore.getState().syncFromAuth(data.user)
+      useLivesStore.getState().loadFromServer()
       fetch(`${SERVER_URL}/api/telegram/subscribe-me`, {
         method: 'POST', headers: { Authorization: `Bearer ${data.token}` },
       }).catch(() => {})
@@ -100,6 +103,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       saveToken(data.token)
       set({ token: data.token, user: data.user, loading: false })
       useUserStore.getState().syncFromAuth(data.user)
+      useLivesStore.getState().loadFromServer()
       fetch(`${SERVER_URL}/api/telegram/subscribe-me`, {
         method: 'POST', headers: { Authorization: `Bearer ${data.token}` },
       }).catch(() => {})
@@ -145,6 +149,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const user = await res.json()
       set({ user })
       useUserStore.getState().syncFromAuth(user)
+      useLivesStore.getState().loadFromServer()
       fetch(`${SERVER_URL}/api/telegram/subscribe-me`, {
         method: 'POST', headers: { Authorization: `Bearer ${token}` },
       }).catch(() => {})

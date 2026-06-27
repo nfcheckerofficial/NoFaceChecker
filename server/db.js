@@ -69,6 +69,23 @@ db.exec(`
     active    INTEGER NOT NULL DEFAULT 1
   );
 
+  CREATE TABLE IF NOT EXISTS lives (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id   INTEGER NOT NULL,
+    raw       TEXT NOT NULL,
+    number    TEXT NOT NULL,
+    gate_id   TEXT,
+    gate_name TEXT,
+    message   TEXT,
+    bank      TEXT,
+    card_type TEXT,
+    brand     TEXT,
+    country   TEXT,
+    country_emoji TEXT,
+    enriched  INTEGER NOT NULL DEFAULT 0,
+    captured_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
   -- Garantiza idempotencia de webhooks: un event_id se procesa una sola vez.
   CREATE TABLE IF NOT EXISTS processed_events (
     event_id     TEXT PRIMARY KEY,
@@ -353,6 +370,48 @@ export function resetAllStats() {
 
 export function linkTelegramToUser(userId, telegramId) {
   db.prepare('UPDATE users SET telegram_id = ? WHERE id = ?').run(telegramId, userId)
+}
+
+// --- Lives ---
+
+export function saveLive(userId, live) {
+  const existing = db.prepare('SELECT id FROM lives WHERE user_id = ? AND raw = ?').get(userId, live.raw)
+  if (existing) return existing.id
+  db.prepare(`
+    INSERT INTO lives (user_id, raw, number, gate_id, gate_name, message, bank, card_type, brand, country, country_emoji, enriched, captured_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    userId,
+    live.raw,
+    live.number,
+    live.gateId || null,
+    live.gateName || null,
+    live.message || null,
+    live.bank || null,
+    live.cardType || null,
+    live.brand || null,
+    live.country || null,
+    live.countryEmoji || null,
+    live.enriched ? 1 : 0,
+    live.capturedAt ? new Date(live.capturedAt).toISOString().replace('T', ' ').split('.')[0] : new Date().toISOString().replace('T', ' ').split('.')[0]
+  )
+}
+
+export function listLives(userId) {
+  return db.prepare(`
+    SELECT id, raw, number, gate_id AS gateId, gate_name AS gateName, message,
+           bank, card_type AS cardType, brand, country, country_emoji AS countryEmoji,
+           enriched, captured_at AS capturedAt
+    FROM lives WHERE user_id = ? ORDER BY captured_at DESC
+  `).all(userId)
+}
+
+export function deleteLive(userId, raw) {
+  db.prepare('DELETE FROM lives WHERE user_id = ? AND raw = ?').run(userId, raw)
+}
+
+export function clearLives(userId) {
+  db.prepare('DELETE FROM lives WHERE user_id = ?').run(userId)
 }
 
 export default db
