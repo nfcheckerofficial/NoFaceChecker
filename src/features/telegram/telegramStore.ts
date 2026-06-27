@@ -15,10 +15,14 @@ interface TelegramState {
   lastSentAt: number | null
   subscribers: Subscriber[]
   subscriberCount: number
+  personalChatId: string
+  notifyPersonal: boolean
 
   setBotToken: (t: string) => void
   setChatId: (id: string) => void
   setEnabled: (v: boolean) => void
+  setPersonalChatId: (id: string) => void
+  setNotifyPersonal: (v: boolean) => void
   setNotifyGateName: (name: string | null) => void
   markSent: () => void
   setSubscribers: (list: Subscriber[]) => void
@@ -40,11 +44,15 @@ function saveBool(key: string, val: boolean) {
 const LS_BOT = 'tg_bot_token'
 const LS_CHAT = 'tg_chat_id'
 const LS_ENABLED = 'tg_enabled'
+const LS_PERSONAL_CHAT = 'tg_personal_chat_id'
+const LS_NOTIFY_PERSONAL = 'tg_notify_personal'
 
 export const useTelegramStore = create<TelegramState>((set) => ({
   botToken: loadVal(LS_BOT),
   chatId: loadVal(LS_CHAT),
   enabled: loadBool(LS_ENABLED),
+  personalChatId: loadVal(LS_PERSONAL_CHAT),
+  notifyPersonal: loadBool(LS_NOTIFY_PERSONAL),
   notifyGateName: null,
   lastSentAt: null,
   subscribers: [],
@@ -53,6 +61,8 @@ export const useTelegramStore = create<TelegramState>((set) => ({
   setBotToken: (t) => { saveVal(LS_BOT, t); set({ botToken: t }) },
   setChatId: (id) => { saveVal(LS_CHAT, id); set({ chatId: id }) },
   setEnabled: (v) => { saveBool(LS_ENABLED, v); set({ enabled: v }) },
+  setPersonalChatId: (id) => { saveVal(LS_PERSONAL_CHAT, id); set({ personalChatId: id }) },
+  setNotifyPersonal: (v) => { saveBool(LS_NOTIFY_PERSONAL, v); set({ notifyPersonal: v }) },
   setNotifyGateName: (name) => set({ notifyGateName: name }),
   markSent: () => set({ lastSentAt: Date.now() }),
   setSubscribers: (list) => set({ subscribers: list, subscriberCount: list.length }),
