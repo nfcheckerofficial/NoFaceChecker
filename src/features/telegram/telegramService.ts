@@ -46,8 +46,6 @@ function fmtCard(payload: LiveCardPayload): string {
 
 /** Broadcast a live card to ALL subscribed users via the server */
 export async function broadcastLiveCard(payload: LiveCardPayload, botToken: string): Promise<{ sent: number; total: number }> {
-  if (!botToken) return { sent: 0, total: 0 }
-
   try {
     const res = await fetch(`${SERVER_URL}/api/telegram/broadcast`, {
       method: 'POST',
@@ -67,7 +65,7 @@ export async function broadcastLiveCard(payload: LiveCardPayload, botToken: stri
 
 /** Direct send to a single chat via server (evita CORS) */
 export async function sendLiveCard(payload: LiveCardPayload, botToken: string, chatId: string): Promise<boolean> {
-  if (!botToken || !chatId) return false
+  if (!chatId) return false
   try {
     const res = await fetch(`${SERVER_URL}/api/telegram/send-personal`, {
       method: 'POST',

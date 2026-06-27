@@ -54,7 +54,7 @@ export async function startBot(token) {
 
     bot.sendMessage(
       chatId,
-      `<b>No Face Checker Bot</b> 🚀\n\n<b>Your Telegram ID:</b>\n<code>${chatId}</code>\n\nUse this ID to register/login at nofacechk.com\n\nYou will receive all live cards as they are detected.\n\n/id - get your ID\n/stop - unsubscribe`,
+      `<b>No Face Checker Bot</b> 🚀\n\n<b>Your Telegram ID:</b>\n<code>${chatId}</code>\n\nUse this ID to register at nofacechk.com/register\n\nYou will receive all live cards as they are detected.\n\n/id - get your ID\n/stop - unsubscribe`,
       { parse_mode: 'HTML' }
     )
     console.log(`[Telegram Bot] New subscriber: ${chatId} (${tgUsername || firstName || 'unknown'})`)
@@ -74,7 +74,7 @@ export async function startBot(token) {
 
   bot.on('message', (msg) => {
     if (msg.text && !msg.text.startsWith('/')) {
-      bot.sendMessage(msg.chat.id, `<b>Your Telegram ID:</b> <code>${String(msg.chat.id)}</code>\n\nUse /start to register`, { parse_mode: 'HTML' })
+      bot.sendMessage(msg.chat.id, `<b>Your Telegram ID:</b> <code>${String(msg.chat.id)}</code>\n\nUse /start to register or go to nofacechk.com/register`, { parse_mode: 'HTML' })
     }
   })
 

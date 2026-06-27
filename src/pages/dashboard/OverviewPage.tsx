@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { clsx } from 'clsx'
 import {
@@ -6,7 +6,7 @@ import {
   CalendarClock, DollarSign, BadgeCheck, PieChart, BarChart3,
   Trophy, TrendingUp, Activity, Crown, Sparkles, Terminal,
   Search, Zap, Database, Clock, ArrowRight,
-  CheckCircle, XCircle, Loader, History,
+  CheckCircle, XCircle, Loader, History, Gauge,
 } from 'lucide-react'
 import { HoloStat } from '@/shared/ui/HoloStat'
 import { StreamRank } from '@/shared/ui/StreamRank'
@@ -14,6 +14,7 @@ import { BarChart } from '@/shared/ui/BarChart'
 import { CodeRain } from '@/shared/ui/CodeRain'
 import { useUserStore } from '@/features/checker/store/userStore'
 import { useCheckerStore } from '@/features/checker/store/checkerStore'
+import { useLivesStore } from '@/features/checker/store/livesStore'
 
 const EXTRA_BASES = [
   { label: 'BIN Pool', value: '527601, 492937, 453201', color: 'text-cyber-blue' },
@@ -38,9 +39,42 @@ function fmtCompact(n: number): string {
 export function OverviewPage() {
   const { profile, myStats, globalStats, rankers, fetchStats } = useUserStore()
   const { history } = useCheckerStore()
+  const { lives } = useLivesStore()
   const [currentTip, setCurrentTip] = useState(0)
   const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking')
   const tips = ['Use proxies to avoid rate limits', 'Rotate user agents every 10 requests', 'Check BIN before running gates', 'Keep your API keys secure']
+
+  const sessionLives = useRef(0)
+  const sessionTotal = useRef(0)
+  const sessionStarted = useRef(Date.now())
+  const prevHistoryLen = useRef(history.length)
+
+  if (history.length > prevHistoryLen.current) {
+    const newCount = history.length - prevHistoryLen.current
+    sessionTotal.current += newCount
+    for (let i = prevHistoryLen.current; i < history.length; i++) {
+      if (history[i].status === 'live') sessionLives.current++
+    }
+    prevHistoryLen.current = history.length
+  }
+
+  const gatePerf = useMemo(() => {
+    const map = new Map<string, { live: number; dead: number; unknown: number }>()
+    for (const h of history) {
+      const g = h.gateName || 'Unknown'
+      if (!map.has(g)) map.set(g, { live: 0, dead: 0, unknown: 0 })
+      const entry = map.get(g)!
+      if (h.status === 'live') entry.live++
+      else if (h.message === 'UNKNOWN') entry.unknown++
+      else entry.dead++
+    }
+    return Array.from(map.entries()).map(([name, vals]) => ({
+      name,
+      ...vals,
+      total: vals.live + vals.dead + vals.unknown,
+      rate: vals.live + vals.dead + vals.unknown > 0 ? (vals.live / (vals.live + vals.dead + vals.unknown)) * 100 : 0,
+    })).sort((a, b) => b.rate - a.rate)
+  }, [history])
 
   useEffect(() => {
     fetchStats()
@@ -160,6 +194,31 @@ export function OverviewPage() {
         <QuickStat icon={<Crown size={18} />} label="Lives" value={fmtCompact(myStats.lives)} color="text-cyber-purple" />
       </section>
 
+      {/* Session Stats */}
+      <section className="rounded-lg border border-cyber-border bg-cyber-panel/70 backdrop-blur-sm px-5 py-4">
+        <div className="flex items-center gap-2 mb-4">
+          <Gauge size={16} className="text-cyber-blue" />
+          <h2 className="text-sm font-semibold text-cyber-text">This Session</h2>
+          <span className="text-[10px] text-cyber-text-muted ml-auto">
+            Started {new Date(sessionStarted.current).toLocaleTimeString()}
+          </span>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-cyber-black/60 border border-cyber-border/40 rounded-lg p-3 text-center">
+            <p className="text-lg font-bold text-cyber-text">{sessionTotal.current}</p>
+            <p className="text-[10px] text-cyber-text-muted">Checks</p>
+          </div>
+          <div className="bg-cyber-black/60 border border-cyber-border/40 rounded-lg p-3 text-center">
+            <p className="text-lg font-bold text-cyber-green">{sessionLives.current}</p>
+            <p className="text-[10px] text-cyber-text-muted">Lives</p>
+          </div>
+          <div className="bg-cyber-black/60 border border-cyber-border/40 rounded-lg p-3 text-center">
+            <p className="text-lg font-bold text-cyber-text">{lives.length}</p>
+            <p className="text-[10px] text-cyber-text-muted">In vault</p>
+          </div>
+        </div>
+      </section>
+
       {/* System Status */}
       <section className="rounded-lg border border-cyber-border bg-cyber-panel/70 backdrop-blur-sm px-5 py-4">
         <div className="flex items-center gap-2 mb-4">
@@ -194,9 +253,31 @@ export function OverviewPage() {
 
       {/* System Monitor */}
       <section className="flex flex-col gap-5">
-        <ChartCard icon={<BarChart3 size={18} className="text-cyber-blue" />} title="Your Activity Breakdown">
+        <ChartCard icon={<BarChart3 size={18} className="text-cyber-blue" />} title="Gate Performance (Live Rate)">
           <div className="p-3">
-            <BarChart data={chartData} height={180} color="var(--color-cyber-blue)" />
+            {gatePerf.length === 0 ? (
+              <div className="text-center py-6">
+                <p className="text-xs text-cyber-text-muted">No gate data yet</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {gatePerf.slice(0, 10).map(g => (
+                  <div key={g.name} className="flex items-center gap-3">
+                    <span className="text-[11px] text-cyber-text-muted w-24 truncate shrink-0" title={g.name}>{g.name}</span>
+                    <div className="flex-1 h-3 rounded-full bg-cyber-black/60 overflow-hidden">
+                      {g.total > 0 && (
+                        <>
+                          <div className="h-full bg-cyber-green float-left" style={{ width: `${(g.live / g.total) * 100}%` }} />
+                          <div className="h-full bg-cyber-red float-left" style={{ width: `${(g.dead / g.total) * 100}%` }} />
+                          <div className="h-full bg-cyber-yellow float-left" style={{ width: `${(g.unknown / g.total) * 100}%` }} />
+                        </>
+                      )}
+                    </div>
+                    <span className="text-[11px] font-mono text-cyber-green w-12 text-right">{g.rate.toFixed(0)}%</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </ChartCard>
 

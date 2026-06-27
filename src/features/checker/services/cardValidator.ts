@@ -52,6 +52,7 @@ export interface CheckResult {
   binSource: 'api' | 'fallback'
   timestamp: Date
   message: string
+  gateName?: string
 }
 
 function maskNumber(cleaned: string): string {

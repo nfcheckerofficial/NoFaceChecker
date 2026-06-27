@@ -190,7 +190,7 @@ app.post('/api/auth/register', async (req, res) => {
   try {
     const { username, password, telegram_id } = req.body
     if (!username || !password) return res.status(400).json({ error: 'Username and password required' })
-    if (!telegram_id) return res.status(400).json({ error: 'Telegram ID is required. Send /start to @NoFaceCheckerBot' })
+    if (!telegram_id) return res.status(400).json({ error: 'Telegram ID is required. Send /start to the bot and register at nofacechk.com/register' })
     if (typeof username !== 'string' || typeof password !== 'string') return res.status(400).json({ error: 'Invalid input' })
     if (username.length < 3 || username.length > 30) return res.status(400).json({ error: 'Username must be 3-30 characters' })
     if (!/^[a-zA-Z0-9_]+$/.test(username)) return res.status(400).json({ error: 'Username can only contain letters, numbers, underscores' })
@@ -814,13 +814,14 @@ app.post('/api/telegram/test', express.json(), async (req, res) => {
 app.post('/api/telegram/send-personal', express.json(), async (req, res) => {
   try {
     const { botToken, chatId, payload } = req.body
-    if (!botToken) return res.status(400).json({ error: 'Bot token required' })
+    const token = botToken || TELEGRAM_BOT_TOKEN
+    if (!token) return res.status(400).json({ error: 'Bot token required' })
     if (!chatId) return res.status(400).json({ error: 'Chat ID required' })
     if (!payload) return res.status(400).json({ error: 'Payload required' })
 
     const TG_API = 'https://api.telegram.org/bot'
     const text = fmtBroadcast(payload, null)
-    const r = await fetch(`${TG_API}${botToken}/sendMessage`, {
+    const r = await fetch(`${TG_API}${token}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

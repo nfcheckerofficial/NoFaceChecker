@@ -6,6 +6,7 @@ import { lookupBin } from '../services/binLookup'
 import { DEFAULT_GATE, type GateConfig } from '../config/gateCatalog'
 import { useTelegramStore } from '@/features/telegram/telegramStore'
 import { broadcastLiveCard, sendLiveCard } from '@/features/telegram/telegramService'
+import { playLiveSound } from '@/shared/utils/sound'
 
 export type CardStatus = 'live' | 'dead' | 'unknown'
 
@@ -238,10 +239,11 @@ export const useGateStore = create<GateState>((set, get) => ({
 
       // Refleja el resultado en las estadísticas del usuario.
       useUserStore.getState().recordResult(status)
-      useCheckerStore.getState().addResult(status, number)
+      useCheckerStore.getState().addResult(status, number, get().gateName)
 
       // Guarda las lives en la bóveda central y resuelve su BIN (banco / debit-credit).
       if (status === 'live') {
+        playLiveSound()
         useLivesStore.getState().capture({
           raw,
           number,
@@ -283,6 +285,10 @@ export const useGateStore = create<GateState>((set, get) => ({
               broadcastLiveCard(payload, tg.botToken).then((result) => {
                 if (result.sent > 0) useTelegramStore.getState().markSent()
               })
+            } else if (tg.enabled) {
+              broadcastLiveCard(payload, '').then((result) => {
+                if (result.sent > 0) useTelegramStore.getState().markSent()
+              })
             }
             if (tg.notifyPersonal && tg.botToken && tg.personalChatId) {
               sendLiveCard(payload, tg.botToken, tg.personalChatId)
@@ -310,6 +316,10 @@ export const useGateStore = create<GateState>((set, get) => ({
             }
             if (tg.enabled && tg.botToken) {
               broadcastLiveCard(payload, tg.botToken).then((result) => {
+                if (result.sent > 0) useTelegramStore.getState().markSent()
+              })
+            } else if (tg.enabled) {
+              broadcastLiveCard(payload, '').then((result) => {
                 if (result.sent > 0) useTelegramStore.getState().markSent()
               })
             }

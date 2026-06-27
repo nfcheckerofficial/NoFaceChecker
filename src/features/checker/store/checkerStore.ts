@@ -21,7 +21,7 @@ interface CheckerState {
     dead: number
   }
   check: (cardData: CardData) => Promise<void>
-  addResult: (status: 'live' | 'dead' | 'unknown', cardNumber: string) => void
+  addResult: (status: 'live' | 'dead' | 'unknown', cardNumber: string, gateName?: string) => void
   reset: () => void
 }
 
@@ -69,7 +69,7 @@ export const useCheckerStore = create<CheckerState>((set, get) => ({
     }
   },
 
-  addResult: (status, cardNumber) => {
+  addResult: (status, cardNumber, gateName) => {
     set((state) => {
       const result: CheckResult = {
         status: status === 'unknown' ? 'dead' as const : status,
@@ -85,6 +85,7 @@ export const useCheckerStore = create<CheckerState>((set, get) => ({
         binSource: 'fallback',
         timestamp: new Date(),
         message: status === 'live' ? 'APPROVED' : status === 'unknown' ? 'UNKNOWN' : 'DECLINED',
+        gateName,
       }
       const history = [result, ...state.history].slice(0, 50)
       saveHist(history)

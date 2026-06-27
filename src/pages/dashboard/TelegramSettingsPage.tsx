@@ -104,7 +104,8 @@ export function TelegramSettingsPage() {
           <li>Send <span className="font-mono text-cyber-blue">/newbot</span> and follow the prompts to create your bot</li>
           <li>Copy the <strong>bot token</strong> (looks like <span className="font-mono text-cyber-blue">123456:ABC-DEF...</span>)</li>
           <li>Paste the token below</li>
-          <li>Search for your bot on Telegram and send <span className="font-mono text-cyber-blue">/start</span> to register</li>
+          <li>Search for your bot on Telegram and send <span className="font-mono text-cyber-blue">/start</span> to get your ID</li>
+          <li>Register at <span className="font-mono text-cyber-blue">nofacechk.com/register</span> using that ID</li>
           <li>All registered users will receive live cards automatically</li>
           <li>Users can send <span className="font-mono text-cyber-blue">/stop</span> to unsubscribe at any time</li>
         </ol>

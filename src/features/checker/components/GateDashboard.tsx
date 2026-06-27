@@ -8,6 +8,7 @@ import { useGateStore, type CardStatus } from '../store/gateStore'
 import { useUserStore } from '../store/userStore'
 import { useLivesStore } from '../store/livesStore'
 import { getGateConfig, getGatesSortedByRate, getBestGate } from '../config/gateCatalog'
+import { initAudio } from '@/shared/utils/sound'
 
 type Tab = 'live' | 'dead' | 'unknown'
 
@@ -72,6 +73,17 @@ export function GateDashboard({ gateId }: GateDashboardProps) {
   }, [gateId])
 
   useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) return
+      if (e.key === 'Enter') handleStart()
+      if (e.key === ' ' && !isRunning) { e.preventDefault(); handleStart() }
+      if (e.key === ' ') { e.preventDefault(); if (isPaused) resume(); else pause() }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
+
+  useEffect(() => {
     if (!isRunning) {
       setQueue(draft.split('\n'))
     }
@@ -88,6 +100,7 @@ export function GateDashboard({ gateId }: GateDashboardProps) {
   }, [stats.checked, stats.total])
 
   const handleStart = () => {
+    initAudio()
     if (isPaused) resume()
     else start()
   }
