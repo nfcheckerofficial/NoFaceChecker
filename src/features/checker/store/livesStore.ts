@@ -1,33 +1,37 @@
 import { create } from 'zustand'
 
+const STORAGE_KEY = 'chk_lives_vault'
+
 export interface LiveCard {
-  /** Línea cruda: number|MM|YYYY|CVV */
   raw: string
   number: string
-  /** Id del gate donde salió live. */
   gateId: string
-  /** Nombre legible del gate. */
   gateName: string
   message: string
   capturedAt: number
-  /** Datos del emisor (rellenados de forma asíncrona vía BIN lookup). */
   bank?: string | null
-  /** 'debit' | 'credit' | null */
   cardType?: string | null
   brand?: string | null
   country?: string | null
   countryEmoji?: string | null
-  /** Indica si el BIN lookup ya terminó. */
   enriched?: boolean
+}
+
+function loadLives(): LiveCard[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+function saveLives(lives: LiveCard[]) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(lives)) } catch {}
 }
 
 interface LivesState {
   lives: LiveCard[]
-  /** Guarda una tarjeta live en la bóveda (evita duplicados exactos). */
   capture: (card: LiveCard) => void
-  /** Completa los datos de emisor de una tarjeta ya guardada. */
   enrich: (raw: string, info: Partial<LiveCard>) => void
-  /** Elimina una tarjeta por su línea cruda. */
   remove: (raw: string) => void
   clear: () => void
 }
@@ -35,23 +39,34 @@ interface LivesState {
 const MAX_LIVES = 500
 
 export const useLivesStore = create<LivesState>((set) => ({
-  lives: [],
+  lives: loadLives(),
 
   capture: (card) =>
     set((s) => {
       if (s.lives.some((l) => l.raw === card.raw)) return s
-      return { lives: [card, ...s.lives].slice(0, MAX_LIVES) }
+      const lives = [card, ...s.lives].slice(0, MAX_LIVES)
+      saveLives(lives)
+      return { lives }
     }),
 
   enrich: (raw, info) =>
-    set((s) => ({
-      lives: s.lives.map((l) =>
+    set((s) => {
+      const lives = s.lives.map((l) =>
         l.raw === raw ? { ...l, ...info, enriched: true } : l
-      ),
-    })),
+      )
+      saveLives(lives)
+      return { lives }
+    }),
 
   remove: (raw) =>
-    set((s) => ({ lives: s.lives.filter((l) => l.raw !== raw) })),
+    set((s) => {
+      const lives = s.lives.filter((l) => l.raw !== raw)
+      saveLives(lives)
+      return { lives }
+    }),
 
-  clear: () => set({ lives: [] }),
+  clear: () => {
+    saveLives([])
+    set({ lives: [] })
+  },
 }))

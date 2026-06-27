@@ -8,6 +8,21 @@ import { broadcastLiveCard } from '@/features/telegram/telegramService'
 
 export type CardStatus = 'live' | 'dead' | 'unknown'
 
+function gateStorageKey(gateId: string) {
+  return `chk_gate_${gateId}`
+}
+
+function loadGateResults(gateId: string): GateCard[] {
+  try {
+    const raw = localStorage.getItem(gateStorageKey(gateId))
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+function saveGateResults(gateId: string, results: GateCard[]) {
+  try { localStorage.setItem(gateStorageKey(gateId), JSON.stringify(results.slice(0, 200))) } catch {}
+}
+
 export interface GateCard {
   /** Línea cruda tal cual se ingresó: number|MM|YYYY|CVV */
   raw: string
@@ -107,14 +122,29 @@ export const useGateStore = create<GateState>((set, get) => ({
 
   configure: (config) => {
     activeConfig = config
-    // Si es un gate distinto al actual, reinicia el estado de trabajo.
     if (get().gateId !== config.id) {
+      const saved = loadGateResults(config.id)
+      const stats = saved.reduce((acc, r) => {
+        acc.checked++
+        if (r.status === 'live') acc.live++
+        else if (r.status === 'dead') acc.dead++
+        else acc.unknown++
+        return acc
+      }, { total: 0, live: 0, dead: 0, unknown: 0, checked: 0 })
+      stats.total = stats.checked
       set({
         gateId: config.id,
         gateName: config.name,
         liveCost: config.liveCost,
         deadCost: config.deadCost,
-        ...EMPTY_STATE,
+        queue: [],
+        results: saved,
+        currentCard: null,
+        prevCard: null,
+        isRunning: false,
+        isPaused: false,
+        notice: null,
+        stats,
       })
     } else {
       set({
@@ -158,6 +188,7 @@ export const useGateStore = create<GateState>((set, get) => ({
   },
 
   reset: () => {
+    saveGateResults(get().gateId, [])
     set({ ...EMPTY_STATE })
   },
 
@@ -278,18 +309,22 @@ export const useGateStore = create<GateState>((set, get) => ({
           })
       }
 
-      set((cur) => ({
-        results: [card, ...cur.results],
-        prevCard: number,
-        currentCard: null,
-        stats: {
-          ...cur.stats,
-          checked: cur.stats.checked + 1,
-          live: cur.stats.live + (status === 'live' ? 1 : 0),
-          dead: cur.stats.dead + (status === 'dead' ? 1 : 0),
-          unknown: cur.stats.unknown + (status === 'unknown' ? 1 : 0),
-        },
-      }))
+      set((cur) => {
+        const newResults = [card, ...cur.results]
+        saveGateResults(cur.gateId, newResults)
+        return {
+          results: newResults,
+          prevCard: number,
+          currentCard: null,
+          stats: {
+            ...cur.stats,
+            checked: cur.stats.checked + 1,
+            live: cur.stats.live + (status === 'live' ? 1 : 0),
+            dead: cur.stats.dead + (status === 'dead' ? 1 : 0),
+            unknown: cur.stats.unknown + (status === 'unknown' ? 1 : 0),
+          },
+        }
+      })
 
       setTimeout(() => get()._tick(), activeConfig.speedMs)
     }, activeConfig.speedMs * 0.4)
