@@ -148,15 +148,14 @@ export const useUserStore = create<UserState>((set, get) => ({
   },
 
   syncFromAuth: (user) => {
-    const localCredits = loadCredits()
-    const credits = localCredits >= 0 ? localCredits : user.credits
+    saveCredits(user.credits)
     const localSt = loadStats()
     set({
       profile: {
         username: user.username,
         telegramId: user.telegram_id || '',
         registeredOn: user.created_at ? user.created_at.split('T')[0] : '',
-        credits,
+        credits: user.credits,
       },
       myStats: localSt ?? { lives: 0, dead: 0, unknown: 0 },
     })

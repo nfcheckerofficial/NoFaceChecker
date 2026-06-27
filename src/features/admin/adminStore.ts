@@ -59,7 +59,7 @@ interface AdminState {
   toggleBan: (id: string, reason?: string) => void
   addCredits: (id: string, amount: number) => void
   removeCredits: (id: string, amount: number) => Promise<boolean>
-  resetStats: () => Promise<boolean>
+  resetAllCredits: () => Promise<boolean>
 
   addGate: (g: Omit<Gate, 'id'>) => void
   updateGate: (id: string, patch: Partial<Gate>) => void
@@ -164,7 +164,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     syncUserCredits(user.username, newCredits)
     return true
   },
-  resetStats: async () => {
+  resetAllCredits: async () => {
     const token = useAuthStore.getState().token
     if (!token) return false
     try {

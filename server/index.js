@@ -296,6 +296,7 @@ app.get('/api/admin/users', authMiddleware, (req, res) => {
 
 app.post('/api/admin/reset-credits', authMiddleware, (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' })
+  console.warn(`[ADMIN] ${req.user.username} reset ALL credits to 0 at ${new Date().toISOString()}`)
   resetAllCredits()
   res.json({ ok: true })
 })

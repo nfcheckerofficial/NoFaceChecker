@@ -12,7 +12,7 @@ interface UserForm { username: string; email: string; credits: number; role: 'ad
 const emptyUser: UserForm = { username: '', email: '', credits: 0, role: 'user' }
 
 export function ControlPanelPage() {
-  const { users, fetchUsers, addUser, updateUser, deleteUser, toggleBan, addCredits, removeCredits, resetStats } = useAdminStore()
+  const { users, fetchUsers, addUser, updateUser, deleteUser, toggleBan, addCredits, removeCredits, resetAllCredits } = useAdminStore()
 
   useEffect(() => {
     fetchUsers()
@@ -27,6 +27,7 @@ export function ControlPanelPage() {
   const [banReason, setBanReason] = useState('')
   const [deleteConfirm, setDeleteConfirm] = useState('')
   const [creditsAmount, setCreditsAmount] = useState(10)
+  const [confirmReset, setConfirmReset] = useState(false)
   const [creditsMode, setCreditsMode] = useState<'add' | 'remove'>('add')
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
@@ -136,14 +137,31 @@ export function ControlPanelPage() {
             >
               <UserPlus size={14} /> Add User
             </button>
-            <button onClick={async () => {
-              const ok = await resetStats()
-              showNotif(ok ? 'success' : 'error', ok ? 'All stats reset to 0' : 'Failed to reset stats')
-            }}
-              className="px-3 py-2 bg-cyber-red/20 border border-cyber-red/50 rounded-lg text-sm text-cyber-red hover:bg-cyber-red/30 transition-colors flex items-center gap-2"
-            >
-              <X size={14} /> Reset Stats
-            </button>
+            {confirmReset ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-cyber-red font-bold">¿Resetear TODOS los credits a 0?</span>
+                <button onClick={async () => {
+                  const ok = await resetAllCredits()
+                  setConfirmReset(false)
+                  showNotif(ok ? 'success' : 'error', ok ? 'All credits reset to 0' : 'Failed to reset credits')
+                }}
+                  className="px-3 py-2 bg-cyber-red border border-cyber-red rounded-lg text-xs text-white hover:bg-cyber-red/80 transition-colors font-bold"
+                >
+                  Confirmar
+                </button>
+                <button onClick={() => setConfirmReset(false)}
+                  className="px-3 py-2 bg-cyber-dark border border-cyber-border rounded-lg text-xs text-cyber-text-muted hover:text-cyber-text transition-colors"
+                >
+                  Cancelar
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => setConfirmReset(true)}
+                className="px-3 py-2 bg-cyber-red/20 border border-cyber-red/50 rounded-lg text-sm text-cyber-red hover:bg-cyber-red/30 transition-colors flex items-center gap-2"
+              >
+                <X size={14} /> Reset ALL Credits
+              </button>
+            )}
           </div>
         </div>
 
