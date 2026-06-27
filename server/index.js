@@ -882,27 +882,28 @@ function escapeMd(text) {
 
 function fmtBroadcast(payload, credits) {
   const lines = [
-    `🚀 *LIVE CARD DETECTED*`,
+    `🔥 *LIVE HIT* 🔥`,
     ``,
-    `\`${escapeMd(payload.raw)}\``,
+    '```',
+    `${escapeMd(payload.raw)}`,
+    '```',
     ``,
-    `── *GATE* ──`,
-    `${escapeMd(payload.gateName)}`,
+    `╭── *GATE* ──╮`,
+    `│ ${escapeMd(payload.gateName)}`,
+    `╰────────────╯`,
     ``,
-    `── *BIN INFO* ──`,
-    `BIN: \`${escapeMd(payload.bin)}\``,
-    `Brand: ${escapeMd(payload.brand)}`,
-    `Issuer: ${escapeMd(payload.bank)}`,
-    `Country: ${payload.countryEmoji} ${escapeMd(payload.country)}`,
-    `Type: ${escapeMd(payload.cardType)} · ${escapeMd(payload.cardCategory)}`,
+    `├ BIN:     \`${escapeMd(payload.bin)}\``,
+    `├ BRAND:   ${escapeMd(payload.brand)}`,
+    `├ BANK:    ${escapeMd(payload.bank)}`,
+    `├ COUNTRY: ${payload.countryEmoji} ${escapeMd(payload.country)}`,
+    `└ TYPE:    ${escapeMd(payload.cardType)} | ${escapeMd(payload.cardCategory)}`,
     ``,
-    `Response: ${escapeMd(payload.message)}`,
+    `✅ *${escapeMd(payload.message)}*`,
   ]
   if (credits != null) {
     lines.push(
       ``,
-      `── *ACCOUNT* ──`,
-      `Credits remaining: \`${escapeMd(String(credits))}\``,
+      `├ CREDITS: ${escapeMd(String(credits))}`,
     )
   }
   return lines.join('\n')
