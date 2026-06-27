@@ -841,6 +841,31 @@ app.post('/api/telegram/send-personal', express.json(), async (req, res) => {
   }
 })
 
+// Check if the authenticated user is subscribed
+app.get('/api/telegram/am-i-subscribed', authMiddleware, (req, res) => {
+  try {
+    const user = getUserById(req.user.id)
+    if (!user || !user.telegram_id) return res.json({ subscribed: false })
+    const subs = listSubscribers()
+    const subscribed = subs.some((s) => s.chat_id === user.telegram_id)
+    res.json({ subscribed })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// Subscribe the authenticated user's telegram_id
+app.post('/api/telegram/subscribe-me', authMiddleware, (req, res) => {
+  try {
+    const user = getUserById(req.user.id)
+    if (!user || !user.telegram_id) return res.status(400).json({ error: 'No Telegram ID linked' })
+    addSubscriber(user.telegram_id, user.username, user.username)
+    res.json({ ok: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // List all subscribers
 app.get('/api/telegram/subscribers', (_req, res) => {
   try {

@@ -54,6 +54,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       saveToken(data.token)
       set({ token: data.token, user: data.user, loading: false })
       useUserStore.getState().syncFromAuth(data.user)
+      fetch(`${SERVER_URL}/api/telegram/subscribe-me`, {
+        method: 'POST', headers: { Authorization: `Bearer ${data.token}` },
+      }).catch(() => {})
       return true
     } catch (err) {
       set({ loading: false, error: String(err) })
@@ -94,6 +97,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       saveToken(data.token)
       set({ token: data.token, user: data.user, loading: false })
       useUserStore.getState().syncFromAuth(data.user)
+      fetch(`${SERVER_URL}/api/telegram/subscribe-me`, {
+        method: 'POST', headers: { Authorization: `Bearer ${data.token}` },
+      }).catch(() => {})
       return true
     } catch (err) {
       set({ loading: false, error: String(err) })
@@ -136,6 +142,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const user = await res.json()
       set({ user })
       useUserStore.getState().syncFromAuth(user)
+      fetch(`${SERVER_URL}/api/telegram/subscribe-me`, {
+        method: 'POST', headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => {})
     } catch {
       saveToken(null)
       set({ token: null, user: null })
