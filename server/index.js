@@ -58,6 +58,7 @@ if (!STRIPE_SECRET_KEY) {
 }
 
 const isProd = NODE_ENV === 'production'
+const DEPLOY_VERSION = process.env.RENDER_GIT_COMMIT || process.env.DEPLOY_VERSION || String(Date.now())
 let isLiveKey = false
 let isTestKey = false
 let stripe = null
@@ -839,6 +840,11 @@ app.post('/api/telegram/send-personal', express.json(), async (req, res) => {
     console.error('[Telegram] Send personal error:', err.message)
     res.status(500).json({ error: err.message })
   }
+})
+
+// Current deploy version (for auto-refresh)
+app.get('/api/version', (_req, res) => {
+  res.json({ version: DEPLOY_VERSION })
 })
 
 // Check if the authenticated user is subscribed

@@ -11,6 +11,7 @@ import { DashboardLayout } from '@/widgets/DashboardLayout/DashboardLayout'
 import { ProtectedRoute } from '@/features/auth/components/ProtectedRoute'
 import { AdminRoute } from '@/features/auth/components/AdminRoute'
 import { GateDashboard } from '@/features/checker/components/GateDashboard'
+import { VersionChecker } from '@/features/version/VersionChecker'
 
 const OverviewPage = lazy(() => import('@/pages/dashboard/OverviewPage').then(m => ({ default: m.OverviewPage })))
 const GeneratorDashboardPage = lazy(() => import('@/pages/dashboard/GeneratorDashboardPage').then(m => ({ default: m.GeneratorDashboardPage })))
@@ -63,6 +64,7 @@ function RouteChangeTracker() {
 export function AppRoutes() {
   return (
     <>
+      <VersionChecker />
       <RouteChangeTracker />
       <Routes>
       <Route path="/" element={<LandingPage />} />
