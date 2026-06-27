@@ -203,17 +203,17 @@ app.post('/api/auth/register', async (req, res) => {
     if (password.length < 4) return res.status(400).json({ error: 'Password must be at least 4 characters' })
     if (!/^\d+$/.test(telegram_id)) return res.status(400).json({ error: 'Invalid Telegram ID format' })
 
-    const existing = getUserByUsername(username)
+    const existing = await getUserByUsername(username)
     if (existing) return res.status(409).json({ error: 'Username already taken' })
 
-    const existingTg = getUserByTelegramId(telegram_id)
+    const existingTg = await getUserByTelegramId(telegram_id)
     if (existingTg) return res.status(409).json({ error: 'Telegram ID already linked to another account' })
 
     const passwordHash = await bcrypt.hash(password, 10)
-    const user = createUser(username, passwordHash, telegram_id)
+    const user = await createUser(username, passwordHash, telegram_id)
     if (!user) return res.status(500).json({ error: 'Failed to create user' })
 
-    addSubscriber(telegram_id, username, username)
+    await addSubscriber(telegram_id, username, username)
 
     const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' })
     res.status(201).json({ token, user })
@@ -229,7 +229,7 @@ app.post('/api/auth/login', async (req, res) => {
     if (!username || !password) return res.status(400).json({ error: 'Username and password required' })
     if (typeof username !== 'string' || typeof password !== 'string') return res.status(400).json({ error: 'Invalid input' })
 
-    const user = getUserByUsername(username)
+    const user = await getUserByUsername(username)
     if (!user) return res.status(401).json({ error: 'Invalid credentials' })
 
     const match = await bcrypt.compare(password, user.password_hash)
@@ -250,7 +250,7 @@ app.post('/api/auth/telegram-login', async (req, res) => {
   try {
     const { telegram_id } = req.body
     if (!telegram_id) return res.status(400).json({ error: 'Telegram ID required' })
-    const user = getUserByTelegramId(telegram_id)
+    const user = await getUserByTelegramId(telegram_id)
     if (!user) return res.status(404).json({ error: 'Telegram ID not linked. Send /start to @NoFaceCheckerBot' })
     const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' })
     res.json({
@@ -267,11 +267,11 @@ app.post('/api/auth/link-telegram', authMiddleware, async (req, res) => {
   try {
     const { telegram_id } = req.body
     if (!telegram_id) return res.status(400).json({ error: 'Telegram ID required' })
-    const existing = getUserByTelegramId(telegram_id)
+    const existing = await getUserByTelegramId(telegram_id)
     if (existing && existing.id !== req.user.id) return res.status(409).json({ error: 'Telegram ID already linked to another account' })
-    linkTelegramToUser(req.user.id, telegram_id)
-    addSubscriber(telegram_id, req.user.username, req.user.username)
-    const user = getUserById(req.user.id)
+    await linkTelegramToUser(req.user.id, telegram_id)
+    await addSubscriber(telegram_id, req.user.username, req.user.username)
+    const user = await getUserById(req.user.id)
     res.json({ user: { id: user.id, username: user.username, credits: user.credits, role: user.role, telegram_id: user.telegram_id, created_at: user.created_at } })
   } catch (err) {
     console.error('[auth] link-telegram error:', err.message)
@@ -279,10 +279,10 @@ app.post('/api/auth/link-telegram', authMiddleware, async (req, res) => {
   }
 })
 
-app.get('/api/admin/users', authMiddleware, (req, res) => {
+app.get('/api/admin/users', authMiddleware, async (req, res) => {
   try {
     if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' })
-    const users = listUsers()
+    const users = await listUsers()
     res.json(users.map(u => ({
       id: String(u.id),
       username: u.username,
@@ -300,19 +300,19 @@ app.get('/api/admin/users', authMiddleware, (req, res) => {
   }
 })
 
-app.post('/api/admin/reset-credits', authMiddleware, (req, res) => {
+app.post('/api/admin/reset-credits', authMiddleware, async (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' })
   console.warn(`[ADMIN] ${req.user.username} reset ALL credits to 0 at ${new Date().toISOString()}`)
-  resetAllCredits()
+  await resetAllCredits()
   res.json({ ok: true })
 })
 
-app.post('/api/admin/set-credits', authMiddleware, (req, res) => {
+app.post('/api/admin/set-credits', authMiddleware, async (req, res) => {
   try {
     if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' })
     const { username, credits } = req.body
     if (!username || typeof credits !== 'number' || credits < 0) return res.status(400).json({ error: 'Invalid data' })
-    updateUserCredits(username, credits)
+    await updateUserCredits(username, credits)
     res.json({ ok: true, username, credits })
   } catch (err) {
     console.error('[admin] set-credits error:', err.message)
@@ -320,16 +320,16 @@ app.post('/api/admin/set-credits', authMiddleware, (req, res) => {
   }
 })
 
-app.get('/api/auth/me', authMiddleware, (req, res) => {
-  const user = getUserById(req.user.id)
+app.get('/api/auth/me', authMiddleware, async (req, res) => {
+  const user = await getUserById(req.user.id)
   if (!user) return res.status(404).json({ error: 'User not found' })
   res.json(user)
 })
 
-app.put('/api/auth/credits', authMiddleware, (req, res) => {
+app.put('/api/auth/credits', authMiddleware, async (req, res) => {
   const { credits } = req.body
   if (typeof credits !== 'number' || credits < 0) return res.status(400).json({ error: 'Invalid credits value' })
-  updateUserCredits(req.user.username, credits)
+  await updateUserCredits(req.user.username, credits)
   res.json({ ok: true, credits })
 })
 
@@ -337,7 +337,8 @@ app.put('/api/auth/credits', authMiddleware, (req, res) => {
 // Stripe puede reenviar eventos. markEventProcessed usa UNIQUE(event_id)
 // en SQLite, así que sobrevive a reinicios del servidor.
 async function handleStripeEvent(event) {
-  if (!markEventProcessed(event.id)) {
+  const processed = await markEventProcessed(event.id)
+  if (!processed) {
     console.log(`[webhook] evento ${event.id} ya procesado, ignorado`)
     return
   }
@@ -371,7 +372,7 @@ async function handleStripeEvent(event) {
         email = customer.deleted ? null : customer.email
       }
 
-      saveValidatedCard({
+      await saveValidatedCard({
         pmId: pm.id,
         customerId: si.customer ?? null,
         email,
@@ -400,7 +401,7 @@ async function handleStripeEvent(event) {
       // el reto 3D Secure de forma asíncrona). Actualiza el recibo.
       const intent = event.data.object
       const charge = intent.charges?.data?.[0]
-      saveCharge({
+      await saveCharge({
         piId: intent.id,
         pmId: typeof intent.payment_method === 'string' ? intent.payment_method : null,
         customerId: typeof intent.customer === 'string' ? intent.customer : null,
@@ -421,7 +422,7 @@ async function handleStripeEvent(event) {
       // Registra el fallo en el recibo correspondiente. Múltiples fallos
       // seguidos => posible card testing; Stripe Radar normalmente lo bloquea.
       const intent = event.data.object
-      saveCharge({
+      await saveCharge({
         piId: intent.id,
         pmId: typeof intent.payment_method === 'string' ? intent.payment_method : null,
         customerId: typeof intent.customer === 'string' ? intent.customer : null,
@@ -586,10 +587,10 @@ app.get('/api/setup-intent/:id', async (req, res) => {
 })
 
 // Lista los métodos de pago validados y guardados (solo metadatos seguros).
-app.get('/api/saved-cards', (req, res) => {
+app.get('/api/saved-cards', async (req, res) => {
   try {
     const { email } = req.query
-    const cards = listValidatedCards(typeof email === 'string' ? email : undefined)
+    const cards = await listValidatedCards(typeof email === 'string' ? email : undefined)
     res.json(
       cards.map((c) => ({
         id: c.id,
@@ -653,7 +654,7 @@ app.post('/api/charge-saved-card', async (req, res) => {
       if (err.code === 'authentication_required') {
         const pi = err.raw?.payment_intent
         if (pi) {
-          saveCharge({
+          await saveCharge({
             piId: pi.id,
             pmId: paymentMethodId,
             customerId,
@@ -680,7 +681,7 @@ app.post('/api/charge-saved-card', async (req, res) => {
 
     // Cargo exitoso: registra el recibo.
     const charge = intent.charges?.data?.[0]
-    saveCharge({
+    await saveCharge({
       piId: intent.id,
       pmId: paymentMethodId,
       customerId,
@@ -707,10 +708,10 @@ app.post('/api/charge-saved-card', async (req, res) => {
 })
 
 // Lista los recibos de cobros (historial de transacciones).
-app.get('/api/charges', (req, res) => {
+app.get('/api/charges', async (req, res) => {
   try {
     const { email } = req.query
-    const rows = listCharges(typeof email === 'string' ? email : undefined)
+    const rows = await listCharges(typeof email === 'string' ? email : undefined)
     res.json(
       rows.map((c) => ({
         id: c.id,
@@ -754,7 +755,7 @@ app.post('/api/telegram/broadcast', express.json(), async (req, res) => {
     const token = botToken || TELEGRAM_BOT_TOKEN
     if (!token) return res.status(400).json({ error: 'No bot token available' })
 
-    const subscribers = listSubscribers(true)
+    const subscribers = await listSubscribers(true)
     if (subscribers.length === 0) return res.json({ sent: 0, total: 0 })
 
     const TG_API = 'https://api.telegram.org/bot'
@@ -763,7 +764,7 @@ app.post('/api/telegram/broadcast', express.json(), async (req, res) => {
     await Promise.allSettled(
       subscribers.map(async (sub) => {
         try {
-          const user = getUserByTelegramId(sub.chat_id)
+          const user = await getUserByTelegramId(sub.chat_id)
           const text = fmtBroadcast(payload, user ? user.credits : null)
           const r = await fetch(`${TG_API}${token}/sendMessage`, {
             method: 'POST',
@@ -856,11 +857,11 @@ app.get('/api/version', (_req, res) => {
 })
 
 // Check if the authenticated user is subscribed
-app.get('/api/telegram/am-i-subscribed', authMiddleware, (req, res) => {
+app.get('/api/telegram/am-i-subscribed', authMiddleware, async (req, res) => {
   try {
-    const user = getUserById(req.user.id)
+    const user = await getUserById(req.user.id)
     if (!user || !user.telegram_id) return res.json({ subscribed: false })
-    const subs = listSubscribers()
+    const subs = await listSubscribers()
     const subscribed = subs.some((s) => s.chat_id === user.telegram_id)
     res.json({ subscribed })
   } catch (err) {
@@ -869,11 +870,11 @@ app.get('/api/telegram/am-i-subscribed', authMiddleware, (req, res) => {
 })
 
 // Subscribe the authenticated user's telegram_id
-app.post('/api/telegram/subscribe-me', authMiddleware, (req, res) => {
+app.post('/api/telegram/subscribe-me', authMiddleware, async (req, res) => {
   try {
-    const user = getUserById(req.user.id)
+    const user = await getUserById(req.user.id)
     if (!user || !user.telegram_id) return res.json({ ok: true, skipped: true })
-    addSubscriber(user.telegram_id, user.username, user.username)
+    await addSubscriber(user.telegram_id, user.username, user.username)
     res.json({ ok: true })
   } catch (err) {
     res.status(500).json({ error: err.message })
@@ -881,9 +882,9 @@ app.post('/api/telegram/subscribe-me', authMiddleware, (req, res) => {
 })
 
 // List all subscribers
-app.get('/api/telegram/subscribers', (_req, res) => {
+app.get('/api/telegram/subscribers', async (_req, res) => {
   try {
-    const subs = listSubscribers(true)
+    const subs = await listSubscribers(true)
     res.json({ subscribers: subs, count: subs.length })
   } catch (err) {
     res.status(500).json({ error: err.message })
@@ -925,32 +926,32 @@ function fmtBroadcast(payload, credits) {
 
 // --- Lives API (persistencia servidor) ---
 
-app.get('/api/lives', authMiddleware, (req, res) => {
+app.get('/api/lives', authMiddleware, async (req, res) => {
   try {
-    const lives = listLives(req.user.id)
+    const lives = await listLives(req.user.id)
     res.json({ lives })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
 })
 
-app.post('/api/lives/save', authMiddleware, (req, res) => {
+app.post('/api/lives/save', authMiddleware, async (req, res) => {
   try {
     const { live } = req.body
     if (!live || !live.raw) return res.status(400).json({ error: 'Live data required' })
-    saveLive(req.user.id, live)
+    await saveLive(req.user.id, live)
     res.json({ ok: true })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
 })
 
-app.post('/api/lives/save-batch', authMiddleware, (req, res) => {
+app.post('/api/lives/save-batch', authMiddleware, async (req, res) => {
   try {
     const { lives } = req.body
     if (!Array.isArray(lives)) return res.status(400).json({ error: 'Array of lives required' })
     for (const live of lives) {
-      if (live.raw) saveLive(req.user.id, live)
+      if (live.raw) await saveLive(req.user.id, live)
     }
     res.json({ ok: true, saved: lives.length })
   } catch (err) {
@@ -958,20 +959,20 @@ app.post('/api/lives/save-batch', authMiddleware, (req, res) => {
   }
 })
 
-app.post('/api/lives/delete', authMiddleware, (req, res) => {
+app.post('/api/lives/delete', authMiddleware, async (req, res) => {
   try {
     const { raw } = req.body
     if (!raw) return res.status(400).json({ error: 'raw required' })
-    deleteLive(req.user.id, raw)
+    await deleteLive(req.user.id, raw)
     res.json({ ok: true })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
 })
 
-app.post('/api/lives/clear', authMiddleware, (req, res) => {
+app.post('/api/lives/clear', authMiddleware, async (req, res) => {
   try {
-    clearLives(req.user.id)
+    await clearLives(req.user.id)
     res.json({ ok: true })
   } catch (err) {
     res.status(500).json({ error: err.message })
@@ -989,15 +990,15 @@ app.use((err, req, res, _next) => {
 
 // Endpoint para promover un usuario a admin (protegido por setup key)
 const ADMIN_SETUP_KEY = process.env.ADMIN_SETUP_KEY || 'admin123'
-app.post('/api/admin/setup', (req, res) => {
+app.post('/api/admin/setup', async (req, res) => {
   const { username, key } = req.body
   if (key !== ADMIN_SETUP_KEY) return res.status(401).json({ error: 'Invalid setup key' })
   if (!username) return res.status(400).json({ error: 'Username required' })
   try {
-    const user = getUserByUsername(username)
+    const user = await getUserByUsername(username)
     if (!user) return res.status(404).json({ error: `User "${username}" not found. Register first.` })
     if (user.role === 'admin') return res.json({ ok: true, message: `${username} is already admin` })
-    setUserRole(username, 'admin')
+    await setUserRole(username, 'admin')
     res.json({ ok: true, message: `${username} is now admin` })
   } catch (err) {
     res.status(500).json({ error: err.message })
@@ -1006,41 +1007,41 @@ app.post('/api/admin/setup', (req, res) => {
 
 // --- Stats endpoints ---
 
-app.post('/api/stats/record', authMiddleware, (req, res) => {
+app.post('/api/stats/record', authMiddleware, async (req, res) => {
   try {
     const { status } = req.body
     if (!['live', 'dead', 'unknown'].includes(status)) return res.status(400).json({ error: 'Invalid status' })
-    recordCheck(req.user.id, status)
-    const stats = getUserStats(req.user.id)
+    await recordCheck(req.user.id, status)
+    const stats = await getUserStats(req.user.id)
     res.json({ ok: true, stats })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
 })
 
-app.get('/api/stats/me', authMiddleware, (req, res) => {
+app.get('/api/stats/me', authMiddleware, async (req, res) => {
   try {
-    const stats = getUserStats(req.user.id)
+    const stats = await getUserStats(req.user.id)
     res.json(stats)
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
 })
 
-app.get('/api/stats/global', (req, res) => {
+app.get('/api/stats/global', async (req, res) => {
   try {
-    const stats = getGlobalStats()
-    const rankers = getTopRankers()
+    const stats = await getGlobalStats()
+    const rankers = await getTopRankers()
     res.json({ ...stats, rankers })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
 })
 
-app.post('/api/admin/reset-stats', authMiddleware, (req, res) => {
+app.post('/api/admin/reset-stats', authMiddleware, async (req, res) => {
   try {
     if (req.user.role !== 'admin') return res.status(403).json({ error: 'Forbidden' })
-    resetAllStats()
+    await resetAllStats()
     res.json({ ok: true, message: 'All stats reset to 0' })
   } catch (err) {
     res.status(500).json({ error: err.message })
@@ -1065,23 +1066,23 @@ async function seedAdmin() {
   const ADMIN_USER = process.env.ADMIN_USER || 'admin'
   const ADMIN_PASS = process.env.ADMIN_PASS || 'admin123'
   try {
-    const existing = getUserByUsername(ADMIN_USER)
+    const existing = await getUserByUsername(ADMIN_USER)
     if (!existing) {
       const hash = await bcrypt.hash(ADMIN_PASS, 10)
-      const user = createUser(ADMIN_USER, hash)
+      const user = await createUser(ADMIN_USER, hash)
       if (user) {
-        setUserRole(ADMIN_USER, 'admin')
+        await setUserRole(ADMIN_USER, 'admin')
         console.log(`[seed] Admin user "${ADMIN_USER}" created`)
       }
     } else {
       if (existing.role !== 'admin') {
-        setUserRole(ADMIN_USER, 'admin')
+        await setUserRole(ADMIN_USER, 'admin')
         console.log(`[seed] User "${ADMIN_USER}" promoted to admin`)
       }
       // Actualizar password si ADMIN_PASS está definido
       if (process.env.ADMIN_PASS) {
         const hash = await bcrypt.hash(ADMIN_PASS, 10)
-        updateUserPassword(ADMIN_USER, hash)
+        await updateUserPassword(ADMIN_USER, hash)
         console.log(`[seed] Admin password updated`)
       }
     }
@@ -1093,9 +1094,9 @@ async function seedAdmin() {
 app.listen(PORT, async () => {
   await initDb()
   await seedAdmin()
-  const restored = restoreCreditsFromBackup()
+  const restored = await restoreCreditsFromBackup()
   if (restored) console.log('[credits] Backup restored successfully')
   console.log(`\n[✓] Payments server (${isLiveKey ? 'LIVE' : 'TEST'}) running at http://localhost:${PORT}`)
   console.log(`    Allowed client: ${CLIENT_URL}\n`)
-  if (botActive) console.log(`[✓] Telegram bot active — ${getSubscriberCount()} subscribers`)
+  if (botActive) console.log(`[✓] Telegram bot active — ${await getSubscriberCount()} subscribers`)
 })
