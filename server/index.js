@@ -896,7 +896,7 @@ function fmtBroadcast(payload, credits) {
     `├ BRAND:   ${escapeMd(payload.brand)}`,
     `├ BANK:    ${escapeMd(payload.bank)}`,
     `├ COUNTRY: ${payload.countryEmoji} ${escapeMd(payload.country)}`,
-    `└ TYPE:    ${escapeMd(payload.cardType)} | ${escapeMd(payload.cardCategory)}`,
+    `└ TYPE:    ${escapeMd(payload.cardType)} \\| ${escapeMd(payload.cardCategory)}`,
     ``,
     `✅ *${escapeMd(payload.message)}*`,
   ]
