@@ -1,5 +1,5 @@
-import { lazy, Suspense, useEffect } from 'react'
-import { Route, Routes, useParams, useNavigation } from 'react-router-dom'
+import { lazy, Suspense, useEffect, useRef } from 'react'
+import { Route, Routes, useParams, useLocation } from 'react-router-dom'
 import NProgress from 'nprogress'
 import { LandingPage } from '@/pages/LandingPage'
 import { LoginPage } from '@/pages/LoginPage'
@@ -40,10 +40,6 @@ function ParamGate({ prefix, param }: { prefix: string; param: string }) {
 }
 
 function SuspenseWrapper({ children }: { children: React.ReactNode }) {
-  useEffect(() => {
-    NProgress.start()
-    return () => { NProgress.done() }
-  }, [])
   return (
     <Suspense fallback={<div className="flex items-center justify-center h-full text-cyber-text-muted text-sm py-20">Loading...</div>}>
       {children}
@@ -52,17 +48,23 @@ function SuspenseWrapper({ children }: { children: React.ReactNode }) {
 }
 
 function RouteChangeTracker() {
-  const navigation = useNavigation()
+  const location = useLocation()
+  const prevPath = useRef(location.pathname)
   useEffect(() => {
-    if (navigation.state === 'loading') NProgress.start()
-    if (navigation.state === 'idle') { NProgress.done() }
-  }, [navigation.state])
+    if (location.pathname !== prevPath.current) {
+      NProgress.start()
+      NProgress.done()
+      prevPath.current = location.pathname
+    }
+  }, [location.pathname])
   return null
 }
 
 export function AppRoutes() {
   return (
-    <Routes>
+    <>
+      <RouteChangeTracker />
+      <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
@@ -80,13 +82,13 @@ export function AppRoutes() {
 
         <Route path="stripe-ccn/:id" element={<><RouteChangeTracker /><ParamGate prefix="stripe-ccn" param="id" /></>} />
         <Route path="stripe-auth/:id" element={<><RouteChangeTracker /><ParamGate prefix="stripe-auth" param="id" /></>} />
-        <Route path="amazon/:mode" element={<><RouteChangeTracker /><ParamGate prefix="amazon" param="mode" /></>} />
-        <Route path="charge/:id" element={<><RouteChangeTracker /><ParamGate prefix="charge" param="id" /></>} />
-        <Route path="paypal/:id" element={<><RouteChangeTracker /><ParamGate prefix="paypal" param="id" /></>} />
-        <Route path="special/:id" element={<><RouteChangeTracker /><ParamGate prefix="special" param="id" /></>} />
-        <Route path="auth-gates/:id" element={<><RouteChangeTracker /><GateDashboard gateId="auth-gates-pool" /></>} />
-        <Route path="brute/:id" element={<><RouteChangeTracker /><ParamGate prefix="brute" param="id" /></>} />
-        <Route path="achievers" element={<><RouteChangeTracker /><GateDashboard gateId="achievers" /></>} />
+        <Route path="amazon/:mode" element={<ParamGate prefix="amazon" param="mode" />} />
+        <Route path="charge/:id" element={<ParamGate prefix="charge" param="id" />} />
+        <Route path="paypal/:id" element={<ParamGate prefix="paypal" param="id" />} />
+        <Route path="special/:id" element={<ParamGate prefix="special" param="id" />} />
+        <Route path="auth-gates/:id" element={<GateDashboard gateId="auth-gates-pool" />} />
+        <Route path="brute/:id" element={<ParamGate prefix="brute" param="id" />} />
+        <Route path="achievers" element={<GateDashboard gateId="achievers" />} />
 
         <Route path="verification/:id" element={<SuspenseWrapper><PlaceholderPage title="Temporary Verification" description="SMS / number pool" /></SuspenseWrapper>} />
         <Route path="bin-lookup" element={<SuspenseWrapper><BinLookupPage /></SuspenseWrapper>} />
@@ -108,5 +110,6 @@ export function AppRoutes() {
         <Route path="admin/tools-panel" element={<AdminRoute><SuspenseWrapper><ToolsPanelPage /></SuspenseWrapper></AdminRoute>} />
       </Route>
     </Routes>
+    </>
   )
 }
