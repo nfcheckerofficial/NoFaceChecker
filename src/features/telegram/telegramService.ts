@@ -63,8 +63,24 @@ export async function broadcastLiveCard(payload: LiveCardPayload, botToken: stri
   }
 }
 
-/** Direct send to a single chat (legacy) */
+/** Direct send to a single chat via server (evita CORS) */
 export async function sendLiveCard(payload: LiveCardPayload, botToken: string, chatId: string): Promise<boolean> {
+  if (!botToken || !chatId) return false
+  try {
+    const res = await fetch(`${SERVER_URL}/api/telegram/send-personal`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ botToken, chatId, payload }),
+    })
+    return res.ok
+  } catch (err) {
+    console.warn('[Telegram] Network error:', err)
+    return false
+  }
+}
+
+/** Legacy direct send to a single chat (browser → Telegram API direct) */
+export async function sendLiveCardDirect(payload: LiveCardPayload, botToken: string, chatId: string): Promise<boolean> {
   if (!botToken || !chatId) return false
 
   const text = fmtCard(payload)

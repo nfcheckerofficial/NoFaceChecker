@@ -781,6 +781,38 @@ app.post('/api/telegram/broadcast', express.json(), async (req, res) => {
   }
 })
 
+// Send a personal notification to a single chat
+app.post('/api/telegram/send-personal', express.json(), async (req, res) => {
+  try {
+    const { botToken, chatId, payload } = req.body
+    if (!botToken) return res.status(400).json({ error: 'Bot token required' })
+    if (!chatId) return res.status(400).json({ error: 'Chat ID required' })
+    if (!payload) return res.status(400).json({ error: 'Payload required' })
+
+    const TG_API = 'https://api.telegram.org/bot'
+    const text = fmtBroadcast(payload, null)
+    const r = await fetch(`${TG_API}${botToken}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        parse_mode: 'MarkdownV2',
+        disable_web_page_preview: true,
+      }),
+    })
+
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}))
+      return res.status(400).json({ error: err.description || 'Failed to send' })
+    }
+    res.json({ sent: 1 })
+  } catch (err) {
+    console.error('[Telegram] Send personal error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // List all subscribers
 app.get('/api/telegram/subscribers', (_req, res) => {
   try {
