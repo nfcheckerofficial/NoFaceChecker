@@ -4,8 +4,9 @@ import { useLivesStore } from './livesStore'
 import { useCheckerStore } from './checkerStore'
 import { lookupBin } from '../services/binLookup'
 import { DEFAULT_GATE, type GateConfig } from '../config/gateCatalog'
+import { useAuthStore } from '@/features/auth/authStore'
 import { useTelegramStore } from '@/features/telegram/telegramStore'
-import { broadcastLiveCard, sendLiveCard } from '@/features/telegram/telegramService'
+import { sendLiveCard } from '@/features/telegram/telegramService'
 import { playLiveSound } from '@/shared/utils/sound'
 
 export type CardStatus = 'live' | 'dead' | 'unknown'
@@ -264,8 +265,9 @@ export const useGateStore = create<GateState>((set, get) => ({
               countryEmoji: info.countryEmoji,
             })
 
-            // Telegram: broadcast a todos los suscriptores
+            // Telegram: enviar solo al usuario autenticado (no broadcast global)
             const tg = useTelegramStore.getState()
+            const authUser = useAuthStore.getState().user
             const digits = number.replace(/\D/g, '')
             const payload = {
               raw,
@@ -281,24 +283,22 @@ export const useGateStore = create<GateState>((set, get) => ({
               message,
               checkedAt: Date.now(),
             }
-            if (tg.enabled && tg.botToken) {
-              broadcastLiveCard(payload, tg.botToken).then((result) => {
-                if (result.sent > 0) useTelegramStore.getState().markSent()
-              })
-            } else if (tg.enabled) {
-              broadcastLiveCard(payload, '').then((result) => {
+            const chatId = authUser?.telegram_id
+            if (tg.enabled && chatId) {
+              sendLiveCard(payload, tg.botToken || '', chatId).then((result) => {
                 if (result.sent > 0) useTelegramStore.getState().markSent()
               })
             }
-            if (tg.notifyPersonal && tg.botToken && tg.personalChatId) {
+            if (tg.notifyPersonal && tg.botToken && tg.personalChatId && tg.personalChatId !== chatId) {
               sendLiveCard(payload, tg.botToken, tg.personalChatId)
             }
           })
           .catch(() => {
             useLivesStore.getState().enrich(raw, {})
 
-            // Telegram: broadcast incluso sin BIN info
+            // Telegram: enviar solo al usuario autenticado
             const tg = useTelegramStore.getState()
+            const authUser = useAuthStore.getState().user
             const digits = number.replace(/\D/g, '')
             const payload = {
               raw,
@@ -314,16 +314,13 @@ export const useGateStore = create<GateState>((set, get) => ({
               message,
               checkedAt: Date.now(),
             }
-            if (tg.enabled && tg.botToken) {
-              broadcastLiveCard(payload, tg.botToken).then((result) => {
-                if (result.sent > 0) useTelegramStore.getState().markSent()
-              })
-            } else if (tg.enabled) {
-              broadcastLiveCard(payload, '').then((result) => {
+            const chatId = authUser?.telegram_id
+            if (tg.enabled && chatId) {
+              sendLiveCard(payload, tg.botToken || '', chatId).then((result) => {
                 if (result.sent > 0) useTelegramStore.getState().markSent()
               })
             }
-            if (tg.notifyPersonal && tg.botToken && tg.personalChatId) {
+            if (tg.notifyPersonal && tg.botToken && tg.personalChatId && tg.personalChatId !== chatId) {
               sendLiveCard(payload, tg.botToken, tg.personalChatId)
             }
           })
