@@ -291,8 +291,8 @@ app.get('/api/admin/users', authMiddleware, async (req, res) => {
       role: u.role,
       telegram_id: u.telegram_id,
       banned: false,
-      createdAt: u.created_at ? u.created_at.split('T')[0] : '',
-      lastSession: u.created_at ? u.created_at.split('T')[0] : '',
+      createdAt: u.created_at ? new Date(u.created_at).toISOString().split('T')[0] : '',
+      lastSession: u.created_at ? new Date(u.created_at).toISOString().split('T')[0] : '',
     })))
   } catch (err) {
     console.error('[admin] /api/admin/users error:', err.message, err.stack)
