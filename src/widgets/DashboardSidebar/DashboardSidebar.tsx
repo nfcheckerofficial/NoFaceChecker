@@ -54,13 +54,13 @@ export function DashboardSidebar({ open, onClose, className }: DashboardSidebarP
   return (
       <aside
         className={clsx(
-          'flex flex-col w-[280px] shrink-0 h-screen overflow-y-auto',
-          'overflow-x-hidden',
+          'flex flex-col w-[280px] shrink-0',
+          'overflow-x-hidden overflow-y-auto',
           // Desktop: sticky sidebar
-          'hidden lg:flex sticky top-0',
+          'hidden lg:flex sticky top-0 lg:max-h-screen',
           // Mobile: fixed overlay sidebar with slide animation
           open
-            ? 'fixed inset-y-0 left-0 z-50 flex motion-safe:animate-[slideInLeft_0.25s_ease-out]'
+            ? 'fixed inset-y-0 left-0 z-50 flex max-h-screen motion-safe:animate-[slideInLeft_0.25s_ease-out]'
             : 'hidden',
           'bg-gradient-to-b from-cyber-dark/95 via-cyber-panel/90 to-cyber-black/95',
           'backdrop-blur-xl border-r border-cyber-border/50',
