@@ -270,10 +270,13 @@ export function getUserByTelegramId(telegramId) {
 }
 
 export function updateUserCredits(username, credits) {
+  const before = db.prepare('SELECT credits FROM users WHERE username = ?').get(username)
   db.prepare('UPDATE users SET credits = ? WHERE username = ?').run(credits, username)
+  console.log(`[credits] ${username}: ${before?.credits ?? '?'} → ${credits}`)
 }
 
 export function resetAllCredits() {
+  console.warn(`[credits] RESET ALL to 0 at ${new Date().toISOString()}`)
   db.prepare('UPDATE users SET credits = 0').run()
 }
 

