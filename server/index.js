@@ -44,6 +44,7 @@ import {
   listLives,
   deleteLive,
   clearLives,
+  initDb,
 } from './db.js'
 import { startBot, stopBot } from './telegram-bot.js'
 
@@ -1090,6 +1091,7 @@ async function seedAdmin() {
 }
 
 app.listen(PORT, async () => {
+  await initDb()
   await seedAdmin()
   const restored = restoreCreditsFromBackup()
   if (restored) console.log('[credits] Backup restored successfully')
