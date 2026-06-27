@@ -8,6 +8,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Render deploy
+      - name: Trigger Render deploy (Frontend)
         run: |
-          curl -X POST "https://api.render.com/deploy/srv-d8v026tckfvc73f30fdg?key=Voav92Pj58E"
+          curl -s -X POST "https://api.render.com/deploy/srv-d8v026tckfvc73f30fdg?key=Voav92Pj58E"
+      - name: Trigger Render deploy (API)
+        run: |
+          curl -s -X POST "https://api.render.com/deploy/srv-d8v03smrnols73fp97q0?key=l9mWfEMzsHM"
