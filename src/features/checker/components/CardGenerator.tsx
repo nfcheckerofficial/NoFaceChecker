@@ -162,8 +162,7 @@ export function CardGenerator({ open = true, onClose, onGenerate, className }: C
       >
         {/* Imagen de fondo del hacker */}
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-[0.18]"
-          style={{ backgroundImage: 'url(/noface-hero.png)' }}
+          className="absolute inset-0 bg-gradient-to-br from-cyber-purple/10 via-cyber-blue/5 to-cyber-green/5 opacity-[0.18]"
         />
         {/* Overlays de color para profundidad neón */}
         <div className="absolute inset-0 bg-gradient-to-b from-cyber-panel/80 via-cyber-black/90 to-cyber-black/95" />

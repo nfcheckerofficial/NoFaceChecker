@@ -13,8 +13,7 @@ export function GateShell({ title, subtitle, children, className }: GateShellPro
     <div className="relative min-h-[calc(100vh-4rem)] -m-3 sm:-m-6">
       {/* Background layers */}
       <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: 'url(/noface-hero.png)' }}
+        className="absolute inset-0 bg-gradient-to-br from-cyber-green/5 via-cyber-blue/5 to-cyber-purple/10"
       />
       <div className="absolute inset-0 bg-cyber-black/85" />
       <CodeRain color="#00ff88" opacity={0.35} fontSize={14} />

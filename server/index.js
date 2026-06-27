@@ -871,7 +871,7 @@ app.get('/api/telegram/am-i-subscribed', authMiddleware, (req, res) => {
 app.post('/api/telegram/subscribe-me', authMiddleware, (req, res) => {
   try {
     const user = getUserById(req.user.id)
-    if (!user || !user.telegram_id) return res.status(400).json({ error: 'No Telegram ID linked' })
+    if (!user || !user.telegram_id) return res.json({ ok: true, skipped: true })
     addSubscriber(user.telegram_id, user.username, user.username)
     res.json({ ok: true })
   } catch (err) {

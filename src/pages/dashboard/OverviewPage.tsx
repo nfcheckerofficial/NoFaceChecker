@@ -105,7 +105,7 @@ export function OverviewPage() {
       {/* Fondo del hacker para todo el Overview */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: 'url(/noface-hero.png)' }}
+        style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27100%27 height=%27100%27%3E%3Crect width=%27100%27 height=%27100%27 fill=%27%230a0a0f%27/%3E%3Ccircle cx=%2750%27 cy=%2750%27 r=%2730%27 fill=%27none%27 stroke=%27%2300ff8840%27 stroke-width=%270.5%27/%3E%3C/svg%3E")' }}
       />
       <div className="absolute inset-0 bg-cyber-black/88" />
       {/* Lluvia de código tipo hack cayendo detrás */}
@@ -119,8 +119,7 @@ export function OverviewPage() {
       {/* Hero banner */}
       <section className="relative h-40 sm:h-52 rounded-xl overflow-hidden border border-cyber-purple/30 shadow-[0_0_30px_rgba(157,0,255,0.15)]">
         <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: 'url(/noface-hero.png)' }}
+          className="absolute inset-0 bg-gradient-to-br from-cyber-purple/20 via-cyber-blue/10 to-cyber-green/5"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-cyber-black/50 via-cyber-black/30 to-cyber-black/50" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(157,0,255,0.12),transparent_60%)]" />
