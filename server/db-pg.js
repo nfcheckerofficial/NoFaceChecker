@@ -309,7 +309,7 @@ export async function saveLive(userId, live) {
     INSERT INTO lives (user_id, raw, number, gate_id, gate_name, message, bank, card_type, brand, country, country_emoji, enriched, captured_at)
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
   `, [
-    userId, live.raw, live.number, live.gateId || null, live.gateName || null,
+    userId, live.raw, live.number || '', live.gateId || null, live.gateName || null,
     live.message || null, live.bank || null, live.cardType || null, live.brand || null,
     live.country || null, live.countryEmoji || null, live.enriched ? 1 : 0,
     live.capturedAt ? new Date(live.capturedAt).toISOString() : new Date().toISOString(),
