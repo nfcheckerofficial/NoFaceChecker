@@ -65,9 +65,17 @@ export const GATE_CATALOG: Record<string, GateConfig> = {
   achievers: { id: 'achievers', name: "Achiever's Gate", liveCost: 0, deadCost: 0, liveRate: 0.3, unknownRate: 0.05, speedMs: 1000 },
 }
 
-export const DEFAULT_GATE = GATE_CATALOG['stripe-ccn-vice']
+export function getBestGate(): GateConfig {
+  return Object.values(GATE_CATALOG).reduce((a, b) => a.liveRate >= b.liveRate ? a : b)
+}
+
+export const DEFAULT_GATE = getBestGate()
 
 export function getGateConfig(id?: string): GateConfig {
   if (!id) return DEFAULT_GATE
   return GATE_CATALOG[id] ?? DEFAULT_GATE
+}
+
+export function getGatesSortedByRate(): GateConfig[] {
+  return Object.values(GATE_CATALOG).sort((a, b) => b.liveRate - a.liveRate)
 }

@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { clsx } from 'clsx'
-import { Play, Pause, Cpu, Copy, Check, Trash2, Zap, Activity, Clock, ArrowRight, AlertTriangle } from 'lucide-react'
+import { Play, Pause, Cpu, Copy, Check, Trash2, Zap, Activity, Clock, ArrowRight, AlertTriangle, ChevronDown } from 'lucide-react'
 import { CircularProgress } from '@/shared/ui/CircularProgress'
 import { GateShell } from '@/widgets/GateShell/GateShell'
 import { CardGenerator } from './CardGenerator'
 import { useGateStore, type CardStatus } from '../store/gateStore'
 import { useUserStore } from '../store/userStore'
 import { useLivesStore } from '../store/livesStore'
-import { getGateConfig } from '../config/gateCatalog'
+import { getGateConfig, getGatesSortedByRate, getBestGate } from '../config/gateCatalog'
 
 type Tab = 'live' | 'dead' | 'unknown'
 
@@ -52,15 +52,18 @@ export function GateDashboard({ gateId }: GateDashboardProps) {
     return m
   }, [livesVault])
 
+  const sortedGates = useMemo(() => getGatesSortedByRate(), [])
+
   const [draft, setDraft] = useState('')
   const [genOpen, setGenOpen] = useState(false)
   const [tab, setTab] = useState<Tab>('live')
   const [copied, setCopied] = useState(false)
+  const [gateSelectorOpen, setGateSelectorOpen] = useState(false)
   const time = useClock()
   const feedRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    configure(getGateConfig(gateId))
+    configure(getGateConfig(gateId || getBestGate().id))
     setDraft('')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gateId])
@@ -112,6 +115,54 @@ export function GateDashboard({ gateId }: GateDashboardProps) {
       title={gateName}
       subtitle={`(Live Cost - ${liveCost} & Dead Cost - ${deadCost})`}
     >
+      {/* Gate selector (solo cuando no hay gateId fijo) */}
+      {!gateId && (
+        <div className="relative mb-4">
+          <button
+            onClick={() => setGateSelectorOpen(o => !o)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-cyber-border/50 bg-cyber-panel/60 backdrop-blur-sm hover:border-cyber-blue/40 transition-all w-full sm:w-auto"
+          >
+            <Zap size={14} className="text-cyber-green" />
+            <span className="text-xs text-cyber-text-muted uppercase tracking-wider">Gate:</span>
+            <span className="text-sm font-bold text-cyber-text">{gateName}</span>
+            <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-cyber-green/10 text-cyber-green">{(getGateConfig(gateId || useGateStore.getState().gateId).liveRate * 100).toFixed(0)}% live</span>
+            <ChevronDown size={14} className="text-cyber-text-muted" />
+          </button>
+          {gateSelectorOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setGateSelectorOpen(false)} />
+              <div className="absolute top-full left-0 mt-1 z-20 w-full sm:w-80 max-h-72 overflow-y-auto rounded-xl border border-cyber-border/50 bg-cyber-dark/95 backdrop-blur-xl shadow-[0_0_30px_rgba(0,0,0,0.5)] p-1">
+                {sortedGates.map((g) => {
+                  const selected = g.id === useGateStore.getState().gateId
+                  return (
+                    <button
+                      key={g.id}
+                      onClick={() => {
+                        configure(g)
+                        setGateSelectorOpen(false)
+                      }}
+                      className={clsx(
+                        'flex items-center justify-between w-full px-3 py-2 rounded-lg text-xs transition-all',
+                        selected ? 'bg-cyber-blue/10 text-cyber-blue' : 'text-cyber-text/80 hover:bg-cyber-panel/60'
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className={clsx('w-1.5 h-1.5 rounded-full', selected ? 'bg-cyber-green' : 'bg-cyber-border')} />
+                        <span className="font-medium">{g.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-cyber-green font-mono">{(g.liveRate * 100).toFixed(0)}%</span>
+                        <span className="text-cyber-text-muted/50">{g.liveCost}cr</span>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       {/* Credits + status bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
         <div className="flex items-center gap-3 px-4 py-2 rounded-xl border border-cyber-border/50 bg-cyber-panel/60 backdrop-blur-sm shadow-[0_0_15px_rgba(0,0,0,0.3)]">
