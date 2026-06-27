@@ -781,6 +781,34 @@ app.post('/api/telegram/broadcast', express.json(), async (req, res) => {
   }
 })
 
+// Test Telegram connection
+app.post('/api/telegram/test', express.json(), async (req, res) => {
+  try {
+    const { botToken, chatId } = req.body
+    if (!botToken) return res.status(400).json({ ok: false, error: 'Bot token required' })
+    if (!chatId) return res.status(400).json({ ok: false, error: 'Chat ID required' })
+
+    const TG_API = 'https://api.telegram.org/bot'
+    const r = await fetch(`${TG_API}${botToken}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: '🟢 *No Face Checker* — Telegram bot connected successfully\\!',
+        parse_mode: 'MarkdownV2',
+      }),
+    })
+
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}))
+      return res.json({ ok: false, error: err.description || `HTTP ${r.status}` })
+    }
+    res.json({ ok: true })
+  } catch (err) {
+    res.json({ ok: false, error: String(err) })
+  }
+})
+
 // Send a personal notification to a single chat
 app.post('/api/telegram/send-personal', express.json(), async (req, res) => {
   try {

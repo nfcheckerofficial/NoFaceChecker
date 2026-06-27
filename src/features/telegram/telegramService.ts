@@ -113,22 +113,13 @@ export async function sendLiveCardDirect(payload: LiveCardPayload, botToken: str
 export async function testTelegramConnection(botToken: string, chatId: string): Promise<{ ok: boolean; error?: string }> {
   if (!botToken) return { ok: false, error: 'Bot token is empty' }
   if (!chatId) return { ok: false, error: 'Chat ID is empty' }
-
   try {
-    const res = await fetch(`${TG_API}${botToken}/sendMessage`, {
+    const res = await fetch(`${SERVER_URL}/api/telegram/test`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: '🟢 *No Face Checker* — Telegram bot connected successfully\\!',
-        parse_mode: 'MarkdownV2',
-      }),
+      body: JSON.stringify({ botToken, chatId }),
     })
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}))
-      return { ok: false, error: err?.description || `HTTP ${res.status}` }
-    }
-    return { ok: true }
+    return await res.json()
   } catch (err) {
     return { ok: false, error: String(err) }
   }
