@@ -109,6 +109,7 @@ export const NAV_GROUPS: NavGroup[] = [
           { label: 'SMS Pool', href: '/dashboard/verification/sms' },
         ],
       },
+      { label: 'Live Vault', icon: Vault, color: 'text-cyber-green', href: '/dashboard/live-vault' },
       { label: 'Bin Lookup', icon: Search, color: 'text-cyber-blue', href: '/dashboard/bin-lookup' },
       { label: 'Random Data', icon: Database, color: 'text-cyber-green', href: '/dashboard/random-data' },
       { label: '3D Checker', icon: Crosshair, color: 'text-cyber-red', href: '/dashboard/3d-checker' },

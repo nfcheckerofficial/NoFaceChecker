@@ -65,6 +65,9 @@ export function GateDashboard({ gateId }: GateDashboardProps) {
   useEffect(() => {
     configure(getGateConfig(gateId || getBestGate().id))
     setDraft('')
+    return () => {
+      if (gateId) reset()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gateId])
 

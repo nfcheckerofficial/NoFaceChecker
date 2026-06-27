@@ -26,6 +26,7 @@ const ProfilePage = lazy(() => import('@/pages/dashboard/ProfilePage').then(m =>
 const FaqsPage = lazy(() => import('@/pages/dashboard/FaqsPage').then(m => ({ default: m.FaqsPage })))
 const SupportPage = lazy(() => import('@/pages/dashboard/SupportPage').then(m => ({ default: m.SupportPage })))
 const CardVaultPage = lazy(() => import('@/pages/dashboard/CardVaultPage').then(m => ({ default: m.CardVaultPage })))
+const LiveVaultPage = lazy(() => import('@/pages/dashboard/LiveVaultPage').then(m => ({ default: m.LiveVaultPage })))
 const MarketplacePage = lazy(() => import('@/pages/dashboard/MarketplacePage').then(m => ({ default: m.MarketplacePage })))
 const TelegramSettingsPage = lazy(() => import('@/pages/dashboard/TelegramSettingsPage').then(m => ({ default: m.TelegramSettingsPage })))
 const InstaddrPage = lazy(() => import('@/pages/dashboard/InstaddrPage').then(m => ({ default: m.InstaddrPage })))
@@ -95,6 +96,7 @@ export function AppRoutes() {
         <Route path="verification/:id" element={<SuspenseWrapper><PlaceholderPage title="Temporary Verification" description="SMS / number pool" /></SuspenseWrapper>} />
         <Route path="bin-lookup" element={<SuspenseWrapper><BinLookupPage /></SuspenseWrapper>} />
         <Route path="card-vault" element={<SuspenseWrapper><CardVaultPage /></SuspenseWrapper>} />
+        <Route path="live-vault" element={<SuspenseWrapper><LiveVaultPage /></SuspenseWrapper>} />
         <Route path="random-data" element={<SuspenseWrapper><RandomDataPage /></SuspenseWrapper>} />
         <Route path="3d-checker" element={<SuspenseWrapper><ThreeDCheckerPage /></SuspenseWrapper>} />
         <Route path="extrap" element={<SuspenseWrapper><ExtrapPage /></SuspenseWrapper>} />
