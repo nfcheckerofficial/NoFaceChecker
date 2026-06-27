@@ -93,7 +93,7 @@ export function GateDashboard({ gateId }: GateDashboardProps) {
     if (isRunning) {
       appendQueue(lines)
     } else {
-      setDraft(prev => (prev.trim() ? prev.trim() + '\n' : '') + lines.join('\n'))
+      setDraft(lines.join('\n'))
     }
   }
 
