@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { useUserStore } from './userStore'
 import { useLivesStore } from './livesStore'
+import { useCheckerStore } from './checkerStore'
 import { lookupBin } from '../services/binLookup'
 import { DEFAULT_GATE, type GateConfig } from '../config/gateCatalog'
 import { useTelegramStore } from '@/features/telegram/telegramStore'
@@ -237,6 +238,7 @@ export const useGateStore = create<GateState>((set, get) => ({
 
       // Refleja el resultado en las estadísticas del usuario.
       useUserStore.getState().recordResult(status)
+      useCheckerStore.getState().addResult(status === 'live' ? 'live' : 'dead', number)
 
       // Guarda las lives en la bóveda central y resuelve su BIN (banco / debit-credit).
       if (status === 'live') {

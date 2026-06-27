@@ -1,6 +1,16 @@
 import { create } from 'zustand'
 import { CheckResult, CardData, checkCard } from '../services/cardValidator'
 
+const HIST_KEY = 'chk_checker_history'
+const STATS_KEY = 'chk_checker_stats'
+
+function loadHist(): CheckResult[] {
+  try { return JSON.parse(localStorage.getItem(HIST_KEY) || '[]') } catch { return [] }
+}
+function saveHist(h: CheckResult[]) {
+  try { localStorage.setItem(HIST_KEY, JSON.stringify(h)) } catch {}
+}
+
 interface CheckerState {
   isChecking: boolean
   currentResult: CheckResult | null
@@ -11,13 +21,14 @@ interface CheckerState {
     dead: number
   }
   check: (cardData: CardData) => Promise<void>
+  addResult: (status: 'live' | 'dead', cardNumber: string) => void
   reset: () => void
 }
 
 export const useCheckerStore = create<CheckerState>((set, get) => ({
   isChecking: false,
   currentResult: null,
-  history: [],
+  history: loadHist(),
   stats: {
     total: 0,
     live: 0,
@@ -28,27 +39,60 @@ export const useCheckerStore = create<CheckerState>((set, get) => ({
     set({ isChecking: true, currentResult: null })
 
     try {
-      // Tiempo mínimo para que la animación de procesamiento se aprecie,
-      // sin bloquear: la validación real corre en paralelo.
       const minDelay = new Promise((resolve) => setTimeout(resolve, 2200))
       const [result] = await Promise.all([checkCard(cardData), minDelay])
 
-      set((state) => ({
-        isChecking: false,
-        currentResult: result,
-        history: [result, ...state.history].slice(0, 50),
-        stats: {
-          total: state.stats.total + 1,
-          live: state.stats.live + (result.status === 'live' ? 1 : 0),
-          dead: state.stats.dead + (result.status === 'dead' ? 1 : 0),
-        },
-      }))
+      set((state) => {
+        const history = [result, ...state.history].slice(0, 50)
+        saveHist(history)
+        return {
+          isChecking: false,
+          currentResult: result,
+          history,
+          stats: {
+            total: state.stats.total + 1,
+            live: state.stats.live + (result.status === 'live' ? 1 : 0),
+            dead: state.stats.dead + (result.status === 'dead' ? 1 : 0),
+          },
+        }
+      })
     } catch {
       set({ isChecking: false })
     }
   },
 
+  addResult: (status, cardNumber) => {
+    set((state) => {
+      const result: CheckResult = {
+        status,
+        cardNumber,
+        cardType: 'unknown',
+        brand: '',
+        bank: '',
+        country: '',
+        countryEmoji: '',
+        cardCategory: '',
+        bin: cardNumber.slice(0, 6),
+        checks: [],
+        binSource: 'fallback',
+        timestamp: new Date(),
+        message: status === 'live' ? 'APPROVED' : 'DECLINED',
+      }
+      const history = [result, ...state.history].slice(0, 50)
+      saveHist(history)
+      return {
+        history,
+        stats: {
+          total: state.stats.total + 1,
+          live: state.stats.live + (status === 'live' ? 1 : 0),
+          dead: state.stats.dead + (status === 'dead' ? 1 : 0),
+        },
+      }
+    })
+  },
+
   reset: () => {
+    saveHist([])
     set({
       isChecking: false,
       currentResult: null,
