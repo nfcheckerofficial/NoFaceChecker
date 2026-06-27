@@ -5,6 +5,7 @@ const API_BASE = import.meta.env.VITE_PAYMENTS_API ?? ''
 const SERVER_URL = API_BASE
 
 const CREDITS_KEY = 'chk_user_credits'
+const CREDITS_BACKUP_KEY = 'chk_user_credits_backup'
 const STATS_KEY = 'chk_user_stats'
 
 function loadCredits(): number {
@@ -15,6 +16,17 @@ function loadCredits(): number {
 }
 function saveCredits(n: number) {
   try { localStorage.setItem(CREDITS_KEY, String(n)) } catch {}
+}
+function loadCreditsBackup(): number {
+  try {
+    const v = localStorage.getItem(CREDITS_BACKUP_KEY)
+    return v ? Number(v) : -1
+  } catch { return -1 }
+}
+function saveCreditsBackup(n: number) {
+  if (n > 0) {
+    try { localStorage.setItem(CREDITS_BACKUP_KEY, String(n)) } catch {}
+  }
 }
 function loadStats(): SessionStats | null {
   try {
@@ -68,7 +80,10 @@ export const useUserStore = create<UserState>((set, get) => ({
   setProfile: (patch) =>
     set((s) => {
       const profile = { ...s.profile, ...patch }
-      if ('credits' in patch) saveCredits(profile.credits)
+      if ('credits' in patch) {
+        saveCredits(profile.credits)
+        saveCreditsBackup(profile.credits)
+      }
       return { profile }
     }),
 
@@ -133,6 +148,7 @@ export const useUserStore = create<UserState>((set, get) => ({
     const credits = profile.credits - n
     set({ profile: { ...profile, credits } })
     saveCredits(credits)
+    saveCreditsBackup(credits)
     syncAdminCredits(profile.username, credits)
     persistCredits(credits)
     return true
@@ -143,19 +159,26 @@ export const useUserStore = create<UserState>((set, get) => ({
     const credits = profile.credits + n
     set({ profile: { ...profile, credits } })
     saveCredits(credits)
+    saveCreditsBackup(credits)
     syncAdminCredits(profile.username, credits)
     persistCredits(credits)
   },
 
   syncFromAuth: (user) => {
-    saveCredits(user.credits)
+    let credits = user.credits
+    if (credits === 0) {
+      const backup = loadCreditsBackup()
+      if (backup > 0) credits = backup
+    }
+    saveCredits(credits)
+    saveCreditsBackup(credits)
     const localSt = loadStats()
     set({
       profile: {
         username: user.username,
         telegramId: user.telegram_id || '',
         registeredOn: user.created_at ? user.created_at.split('T')[0] : '',
-        credits: user.credits,
+        credits,
       },
       myStats: localSt ?? { lives: 0, dead: 0, unknown: 0 },
     })

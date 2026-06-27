@@ -32,6 +32,7 @@ import {
   setUserRole,
   linkTelegramToUser,
   resetAllCredits,
+  restoreCreditsFromBackup,
   listUsers,
   recordCheck,
   getUserStats,
@@ -1090,6 +1091,8 @@ async function seedAdmin() {
 
 app.listen(PORT, async () => {
   await seedAdmin()
+  const restored = restoreCreditsFromBackup()
+  if (restored) console.log('[credits] Backup restored successfully')
   console.log(`\n[✓] Payments server (${isLiveKey ? 'LIVE' : 'TEST'}) running at http://localhost:${PORT}`)
   console.log(`    Allowed client: ${CLIENT_URL}\n`)
   if (botActive) console.log(`[✓] Telegram bot active — ${getSubscriberCount()} subscribers`)

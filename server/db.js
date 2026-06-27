@@ -286,16 +286,53 @@ export function getUserByTelegramId(telegramId) {
   return db.prepare('SELECT id, username, credits, role, telegram_id, created_at FROM users WHERE telegram_id = ?').get(telegramId)
 }
 
+const BACKUP_FILE = join(dbDir, 'credits_backup.json')
+
+function saveCreditsBackup() {
+  try {
+    const users = db.prepare('SELECT username, credits FROM users').all()
+    const data = Object.fromEntries(users.map(u => [u.username, u.credits]))
+    fs.writeFileSync(BACKUP_FILE, JSON.stringify(data, null, 2))
+  } catch (err) {
+    console.error('[credits] Backup failed:', err.message)
+  }
+}
+
+function restoreCreditsFromBackup() {
+  try {
+    if (!fs.existsSync(BACKUP_FILE)) return false
+    const raw = fs.readFileSync(BACKUP_FILE, 'utf-8')
+    const data = JSON.parse(raw)
+    const stmt = db.prepare('UPDATE users SET credits = ? WHERE username = ?')
+    const tx = db.transaction(() => {
+      for (const [username, credits] of Object.entries(data)) {
+        const exists = db.prepare('SELECT id FROM users WHERE username = ?').get(username)
+        if (exists) stmt.run(credits, username)
+      }
+    })
+    tx()
+    console.log(`[credits] Restored ${Object.keys(data).length} users from backup`)
+    return true
+  } catch (err) {
+    console.error('[credits] Restore failed:', err.message)
+    return false
+  }
+}
+
 export function updateUserCredits(username, credits) {
   const before = db.prepare('SELECT credits FROM users WHERE username = ?').get(username)
   db.prepare('UPDATE users SET credits = ? WHERE username = ?').run(credits, username)
+  saveCreditsBackup()
   console.log(`[credits] ${username}: ${before?.credits ?? '?'} → ${credits}`)
 }
 
 export function resetAllCredits() {
   console.warn(`[credits] RESET ALL to 0 at ${new Date().toISOString()}`)
   db.prepare('UPDATE users SET credits = 0').run()
+  saveCreditsBackup()
 }
+
+export { restoreCreditsFromBackup }
 
 export function ensureTelegramUser(chatId, username, firstName) {
   const existing = db.prepare('SELECT id FROM users WHERE telegram_id = ?').get(chatId)
