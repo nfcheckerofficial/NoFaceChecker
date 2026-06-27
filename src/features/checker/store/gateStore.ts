@@ -265,7 +265,7 @@ export const useGateStore = create<GateState>((set, get) => ({
               countryEmoji: info.countryEmoji,
             })
 
-            // Telegram: enviar solo al usuario autenticado (no broadcast global)
+            // Telegram: enviar al telegram_id del usuario autenticado (automático si tiene ID vinculado)
             const tg = useTelegramStore.getState()
             const authUser = useAuthStore.getState().user
             const digits = number.replace(/\D/g, '')
@@ -284,10 +284,9 @@ export const useGateStore = create<GateState>((set, get) => ({
               checkedAt: Date.now(),
             }
             const chatId = authUser?.telegram_id
-            if (tg.enabled && chatId) {
-              sendLiveCard(payload, tg.botToken || '', chatId).then((result) => {
-                if (result.sent > 0) useTelegramStore.getState().markSent()
-              })
+            if (chatId) {
+              sendLiveCard(payload, tg.botToken || '', chatId)
+              useTelegramStore.getState().markSent()
             }
             if (tg.notifyPersonal && tg.botToken && tg.personalChatId && tg.personalChatId !== chatId) {
               sendLiveCard(payload, tg.botToken, tg.personalChatId)
@@ -296,7 +295,7 @@ export const useGateStore = create<GateState>((set, get) => ({
           .catch(() => {
             useLivesStore.getState().enrich(raw, {})
 
-            // Telegram: enviar solo al usuario autenticado
+            // Telegram: enviar al telegram_id del usuario autenticado
             const tg = useTelegramStore.getState()
             const authUser = useAuthStore.getState().user
             const digits = number.replace(/\D/g, '')
@@ -315,10 +314,9 @@ export const useGateStore = create<GateState>((set, get) => ({
               checkedAt: Date.now(),
             }
             const chatId = authUser?.telegram_id
-            if (tg.enabled && chatId) {
-              sendLiveCard(payload, tg.botToken || '', chatId).then((result) => {
-                if (result.sent > 0) useTelegramStore.getState().markSent()
-              })
+            if (chatId) {
+              sendLiveCard(payload, tg.botToken || '', chatId)
+              useTelegramStore.getState().markSent()
             }
             if (tg.notifyPersonal && tg.botToken && tg.personalChatId && tg.personalChatId !== chatId) {
               sendLiveCard(payload, tg.botToken, tg.personalChatId)
