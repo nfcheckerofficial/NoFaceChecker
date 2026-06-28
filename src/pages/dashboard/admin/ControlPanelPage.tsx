@@ -36,6 +36,9 @@ export function ControlPanelPage() {
   // Gate access state
   const [gateSelections, setGateSelections] = useState<Record<string, string[]>>({})
   const [newDateInput, setNewDateInput] = useState('')
+  // Contador de clics por gate/botón rápido para sumar días consecutivos.
+  // Cada clic incrementa el contador y agrega la fecha correspondiente desde hoy.
+  const [quickClicks, setQuickClicks] = useState<Record<string, { day: number; week: number; month: number }>>({})
 
   const showNotif = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message })
@@ -47,6 +50,18 @@ export function ControlPanelPage() {
     const d = new Date()
     d.setDate(d.getDate() + n)
     return d.toISOString().split('T')[0]
+  }
+
+  // Agrega N días consecutivos desde hoy. Si el usuario pica el mismo botón
+  // varias veces, se suman los días (ej: +1 day clic 3 veces → hoy+1, +2, +3).
+  const addRelativeDays = (gateId: string, step: number) => {
+    setQuickClicks(prev => {
+      const cur = prev[gateId] || { day: 0, week: 0, month: 0 }
+      const key = step === 1 ? 'day' : step === 7 ? 'week' : 'month'
+      const next = { ...cur, [key]: cur[key] + 1 }
+      addDateToGate(gateId, addDaysISO(next[key] * step))
+      return { ...prev, [gateId]: next }
+    })
   }
 
   const openModal = (type: ModalType, user?: User) => {
@@ -64,6 +79,7 @@ export function ControlPanelPage() {
       }
       setGateSelections(selections)
       setNewDateInput('')
+      setQuickClicks({})
     }
   }
 
@@ -436,19 +452,19 @@ export function ControlPanelPage() {
                           Today
                         </button>
                         <button
-                          onClick={() => addDateToGate(gateId, addDaysISO(1))}
+                          onClick={() => addRelativeDays(gateId, 1)}
                           className="px-2 py-1 bg-cyber-blue/20 border border-cyber-blue/50 rounded text-[10px] text-cyber-blue hover:bg-cyber-blue/30 transition-colors font-semibold"
                         >
                           +1 day
                         </button>
                         <button
-                          onClick={() => addDateToGate(gateId, addDaysISO(7))}
+                          onClick={() => addRelativeDays(gateId, 7)}
                           className="px-2 py-1 bg-cyber-yellow/20 border border-cyber-yellow/50 rounded text-[10px] text-cyber-yellow hover:bg-cyber-yellow/30 transition-colors font-semibold"
                         >
                           +7 days
                         </button>
                         <button
-                          onClick={() => addDateToGate(gateId, addDaysISO(30))}
+                          onClick={() => addRelativeDays(gateId, 30)}
                           className="px-2 py-1 bg-cyber-purple/20 border border-cyber-purple/50 rounded text-[10px] text-cyber-purple hover:bg-cyber-purple/30 transition-colors font-semibold"
                         >
                           +30 days
