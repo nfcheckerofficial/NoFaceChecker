@@ -822,6 +822,55 @@ app.get('/api/telegram/my-id', authMiddleware, async (req, res) => {
   })
 })
 
+// Helper: envía un mensaje a un chat vía Telegram API
+async function tgSendMessage(token, chatId, text) {
+  const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text,
+      parse_mode: 'MarkdownV2',
+      disable_web_page_preview: true,
+    }),
+  })
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({}))
+    return { ok: false, error: err.description || `HTTP ${r.status}` }
+  }
+  return { ok: true }
+}
+
+// Endpoint unificado: el cliente llama esto cuando se detecta una live.
+// El server envia la live SOLO al telegram_id del user que la detectó.
+// (No broadcast — cada user recibe solo SUS propias live.)
+app.post('/api/telegram/notify-live', authMiddleware, express.json(), async (req, res) => {
+  try {
+    if (!TELEGRAM_BOT_TOKEN) {
+      return res.status(503).json({ error: 'TELEGRAM_BOT_TOKEN not configured on server' })
+    }
+    const { payload } = req.body
+    if (!payload) return res.status(400).json({ error: 'payload required' })
+
+    if (!req.user.telegram_id) {
+      console.log(`[Telegram] notify-live: user ${req.user.username} has no telegram_id, skipping send`)
+      return res.json({ ok: true, sent: false, reason: 'no telegram_id' })
+    }
+
+    const text = fmtBroadcast(payload, req.user.credits ?? null)
+    const r = await tgSendMessage(TELEGRAM_BOT_TOKEN, req.user.telegram_id, text)
+    if (r.ok) {
+      console.log(`[Telegram] notify-live → user ${req.user.username} (${req.user.telegram_id}) OK`)
+      return res.json({ ok: true, sent: true })
+    }
+    console.warn(`[Telegram] notify-live → user ${req.user.username} (${req.user.telegram_id}) FAILED: ${r.error}`)
+    res.status(502).json({ ok: false, error: r.error })
+  } catch (err) {
+    console.error('[Telegram] notify-live error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // Broadcast a live card to all subscribers
 app.post('/api/telegram/broadcast', authMiddleware, express.json(), async (req, res) => {
   try {

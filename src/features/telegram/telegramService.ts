@@ -44,42 +44,41 @@ function fmtCard(payload: LiveCardPayload): string {
   return lines.join('\n')
 }
 
-/** Broadcast a live card to ALL subscribed users via the server */
-export async function broadcastLiveCard(payload: LiveCardPayload, botToken: string): Promise<{ sent: number; total: number }> {
+/**
+ * Notifica al server sobre una live card detectada por el user actual.
+ * El server envia la live SOLO al telegram_id de ese user. Sin broadcast.
+ */
+export async function notifyLiveCard(payload: LiveCardPayload, token: string): Promise<{ ok: boolean; sent?: boolean; reason?: string; error?: string }> {
   try {
-    const res = await fetch(`${SERVER_URL}/api/telegram/broadcast`, {
+    const res = await fetch(`${SERVER_URL}/api/telegram/notify-live`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ botToken, payload }),
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ payload }),
     })
+    const data = await res.json().catch(() => ({}))
     if (!res.ok) {
-      console.warn('[Telegram] Broadcast failed:', res.status)
-      return { sent: 0, total: 0 }
+      console.warn('[Telegram] notify-live failed:', res.status, data)
+      return { ok: false, error: data.error || `HTTP ${res.status}` }
     }
-    return await res.json()
+    console.log('[Telegram] notify-live:', data)
+    return { ok: true, ...data }
   } catch (err) {
-    console.warn('[Telegram] Broadcast network error:', err)
-    return { sent: 0, total: 0 }
+    console.warn('[Telegram] notify-live network error:', err)
+    return { ok: false, error: String(err) }
   }
 }
 
-/** Direct send to a single chat via server (evita CORS) */
+/** @deprecated usar notifyLiveCard */
+export async function broadcastLiveCard(payload: LiveCardPayload, botToken: string): Promise<{ sent: number; total: number }> {
+  return { sent: 0, total: 0 }
+}
+
+/** @deprecated usar notifyLiveCard */
 export async function sendLiveCard(payload: LiveCardPayload, botToken: string, chatId: string): Promise<boolean> {
-  if (!chatId) return false
-  try {
-    const res = await fetch(`${SERVER_URL}/api/telegram/send-personal`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ botToken, chatId, payload }),
-    })
-    return res.ok
-  } catch (err) {
-    console.warn('[Telegram] Network error:', err)
-    return false
-  }
+  return false
 }
 
-/** Legacy direct send to a single chat (browser → Telegram API direct) */
+/** @deprecated */
 export async function sendLiveCardDirect(payload: LiveCardPayload, botToken: string, chatId: string): Promise<boolean> {
   if (!botToken || !chatId) return false
 

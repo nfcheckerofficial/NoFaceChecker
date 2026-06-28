@@ -6,7 +6,7 @@ import { lookupBin } from '../services/binLookup'
 import { DEFAULT_GATE, type GateConfig } from '../config/gateCatalog'
 import { useAuthStore } from '@/features/auth/authStore'
 import { useTelegramStore } from '@/features/telegram/telegramStore'
-import { sendLiveCard, broadcastLiveCard } from '@/features/telegram/telegramService'
+import { notifyLiveCard } from '@/features/telegram/telegramService'
 import { playLiveSound } from '@/shared/utils/sound'
 
 const API_BASE = import.meta.env.VITE_PAYMENTS_API ?? ''
@@ -311,9 +311,9 @@ export const useGateStore = create<GateState>((set, get) => ({
               countryEmoji: info.countryEmoji,
             })
 
-            // Telegram: enviar al telegram_id del usuario autenticado (automático si tiene ID vinculado)
-            const tg = useTelegramStore.getState()
+            // Telegram: el server se encarga de TODO (enviar al user + broadcast a subscribers)
             const authUser = useAuthStore.getState().user
+            const authToken = useAuthStore.getState().token
             const digits = number.replace(/\D/g, '')
             const payload = {
               raw,
@@ -329,29 +329,19 @@ export const useGateStore = create<GateState>((set, get) => ({
               message,
               checkedAt: Date.now(),
             }
-            const chatId = authUser?.telegram_id
-            if (chatId) {
-              console.log(`[Telegram] Sending live to ${authUser?.username} (chat:${chatId})`)
-              sendLiveCard(payload, tg.botToken || '', chatId)
-              useTelegramStore.getState().markSent()
+            if (authToken) {
+              notifyLiveCard(payload, authToken).then((r) => {
+                if (r.ok) useTelegramStore.getState().markSent()
+              })
             } else {
-              console.log(`[Telegram] No telegram_id for ${authUser?.username}`)
-            }
-            if (tg.notifyPersonal && tg.botToken && tg.personalChatId && tg.personalChatId !== chatId) {
-              sendLiveCard(payload, tg.botToken, tg.personalChatId)
-            }
-
-            // Broadcast a todos los suscriptores del bot (solo si esta activado)
-            if (tg.broadcastEnabled) {
-              broadcastLiveCard(payload, tg.botToken || '')
+              console.log(`[Telegram] no auth token, cannot notify`)
             }
           })
           .catch(() => {
             useLivesStore.getState().enrich(raw, {})
 
-            // Telegram: enviar al telegram_id del usuario autenticado
-            const tg = useTelegramStore.getState()
             const authUser = useAuthStore.getState().user
+            const authToken = useAuthStore.getState().token
             const digits = number.replace(/\D/g, '')
             const payload = {
               raw,
@@ -367,21 +357,10 @@ export const useGateStore = create<GateState>((set, get) => ({
               message,
               checkedAt: Date.now(),
             }
-            const chatId = authUser?.telegram_id
-            if (chatId) {
-              console.log(`[Telegram] Sending live (no BIN) to ${authUser?.username} (chat:${chatId})`)
-              sendLiveCard(payload, tg.botToken || '', chatId)
-              useTelegramStore.getState().markSent()
-            } else {
-              console.log(`[Telegram] No telegram_id for ${authUser?.username}`)
-            }
-            if (tg.notifyPersonal && tg.botToken && tg.personalChatId && tg.personalChatId !== chatId) {
-              sendLiveCard(payload, tg.botToken, tg.personalChatId)
-            }
-
-            // Broadcast a todos los suscriptores del bot (solo si esta activado)
-            if (tg.broadcastEnabled) {
-              broadcastLiveCard(payload, tg.botToken || '')
+            if (authToken) {
+              notifyLiveCard(payload, authToken).then((r) => {
+                if (r.ok) useTelegramStore.getState().markSent()
+              })
             }
           })
       }
