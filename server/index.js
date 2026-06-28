@@ -814,7 +814,7 @@ if (TELEGRAM_BOT_TOKEN) {
         return startBot(TELEGRAM_BOT_TOKEN)
       } else {
         console.error(`[!] Telegram token INVALID: ${data.description || JSON.stringify(data)}`)
-        console.error('[!] Live notifications will NOT work until TELEGRAM_BOT_TOKEN is fixed in Render env`)
+        console.error('[!] Live notifications will NOT work until TELEGRAM_BOT_TOKEN is fixed in Render env')
       }
     })
     .then(() => {
