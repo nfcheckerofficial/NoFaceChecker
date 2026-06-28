@@ -264,6 +264,10 @@ export async function setUserRole(username, role) {
   await query('UPDATE users SET role = $1 WHERE username = $2', [role, username])
 }
 
+export async function deleteUser(userId) {
+  await query('DELETE FROM users WHERE id = $1', [userId])
+}
+
 export async function updateUserPassword(username, hash) {
   await query('UPDATE users SET password_hash = $1 WHERE username = $2', [hash, username])
 }

@@ -39,6 +39,7 @@ export const {
   getUserByTelegramId,
   updateUserCredits,
   setUserRole,
+  deleteUser,
   linkTelegramToUser,
   resetAllCredits,
   restoreCreditsFromBackup,

@@ -380,6 +380,10 @@ export function setUserRole(username, role) {
   db.prepare('UPDATE users SET role = ? WHERE username = ?').run(role, username)
 }
 
+export function deleteUser(userId) {
+  db.prepare('DELETE FROM users WHERE id = ?').run(userId)
+}
+
 export function updateUserPassword(username, hash) {
   db.prepare('UPDATE users SET password_hash = ? WHERE username = ?').run(hash, username)
 }

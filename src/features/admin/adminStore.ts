@@ -143,9 +143,19 @@ export const useAdminStore = create<AdminState>((set, get) => ({
       syncUserCredits(prev.username, patch.credits)
     }
   },
-  deleteUser: (id) => set((s) => ({
-    users: s.users.filter((u) => u.id !== id),
-  })),
+  deleteUser: async (id) => {
+    const token = useAuthStore.getState().token
+    if (!token) return
+    try {
+      await fetch(`${SERVER_URL}/api/admin/users/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      set((s) => ({ users: s.users.filter((u) => u.id !== id) }))
+    } catch (err) {
+      console.error('[admin] deleteUser error:', err)
+    }
+  },
   toggleBan: (id, reason) => set((s) => ({
     users: s.users.map((u) => (u.id === id ? { ...u, banned: !u.banned, banReason: u.banned ? undefined : (reason || 'No reason provided') } : u)),
   })),

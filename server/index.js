@@ -329,6 +329,20 @@ app.post('/api/admin/set-credits', authMiddleware, async (req, res) => {
   }
 })
 
+app.delete('/api/admin/users/:id', authMiddleware, async (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' })
+  const { id } = req.params
+  try {
+    const user = await getUserById(Number(id))
+    if (!user) return res.status(404).json({ error: 'User not found' })
+    await deleteUser(Number(id))
+    res.json({ ok: true })
+  } catch (err) {
+    console.error('[admin] delete user error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
 app.get('/api/auth/me', authMiddleware, async (req, res) => {
   const user = await getUserById(req.user.id)
   if (!user) return res.status(404).json({ error: 'User not found' })
