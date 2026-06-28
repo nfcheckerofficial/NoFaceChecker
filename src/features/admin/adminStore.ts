@@ -147,10 +147,11 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     const token = useAuthStore.getState().token
     if (!token) return
     try {
-      await fetch(`${SERVER_URL}/api/admin/users/${id}`, {
+      const res = await fetch(`${SERVER_URL}/api/admin/users/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       })
+      if (!res.ok) { console.error('[admin] deleteUser failed:', res.status, await res.text()); return }
       set((s) => ({ users: s.users.filter((u) => u.id !== id) }))
     } catch (err) {
       console.error('[admin] deleteUser error:', err)

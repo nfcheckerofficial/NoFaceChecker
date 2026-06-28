@@ -14,7 +14,7 @@ services:
       - key: CLIENT_URL
         value: https://nofacechk.com
       - key: ADMIN_PASS
-        value: "12345"
+        generateValue: true
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
@@ -22,7 +22,7 @@ services:
       - key: TELEGRAM_BOT_TOKEN
         sync: false
       - key: JWT_SECRET
-        sync: false
+        generateValue: true
       - key: ADMIN_SETUP_KEY
         sync: false
 

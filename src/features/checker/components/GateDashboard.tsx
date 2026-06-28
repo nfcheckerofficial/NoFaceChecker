@@ -75,6 +75,19 @@ export function GateDashboard({ gateId }: GateDashboardProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gateId])
 
+  const handleStart = async () => {
+    initAudio()
+    if (isPaused) {
+      resume()
+      return
+    }
+    if (isAmazon && amazonCookie.trim() === '') {
+      useGateStore.setState({ notice: 'Se requiere la cookie de Amazon para procesar.' })
+      return
+    }
+    await start()
+  }
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) return
@@ -101,19 +114,6 @@ export function GateDashboard({ gateId }: GateDashboardProps) {
     const denom = stats.total || 1
     return Math.round((stats.checked / denom) * 100)
   }, [stats.checked, stats.total])
-
-  const handleStart = async () => {
-    initAudio()
-    if (isPaused) {
-      resume()
-      return
-    }
-    if (isAmazon && amazonCookie.trim() === '') {
-      useGateStore.setState({ notice: 'Se requiere la cookie de Amazon para procesar.' })
-      return
-    }
-    await start()
-  }
 
   const handleGenerated = (lines: string[]) => {
     if (isRunning) {
