@@ -127,7 +127,7 @@ export const useLivesStore = create<LivesState>((set, get) => ({
         for (const l of local) {
           if (!merged.some((m) => m.raw === l.raw)) merged.push(l)
         }
-        merged.sort((a, b) => b.capturedAt - a.capturedAt)
+        merged.sort((a, b) => new Date(b.capturedAt).getTime() - new Date(a.capturedAt).getTime())
         const final = merged.slice(0, MAX_LIVES)
         saveLives(final)
         set({ lives: final, serverReady: true })

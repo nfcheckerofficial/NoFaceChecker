@@ -48,33 +48,32 @@ export async function startBot(token) {
     const tgUsername = msg.from?.username || null
     const firstName = msg.from?.first_name || null
 
-    addSubscriber(chatId, tgUsername, firstName)
-
-    const user = ensureTelegramUser(chatId, tgUsername, firstName)
+    addSubscriber(chatId, tgUsername, firstName).catch(() => {})
+    ensureTelegramUser(chatId, tgUsername, firstName).catch(() => {})
 
     bot.sendMessage(
       chatId,
       `<b>No Face Checker Bot</b> 🚀\n\n<b>Your Telegram ID:</b>\n<code>${chatId}</code>\n\nUse this ID to register at nofacechk.com/register\n\nYou will receive all live cards as they are detected.\n\n/id - get your ID\n/stop - unsubscribe`,
       { parse_mode: 'HTML' }
-    )
+    ).catch(() => {})
     console.log(`[Telegram Bot] New subscriber: ${chatId} (${tgUsername || firstName || 'unknown'})`)
   })
 
   bot.onText(/\/stop/, (msg) => {
     const chatId = String(msg.chat.id)
-    removeSubscriber(chatId)
-    bot.sendMessage(chatId, 'You have been unsubscribed. Send /start to register again.')
+    removeSubscriber(chatId).catch(() => {})
+    bot.sendMessage(chatId, 'You have been unsubscribed. Send /start to register again.').catch(() => {})
     console.log(`[Telegram Bot] Unsubscribed: ${chatId}`)
   })
 
   bot.onText(/\/id/, (msg) => {
     const chatId = String(msg.chat.id)
-    bot.sendMessage(chatId, `<b>Your Telegram ID:</b>\n<code>${chatId}</code>`, { parse_mode: 'HTML' })
+    bot.sendMessage(chatId, `<b>Your Telegram ID:</b>\n<code>${chatId}</code>`, { parse_mode: 'HTML' }).catch(() => {})
   })
 
   bot.on('message', (msg) => {
     if (msg.text && !msg.text.startsWith('/')) {
-      bot.sendMessage(msg.chat.id, `<b>Your Telegram ID:</b> <code>${String(msg.chat.id)}</code>\n\nUse /start to register or go to nofacechk.com/register`, { parse_mode: 'HTML' })
+      bot.sendMessage(msg.chat.id, `<b>Your Telegram ID:</b> <code>${String(msg.chat.id)}</code>\n\nUse /start to register or go to nofacechk.com/register`, { parse_mode: 'HTML' }).catch(() => {})
     }
   })
 
@@ -83,9 +82,9 @@ export async function startBot(token) {
     const subs = listSubscribers()
     const isRegistered = subs.some((s) => s.chat_id === chatId)
     if (isRegistered) {
-      bot.sendMessage(chatId, '✅ You are registered and will receive all live cards.')
+      bot.sendMessage(chatId, '✅ You are registered and will receive all live cards.').catch(() => {})
     } else {
-      bot.sendMessage(chatId, '❌ You are not registered. Send /start to register.')
+      bot.sendMessage(chatId, '❌ You are not registered. Send /start to register.').catch(() => {})
     }
   })
 

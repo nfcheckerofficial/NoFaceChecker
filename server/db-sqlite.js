@@ -17,6 +17,7 @@
 import Database from 'better-sqlite3'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
+import fs from 'fs'
 import { mkdirSync, existsSync } from 'fs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -30,6 +31,7 @@ const db = new Database(join(dbDir, 'payments.db'))
 
 // WAL: mejor concurrencia entre el webhook y las rutas HTTP.
 db.pragma('journal_mode = WAL')
+db.pragma('foreign_keys = ON')
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS payment_methods (
@@ -119,6 +121,16 @@ db.exec(`
     receipt_url     TEXT,
     created_at      TEXT NOT NULL DEFAULT (datetime('now'))
   );
+`)
+
+// --- Indexes ---
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_users_telegram_id ON users(telegram_id);
+  CREATE INDEX IF NOT EXISTS idx_lives_user_id ON lives(user_id);
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_lives_user_raw ON lives(user_id, raw);
+  CREATE INDEX IF NOT EXISTS idx_charges_email ON charges(email);
+  CREATE INDEX IF NOT EXISTS idx_payment_methods_email ON payment_methods(email);
+  CREATE INDEX IF NOT EXISTS idx_gate_access_user ON gate_access(user_id);
 `)
 
 // Migrations: add missing columns to existing tables

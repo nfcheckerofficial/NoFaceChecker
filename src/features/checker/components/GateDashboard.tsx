@@ -80,11 +80,11 @@ export function GateDashboard({ gateId }: GateDashboardProps) {
       if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) return
       if (e.key === 'Enter') handleStart()
       if (e.key === ' ' && !isRunning) { e.preventDefault(); handleStart() }
-      if (e.key === ' ') { e.preventDefault(); if (isPaused) resume(); else pause() }
+      else if (e.key === ' ' && isRunning) { e.preventDefault(); if (isPaused) resume(); else pause() }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  })
+  }, [isRunning, isPaused, handleStart, pause, resume])
 
   useEffect(() => {
     if (!isRunning) {

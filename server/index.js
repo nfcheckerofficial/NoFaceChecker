@@ -61,8 +61,14 @@ const {
   CLIENT_URL = 'http://localhost:5173',
   PORT = 4242,
   NODE_ENV = 'development',
-  JWT_SECRET = 'n0f4c3_chk_s3cr3t_k3y_2024',
+  JWT_SECRET,
 } = process.env
+
+if (NODE_ENV === 'production' && !JWT_SECRET) {
+  console.error('[!] FATAL: JWT_SECRET must be set in production')
+  process.exit(1)
+}
+const _JWT_SECRET = JWT_SECRET || 'dev_only_insecure_jwt_secret_2024'
 
 if (!STRIPE_SECRET_KEY) {
   console.warn('\n[!] STRIPE_SECRET_KEY no configurada — rutas de pago deshabilitadas')
@@ -147,6 +153,9 @@ app.post(
   '/api/webhook',
   express.raw({ type: 'application/json' }),
   (req, res) => {
+    if (!stripe) {
+      return res.status(503).json({ error: 'Stripe not configured' })
+    }
     const signature = req.headers['stripe-signature']
     let event
 
@@ -184,7 +193,7 @@ function authMiddleware(req, res, next) {
   }
   try {
     const token = header.slice(7)
-    req.user = jwt.verify(token, JWT_SECRET)
+    req.user = jwt.verify(token, _JWT_SECRET, { algorithms: ['HS256'] })
     next()
   } catch {
     return res.status(401).json({ error: 'Invalid token' })
@@ -215,7 +224,7 @@ app.post('/api/auth/register', async (req, res) => {
 
     await addSubscriber(telegram_id, username, username)
 
-    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' })
+    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, _JWT_SECRET, { expiresIn: '7d', algorithm: 'HS256' })
     res.status(201).json({ token, user })
   } catch (err) {
     console.error('[auth] register error:', err.message)
@@ -235,7 +244,7 @@ app.post('/api/auth/login', async (req, res) => {
     const match = await bcrypt.compare(password, user.password_hash)
     if (!match) return res.status(401).json({ error: 'Invalid credentials' })
 
-    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' })
+    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, _JWT_SECRET, { expiresIn: '7d', algorithm: 'HS256' })
     res.json({
       token,
       user: { id: user.id, username: user.username, credits: user.credits, role: user.role, telegram_id: user.telegram_id, created_at: user.created_at },
@@ -252,7 +261,7 @@ app.post('/api/auth/telegram-login', async (req, res) => {
     if (!telegram_id) return res.status(400).json({ error: 'Telegram ID required' })
     const user = await getUserByTelegramId(telegram_id)
     if (!user) return res.status(404).json({ error: 'Telegram ID not linked. Send /start to @NoFaceCheckerBot' })
-    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' })
+    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, _JWT_SECRET, { expiresIn: '7d', algorithm: 'HS256' })
     res.json({
       token,
       user: { id: user.id, username: user.username, credits: user.credits, role: user.role, telegram_id: user.telegram_id, created_at: user.created_at },
@@ -296,7 +305,7 @@ app.get('/api/admin/users', authMiddleware, async (req, res) => {
     })))
   } catch (err) {
     console.error('[admin] /api/admin/users error:', err.message, err.stack)
-    res.status(500).json({ error: err.message, stack: err.stack?.split('\n').slice(0, 3).join(' | ') })
+    res.status(500).json({ error: isProd ? 'Internal server error' : err.message })
   }
 })
 
@@ -327,10 +336,11 @@ app.get('/api/auth/me', authMiddleware, async (req, res) => {
 })
 
 app.put('/api/auth/credits', authMiddleware, async (req, res) => {
-  const { credits } = req.body
-  if (typeof credits !== 'number' || credits < 0) return res.status(400).json({ error: 'Invalid credits value' })
-  await updateUserCredits(req.user.username, credits)
-  res.json({ ok: true, credits })
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' })
+  const { username, credits } = req.body
+  if (!username || typeof credits !== 'number' || credits < 0) return res.status(400).json({ error: 'Invalid data' })
+  await updateUserCredits(username, credits)
+  res.json({ ok: true, username, credits })
 })
 
 // --- Idempotencia persistente: evita procesar el mismo evento dos veces ---
@@ -522,7 +532,7 @@ app.get('/api/checkout-session/:id', async (req, res) => {
 // La autenticación 3D Secure es obligatoria aquí: es lo que diferencia
 // validar tu propia tarjeta (legal) de probar tarjetas ajenas (fraude).
 // ---------------------------------------------------------------------------
-app.post('/api/create-setup-intent', async (req, res) => {
+app.post('/api/create-setup-intent', authMiddleware, async (req, res) => {
   try {
     const { email } = req.body
 
@@ -551,7 +561,7 @@ app.post('/api/create-setup-intent', async (req, res) => {
 })
 
 // Tras confirmar en el frontend, consulta el resultado de la validación
-app.get('/api/setup-intent/:id', async (req, res) => {
+app.get('/api/setup-intent/:id', authMiddleware, async (req, res) => {
   try {
     const intent = await stripe.setupIntents.retrieve(req.params.id, {
       expand: ['payment_method', 'latest_attempt'],
@@ -587,7 +597,7 @@ app.get('/api/setup-intent/:id', async (req, res) => {
 })
 
 // Lista los métodos de pago validados y guardados (solo metadatos seguros).
-app.get('/api/saved-cards', async (req, res) => {
+app.get('/api/saved-cards', authMiddleware, async (req, res) => {
   try {
     const { email } = req.query
     const cards = await listValidatedCards(typeof email === 'string' ? email : undefined)
@@ -626,7 +636,7 @@ app.get('/api/saved-cards', async (req, res) => {
 // El resultado se guarda como un RECIBO (tabla charges) ligado al método de
 // pago y al usuario. No se etiqueta ni se acumula en ningún pool.
 // ---------------------------------------------------------------------------
-app.post('/api/charge-saved-card', async (req, res) => {
+app.post('/api/charge-saved-card', authMiddleware, async (req, res) => {
   try {
     const { paymentMethodId, customerId, amount, currency = 'usd', description } = req.body
 
@@ -708,7 +718,7 @@ app.post('/api/charge-saved-card', async (req, res) => {
 })
 
 // Lista los recibos de cobros (historial de transacciones).
-app.get('/api/charges', async (req, res) => {
+app.get('/api/charges', authMiddleware, async (req, res) => {
   try {
     const { email } = req.query
     const rows = await listCharges(typeof email === 'string' ? email : undefined)
@@ -749,8 +759,9 @@ if (TELEGRAM_BOT_TOKEN) {
 }
 
 // Broadcast a live card to all subscribers
-app.post('/api/telegram/broadcast', express.json(), async (req, res) => {
+app.post('/api/telegram/broadcast', authMiddleware, express.json(), async (req, res) => {
   try {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' })
     const { botToken, payload } = req.body
     const token = botToken || TELEGRAM_BOT_TOKEN
     if (!token) return res.status(400).json({ error: 'No bot token available' })
@@ -791,7 +802,7 @@ app.post('/api/telegram/broadcast', express.json(), async (req, res) => {
 })
 
 // Test Telegram connection
-app.post('/api/telegram/test', express.json(), async (req, res) => {
+app.post('/api/telegram/test', authMiddleware, express.json(), async (req, res) => {
   try {
     const { botToken, chatId } = req.body
     if (!botToken) return res.status(400).json({ ok: false, error: 'Bot token required' })
@@ -819,7 +830,7 @@ app.post('/api/telegram/test', express.json(), async (req, res) => {
 })
 
 // Send a personal notification to a single chat
-app.post('/api/telegram/send-personal', express.json(), async (req, res) => {
+app.post('/api/telegram/send-personal', authMiddleware, express.json(), async (req, res) => {
   try {
     const { botToken, chatId, payload } = req.body
     const token = botToken || TELEGRAM_BOT_TOKEN
@@ -882,8 +893,9 @@ app.post('/api/telegram/subscribe-me', authMiddleware, async (req, res) => {
 })
 
 // List all subscribers
-app.get('/api/telegram/subscribers', async (_req, res) => {
+app.get('/api/telegram/subscribers', authMiddleware, async (_req, res) => {
   try {
+    if (_req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' })
     const subs = await listSubscribers(true)
     res.json({ subscribers: subs, count: subs.length })
   } catch (err) {
@@ -1048,9 +1060,10 @@ app.use((err, req, res, _next) => {
 })
 
 // Endpoint para promover un usuario a admin (protegido por setup key)
-const ADMIN_SETUP_KEY = process.env.ADMIN_SETUP_KEY || 'admin123'
+const ADMIN_SETUP_KEY = process.env.ADMIN_SETUP_KEY
 app.post('/api/admin/setup', async (req, res) => {
   const { username, key } = req.body
+  if (!ADMIN_SETUP_KEY) return res.status(403).json({ error: 'Admin setup is disabled. Set ADMIN_SETUP_KEY env var.' })
   if (key !== ADMIN_SETUP_KEY) return res.status(401).json({ error: 'Invalid setup key' })
   if (!username) return res.status(400).json({ error: 'Username required' })
   try {
@@ -1123,7 +1136,11 @@ if (isProd) {
 // Seed: crear admin por defecto si no existe
 async function seedAdmin() {
   const ADMIN_USER = process.env.ADMIN_USER || 'admin'
-  const ADMIN_PASS = process.env.ADMIN_PASS || 'admin123'
+  const ADMIN_PASS = process.env.ADMIN_PASS || (isProd ? '' : 'admin123')
+  if (isProd && !ADMIN_PASS) {
+    console.error('[!] FATAL: ADMIN_PASS must be set in production')
+    process.exit(1)
+  }
   try {
     const existing = await getUserByUsername(ADMIN_USER)
     if (!existing) {
