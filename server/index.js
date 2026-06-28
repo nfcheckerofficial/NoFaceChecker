@@ -1051,8 +1051,10 @@ app.post('/api/admin/gate-access', authMiddleware, async (req, res) => {
     if (!userId || !gateId || !Array.isArray(days)) {
       return res.status(400).json({ error: 'userId, gateId, and days array required' })
     }
+    const todayUtc = new Date().toISOString().split('T')[0]
+    console.log(`[admin] gate-access: userId=${Number(userId)} gateId=${gateId} days=${JSON.stringify(days)} (today UTC=${todayUtc})`)
     await setGateAccess(Number(userId), gateId, days)
-    res.json({ ok: true })
+    res.json({ ok: true, today: todayUtc, savedDays: days })
   } catch (err) {
     console.error('[admin] gate-access set error:', err.message)
     res.status(500).json({ error: err.message })
@@ -1082,10 +1084,25 @@ app.get('/api/gate-access/my', authMiddleware, async (req, res) => {
 
 app.get('/api/gate-access/check/:gateId', authMiddleware, async (req, res) => {
   try {
+    const today = new Date().toISOString().split('T')[0]
     const hasAccess = await checkGateAccessToday(req.user.id, req.params.gateId)
-    res.json({ hasAccess, today: new Date().toISOString().split('T')[0] })
+    console.log(`[gate-access] check: userId=${req.user.id} gateId=${req.params.gateId} today=${today} hasAccess=${hasAccess}`)
+    res.json({ hasAccess, today })
   } catch (err) {
     console.error('[gate-access] check error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// Debug: muestra el gate_access guardado para un user (solo admin)
+app.get('/api/admin/gate-access/user/:userId', authMiddleware, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' })
+    const { listAllGateAccess } = await import('./db.js')
+    const all = await listAllGateAccess()
+    const userRecords = all.filter((r) => String(r.user_id) === String(req.params.userId))
+    res.json({ today: new Date().toISOString().split('T')[0], records: userRecords })
+  } catch (err) {
     res.status(500).json({ error: err.message })
   }
 })
