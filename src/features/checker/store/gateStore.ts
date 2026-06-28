@@ -13,14 +13,31 @@ const API_BASE = import.meta.env.VITE_PAYMENTS_API ?? ''
 
 async function checkGateAccess(gateId: string): Promise<boolean> {
   const token = useAuthStore.getState().token
+  const user = useAuthStore.getState().user
   if (!token) return false
+  // Admin siempre tiene acceso a todos los gates
+  if (user?.role === 'admin') return true
   try {
-    const res = await fetch(`${API_BASE}/api/gate-access/check/${gateId}`, {
+    // Si el gate_access est+� vac+�o para este usuario, permitir acceso (no bloquear por defecto)
+    const myRes = await fetch(`${API_BASE}/api/gate-access/my`, {
       headers: { Authorization: `Bearer ${token}` },
     })
-    if (!res.ok) return false
-    const data = await res.json()
-    return data.hasAccess
+    if (myRes.ok) {
+      const myAccess = await myRes.json()
+      // Si no hay registros de acceso para el usuario, permitir
+      if (!Array.isArray(myAccess) || myAccess.length === 0) return true
+      // Si hay registros pero ninguno para este gate, permitir
+      const gateRecord = myAccess.find((r: { gate_id: string }) => r.gate_id === gateId)
+      if (!gateRecord) return true
+      // Si hay registro para este gate, verificar si hoy est+� en los d+�as
+      const checkRes = await fetch(`${API_BASE}/api/gate-access/check/${gateId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!checkRes.ok) return false
+      const data = await checkRes.json()
+      return data.hasAccess
+    }
+    return false
   } catch {
     return false
   }
@@ -198,7 +215,7 @@ export const useGateStore = create<GateState>((set, get) => ({
     if (!hasAccess) {
       set({
         isRunning: false,
-        notice: 'No tienes acceso a este gate hoy. Contacta al administrador para rentar d+�as.',
+        notice: 'No tienes acceso a este gate hoy. Contacta al administrador para rentar dias.',
       })
       return
     }
