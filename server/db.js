@@ -54,6 +54,11 @@ export const {
   listLives,
   deleteLive,
   clearLives,
+  setGateAccess,
+  listUserGateAccess,
+  listAllGateAccess,
+  deleteGateAccessById,
+  checkGateAccessToday,
 } = db
 
 // Ensure the default export exists (pool for PG, db instance for SQLite)
