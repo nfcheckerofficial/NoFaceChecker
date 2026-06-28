@@ -28,7 +28,6 @@ export function ControlPanelPage() {
 
   const [form, setForm] = useState(emptyUser)
   const [banReason, setBanReason] = useState('')
-  const [deleteConfirm, setDeleteConfirm] = useState('')
   const [creditsAmount, setCreditsAmount] = useState(10)
   const [confirmReset, setConfirmReset] = useState(false)
   const [creditsMode, setCreditsMode] = useState<'add' | 'remove'>('add')
@@ -49,7 +48,6 @@ export function ControlPanelPage() {
     if (type === 'add') setForm(emptyUser)
     if (type === 'edit' && user) setForm({ username: user.username, email: user.email, credits: user.credits, role: user.role })
     if (type === 'ban') setBanReason('')
-    if (type === 'delete') setDeleteConfirm('')
     if (type === 'credits' && user) { setCreditsAmount(10); setCreditsMode('add') }
     if (type === 'gate-access' && user) {
       const userAccess = getUserGateAccess(Number(user.id))
@@ -84,7 +82,7 @@ export function ControlPanelPage() {
   }
 
   const handleDelete = () => {
-    if (!selectedUser || deleteConfirm !== selectedUser.username) return showNotif('error', 'Username does not match')
+    if (!selectedUser) return
     deleteUser(selectedUser.id)
     showNotif('success', `User ${selectedUser.username} deleted`)
     setModal(null)
@@ -382,15 +380,12 @@ export function ControlPanelPage() {
             <AlertTriangle size={18} className="text-cyber-red shrink-0" />
             <p className="text-sm text-cyber-text">This action cannot be undone.</p>
           </div>
-          <p className="text-sm text-cyber-text-muted mb-3">
-            Type <span className="font-mono text-cyber-red font-bold">{selectedUser.username}</span> to confirm:
+          <p className="text-sm text-cyber-text-muted mb-4">
+            Are you sure you want to delete <span className="font-mono text-cyber-red font-bold">{selectedUser.username}</span>?
           </p>
-          <input type="text" value={deleteConfirm} onChange={(e) => setDeleteConfirm(e.target.value)}
-            className="w-full px-3 py-2 bg-cyber-black border border-cyber-border rounded-lg text-cyber-text focus:outline-none focus:border-cyber-red"
-            placeholder="Type username..." />
           <ModalActions>
             <ModalBtn label="Cancel" onClick={() => setModal(null)} variant="ghost" />
-            <ModalBtn label="Delete" onClick={handleDelete} variant="danger" disabled={deleteConfirm !== selectedUser.username} />
+            <ModalBtn label="Delete" onClick={handleDelete} variant="danger" />
           </ModalActions>
         </Modal>
       )}
