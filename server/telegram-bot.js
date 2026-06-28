@@ -36,7 +36,7 @@ export async function startBot(token) {
     await bot.setMyCommands([
       { command: 'start', description: 'Register & get your Telegram ID' },
       { command: 'id', description: 'Get your Telegram ID' },
-      { command: 'group', description: 'Get the official group invite link' },
+      { command: 'group', description: 'Unete A Nuestra Comunidad 🚀' },
       { command: 'status', description: 'Check your registration status' },
       { command: 'stop', description: 'Unsubscribe from notifications' },
     ])
