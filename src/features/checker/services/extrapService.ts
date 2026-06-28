@@ -137,10 +137,15 @@ export async function extrapolateBins(prefix: string): Promise<{
   const nearby: ExtrapResult[] = []
   if (digits.length >= 6) {
     const base = parseInt(digits.slice(0, 6), 10)
-    const offsets = [1, 2, 3, 4, 5, -1, -2, -3, -4, -5]
+    // Rango ampliado a ±20: 40 BINs extras ademas del exacto.
+    const offsets: number[] = []
+    for (let i = 1; i <= 20; i++) {
+      offsets.push(i, -i)
+    }
     const batch = offsets.map((off) => {
       const next = String(base + off)
-      return fetchSingle(next)
+      // Mantener 6 digitos (pad con ceros a la izquierda).
+      return fetchSingle(next.padStart(6, '0'))
     })
     const results = await Promise.allSettled(batch)
     for (const r of results) {
