@@ -90,11 +90,28 @@ export async function startBot(token) {
   // (en memoria, no persistente). Sirve para que /gen sin args pueda tomarlo.
   const lastBinByChat = new Map()
 
+  function pad2(n) { return String(n).padStart(2, '0') }
+
+  // Detecta la marca a partir del BIN para usar la longitud y CVV correctos.
+  // Visa/Mastercard/Discover/Maestro: 16 digitos + CVV 3.
+  // Amex: 15 digitos + CVV 4.
+  function detectBrand(bin6) {
+    if (/^4/.test(bin6)) return { name: 'VISA', length: 16, cvvLen: 3 }
+    if (/^3[47]/.test(bin6)) return { name: 'AMEX', length: 15, cvvLen: 4 }
+    if (/^(5[1-5]|2(2[2-9][1-9]|[3-6]\d{2}|7[01]\d|720))/.test(bin6)) return { name: 'MASTERCARD', length: 16, cvvLen: 3 }
+    if (/^(6011|65|64[4-9])/.test(bin6)) return { name: 'DISCOVER', length: 16, cvvLen: 3 }
+    if (/^(36|30[0-5]|38|39)/.test(bin6)) return { name: 'DINERS', length: 14, cvvLen: 3 }
+    if (/^(35)/.test(bin6)) return { name: 'JCB', length: 16, cvvLen: 3 }
+    return { name: 'CARD', length: 16, cvvLen: 3 }
+  }
+
   // Genera un número de tarjeta válido (Luhn) para un BIN de 6 dígitos.
-  function luhnComplete(bin6) {
-    // Rellenar hasta 15 dígitos, calcular check digit con Luhn.
+  // length: longitud total del número (incluyendo BIN y check digit).
+  function luhnComplete(bin6, length) {
+    const targetBodyLen = length - 1 // sin check digit
     let body = bin6
-    while (body.length < 15) body += Math.floor(Math.random() * 10)
+    while (body.length < targetBodyLen) body += Math.floor(Math.random() * 10)
+    body = body.slice(0, targetBodyLen)
     let sum = 0
     for (let i = 0; i < body.length; i++) {
       let d = parseInt(body[body.length - 1 - i], 10)
@@ -108,7 +125,38 @@ export async function startBot(token) {
     return body + check
   }
 
-  function pad2(n) { return String(n).padStart(2, '0') }
+  // Elige un año futuro con sesgo hacia el más cercano.
+  // Pesos: +0=0, +1=5, +2=4, +3=2, +4=1 → mayor probabilidad 0-2 años.
+  function pickFutureYear() {
+    const weights = [0, 5, 4, 2, 1] // +0, +1, +2, +3, +4
+    const total = weights.reduce((a, b) => a + b, 0)
+    let r = Math.random() * total
+    for (let i = 0; i < weights.length; i++) {
+      r -= weights[i]
+      if (r <= 0) return new Date().getFullYear() + i
+    }
+    return new Date().getFullYear() + 4
+  }
+
+  // Elige un mes. Si el año es el actual, el mes debe ser >= mes actual.
+  function pickMonth(year) {
+    const now = new Date()
+    if (year === now.getFullYear()) {
+      return now.getMonth() + 1 + Math.floor(Math.random() * (12 - now.getMonth()))
+    }
+    return 1 + Math.floor(Math.random() * 12)
+  }
+
+  function generateCard(bin6) {
+    const brand = detectBrand(bin6)
+    const number = luhnComplete(bin6, brand.length)
+    const year = pickFutureYear()
+    const month = pickMonth(year)
+    const cvvMax = brand.cvvLen === 4 ? 10000 : 1000
+    const cvvMin = brand.cvvLen === 4 ? 1000 : 100
+    const cvv = String(cvvMin + Math.floor(Math.random() * (cvvMax - cvvMin)))
+    return { number, month, year, cvv, brand: brand.name }
+  }
 
   // /gen [bin]  o  .gen [bin]  → info del BIN + 12 cards generadas
   const handleGen = async (msg) => {
@@ -148,15 +196,10 @@ export async function startBot(token) {
       if (!/^\d{6}$/.test(bin6)) bin6 = bin6.replace(/\D/g, '').padStart(6, '0').slice(0, 6)
 
       // ----- Generar 12 tarjetas con Luhn válido -----
-      const now = new Date()
       const cards = []
       for (let i = 0; i < 12; i++) {
-        const number = luhnComplete(bin6)
-        // Mes 1-12, año entre el actual y +5 años
-        const month = 1 + Math.floor(Math.random() * 12)
-        const year = now.getFullYear() + Math.floor(Math.random() * 5)
-        const cvv = String(Math.floor(100 + Math.random() * 900))
-        cards.push(`${number}|${pad2(month)}|${year}|${cvv}`)
+        const c = generateCard(bin6)
+        cards.push(`${c.number}|${pad2(c.month)}|${c.year}|${c.cvv}`)
       }
 
       const SEP = '━━━━━━━━━━━━━━'
