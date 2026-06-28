@@ -112,6 +112,10 @@ if (STRIPE_SECRET_KEY) {
 
 const app = express()
 
+// Detras de Render/proxy: confiar en X-Forwarded-* para que express-rate-limit
+// identifique correctamente a los usuarios por IP real.
+app.set('trust proxy', 1)
+
 // Seguridad: headers HTTP
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
