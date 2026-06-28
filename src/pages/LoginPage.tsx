@@ -3,10 +3,9 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/features/auth/authStore'
 import { MatrixRain } from '@/shared/ui/MatrixRain'
 import { ScanLines } from '@/shared/ui/ScanLines'
-import { Eye, EyeOff, LogIn, UserPlus, AlertTriangle, MessageCircle, Terminal, Shield, Activity, Users, Zap } from 'lucide-react'
+import { Eye, EyeOff, LogIn, AlertTriangle, MessageCircle, Terminal, Shield, Activity, Users, Zap } from 'lucide-react'
 
 const API_BASE = import.meta.env.VITE_PAYMENTS_API ?? ''
-const SERVER_URL = API_BASE
 
 const tabClass = (active: boolean) =>
   `flex-1 py-3 flex items-center justify-center gap-2 text-xs uppercase tracking-widest font-semibold transition-all duration-300 ${
@@ -175,7 +174,7 @@ export function LoginPage() {
           <div className="sm:hidden absolute -inset-[1px] rounded-2xl bg-gradient-to-r from-cyber-red/60 via-cyber-purple/40 to-cyber-blue/60" />
           <div className="sm:hidden absolute -inset-[1px] rounded-2xl bg-gradient-to-r from-cyber-red/20 via-cyber-purple/20 to-cyber-blue/20 blur-[4px]" />
 
-          <div className="relative rounded-2xl bg-gradient-to-br from-cyber-dark via-cyber-panel to-cyber-dark border border-cyber-border/50 shadow-[0_0_30px_sm:shadow-[0_0_60px_rgba(255,0,64,0.1)] p-5 sm:p-8 space-y-5 sm:space-y-6">
+          <div className="relative rounded-2xl bg-gradient-to-br from-cyber-dark via-cyber-panel to-cyber-dark border border-cyber-border/50 shadow-[0_0_30px_rgba(255,0,64,0.1)] sm:shadow-[0_0_60px_rgba(255,0,64,0.1)] p-5 sm:p-8 space-y-5 sm:space-y-6">
             {/* Mode tabs */}
             <div className="flex rounded-lg sm:rounded-xl overflow-hidden bg-cyber-black/60 border border-cyber-border/30">
               <button
@@ -201,7 +200,7 @@ export function LoginPage() {
             {mode === 'password' && (
               <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
                 {error && (
-                  <div className="flex items-center gap-2 px-3 sm:gap-2.5 sm:px-4 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-cyber-red/15 to-cyber-red/5 border border-cyber-red/40 text-xs sm:text-sm text-cyber-red shadow-[0_0_15px_sm:shadow-[0_0_25px_rgba(255,0,64,0.12)] motion-safe:animate-[fadeIn_0.3s_ease-out]">
+                  <div className="flex items-center gap-2 px-3 sm:gap-2.5 sm:px-4 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-cyber-red/15 to-cyber-red/5 border border-cyber-red/40 text-xs sm:text-sm text-cyber-red shadow-[0_0_15px_rgba(255,0,64,0.12)] sm:shadow-[0_0_25px_rgba(255,0,64,0.12)] motion-safe:animate-[fadeIn_0.3s_ease-out]">
                     <AlertTriangle size={13} className="sm:hidden shrink-0" />
                     <AlertTriangle size={15} className="hidden sm:block shrink-0" />
                     <span>{error}</span>
@@ -219,7 +218,7 @@ export function LoginPage() {
                       type="text"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      className="relative w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-transparent border border-cyber-border/60 rounded-xl text-xs sm:text-sm text-cyber-text placeholder-cyber-text-muted/40 focus:outline-none focus:border-cyber-red/70 focus:shadow-[0_0_15px_sm:focus:shadow-[0_0_25px_rgba(255,0,64,0.2)] transition-all duration-300 tracking-wide"
+                      className="relative w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-transparent border border-cyber-border/60 rounded-xl text-xs sm:text-sm text-cyber-text placeholder-cyber-text-muted/40 focus:outline-none focus:border-cyber-red/70 focus:shadow-[0_0_15px_rgba(255,0,64,0.2)] sm:focus:shadow-[0_0_25px_rgba(255,0,64,0.2)] transition-all duration-300 tracking-wide"
                       placeholder="Username"
                       autoFocus
                     />
@@ -237,7 +236,7 @@ export function LoginPage() {
                       type={showPw ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="relative w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 bg-transparent border border-cyber-border/60 rounded-xl text-xs sm:text-sm text-cyber-text placeholder-cyber-text-muted/40 focus:outline-none focus:border-cyber-red/70 focus:shadow-[0_0_15px_sm:focus:shadow-[0_0_25px_rgba(255,0,64,0.2)] transition-all duration-300 tracking-wide"
+                      className="relative w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 bg-transparent border border-cyber-border/60 rounded-xl text-xs sm:text-sm text-cyber-text placeholder-cyber-text-muted/40 focus:outline-none focus:border-cyber-red/70 focus:shadow-[0_0_15px_rgba(255,0,64,0.2)] sm:focus:shadow-[0_0_25px_rgba(255,0,64,0.2)] transition-all duration-300 tracking-wide"
                       placeholder="Password"
                     />
                     <button
@@ -282,7 +281,7 @@ export function LoginPage() {
             {mode === 'telegram' && (
               <div className="space-y-4 sm:space-y-5">
                 {error && (
-                  <div className="flex items-center gap-2 px-3 sm:gap-2.5 sm:px-4 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-cyber-red/15 to-cyber-red/5 border border-cyber-red/40 text-xs sm:text-sm text-cyber-red shadow-[0_0_15px_sm:shadow-[0_0_25px_rgba(255,0,64,0.12)] motion-safe:animate-[fadeIn_0.3s_ease-out]">
+                  <div className="flex items-center gap-2 px-3 sm:gap-2.5 sm:px-4 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-cyber-red/15 to-cyber-red/5 border border-cyber-red/40 text-xs sm:text-sm text-cyber-red shadow-[0_0_15px_rgba(255,0,64,0.12)] sm:shadow-[0_0_25px_rgba(255,0,64,0.12)] motion-safe:animate-[fadeIn_0.3s_ease-out]">
                     <AlertTriangle size={13} className="sm:hidden shrink-0" />
                     <AlertTriangle size={15} className="hidden sm:block shrink-0" />
                     <span>{error}</span>
@@ -313,7 +312,7 @@ export function LoginPage() {
                       type="text"
                       value={tgId}
                       onChange={(e) => setTgId(e.target.value)}
-                      className="relative w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-transparent border border-cyber-border/60 rounded-xl text-xs sm:text-sm text-cyber-text placeholder-cyber-text-muted/40 focus:outline-none focus:border-cyber-green/70 focus:shadow-[0_0_15px_sm:focus:shadow-[0_0_25px_rgba(0,255,136,0.2)] transition-all duration-300 tracking-wide"
+                      className="relative w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-transparent border border-cyber-border/60 rounded-xl text-xs sm:text-sm text-cyber-text placeholder-cyber-text-muted/40 focus:outline-none focus:border-cyber-green/70 focus:shadow-[0_0_15px_rgba(0,255,136,0.2)] sm:focus:shadow-[0_0_25px_rgba(0,255,136,0.2)] transition-all duration-300 tracking-wide"
                       placeholder="Telegram ID"
                     />
                   </div>

@@ -12,7 +12,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: CLIENT_URL
-        value: https://chk-no-face-clan.onrender.com
+        value: https://nofacechk.com
       - key: ADMIN_PASS
         value: "12345"
       - key: STRIPE_SECRET_KEY
@@ -38,4 +38,4 @@ services:
       - key: VITE_STRIPE_PUBLISHABLE_KEY
         value: pk_test_51TmP0G6cfmpKwb4mXrdUmWd5mpyCnwommPNQrL0xiMiNo51tIuwv8mO5NN8TTNkKNg8mjI5gZvaUm8puI2JmXCtI003KKfe6U6
       - key: VITE_PAYMENTS_API
-        value: https://api.nofacechk.com
+        value: ""

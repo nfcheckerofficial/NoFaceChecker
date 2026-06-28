@@ -10,7 +10,6 @@ import {
 } from 'lucide-react'
 import { HoloStat } from '@/shared/ui/HoloStat'
 import { StreamRank } from '@/shared/ui/StreamRank'
-import { BarChart } from '@/shared/ui/BarChart'
 import { CodeRain } from '@/shared/ui/CodeRain'
 import { useUserStore } from '@/features/checker/store/userStore'
 import { useCheckerStore } from '@/features/checker/store/checkerStore'
@@ -27,7 +26,7 @@ const QUICK_ACTIONS = [
   { label: 'Card Checker', icon: Terminal, href: '/dashboard', color: 'text-cyber-blue', desc: 'Verify single cards' },
   { label: 'Generator', icon: Zap, href: '/dashboard/generator', color: 'text-cyber-yellow', desc: 'Generate valid cards' },
   { label: 'BIN Lookup', icon: Search, href: '/dashboard/bin-lookup', color: 'text-cyber-purple', desc: 'Search BIN database' },
-  { label: 'Bulk Checker', icon: Database, href: '/dashboard/bulk', color: 'text-cyber-green', desc: 'Mass verification' },
+  { label: 'Bulk Checker', icon: Database, href: '/checker/bulk', color: 'text-cyber-green', desc: 'Mass verification' },
 ]
 
 function fmtCompact(n: number): string {
@@ -101,7 +100,7 @@ export function OverviewPage() {
   const recentActivity = history.slice(0, 8)
 
   return (
-    <div className="relative min-h-[calc(100vh-4rem)] -m-5 sm:-m-6">
+    <div className="relative min-h-[calc(100vh_-_4rem)] -m-5 sm:-m-6">
       {/* Fondo del hacker para todo el Overview */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"

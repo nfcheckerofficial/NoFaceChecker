@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { clsx } from 'clsx'
-import { Network, Plus, Edit, Trash2, Search, DollarSign, Zap, Settings, X, Check, AlertTriangle } from 'lucide-react'
+import { Network, Plus, Edit, Trash2, Search, Zap, Settings, X, Check, AlertTriangle } from 'lucide-react'
 import { useAdminStore, type Gate } from '@/features/admin/adminStore'
 
 type ModalType = 'add' | 'edit' | 'delete' | null

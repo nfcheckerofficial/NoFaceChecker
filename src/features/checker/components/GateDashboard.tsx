@@ -99,10 +99,10 @@ export function GateDashboard({ gateId }: GateDashboardProps) {
     return Math.round((stats.checked / denom) * 100)
   }, [stats.checked, stats.total])
 
-  const handleStart = () => {
+  const handleStart = async () => {
     initAudio()
     if (isPaused) resume()
-    else start()
+    else await start()
   }
 
   const handleGenerated = (lines: string[]) => {

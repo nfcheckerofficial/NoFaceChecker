@@ -105,7 +105,7 @@ export function ProcessingAnimation({ isProcessing, className }: ProcessingAnima
             className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyber-red to-cyber-yellow transition-all duration-300"
             style={{ width: `${progress}%` }}
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[shimmer_2s_infinite]" />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent motion-safe:animate-pulse" />
         </div>
 
         <div className="flex justify-between text-[10px] text-cyber-text-muted">

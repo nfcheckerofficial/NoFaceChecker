@@ -71,6 +71,15 @@ export async function initDb() {
       processed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS gate_access (
+      id          SERIAL PRIMARY KEY,
+      user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      gate_id     TEXT NOT NULL,
+      days        TEXT NOT NULL DEFAULT '[]',
+      created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(user_id, gate_id)
+    );
+
     CREATE TABLE IF NOT EXISTS charges (
       id              SERIAL PRIMARY KEY,
       stripe_pi_id    TEXT NOT NULL UNIQUE,
@@ -332,6 +341,51 @@ export async function deleteLive(userId, raw) {
 
 export async function clearLives(userId) {
   await query('DELETE FROM lives WHERE user_id = $1', [userId])
+}
+
+// --- Gate Access ---
+
+export async function setGateAccess(userId, gateId, days) {
+  const daysStr = JSON.stringify(days)
+  await query(`
+    INSERT INTO gate_access (user_id, gate_id, days)
+    VALUES ($1, $2, $3)
+    ON CONFLICT (user_id, gate_id) DO UPDATE SET days = EXCLUDED.days
+  `, [userId, gateId, daysStr])
+}
+
+export async function getGateAccess(userId, gateId) {
+  const r = await query('SELECT * FROM gate_access WHERE user_id = $1 AND gate_id = $2', [userId, gateId])
+  return r.rows[0] || null
+}
+
+export async function listUserGateAccess(userId) {
+  const r = await query('SELECT * FROM gate_access WHERE user_id = $1', [userId])
+  return r.rows
+}
+
+export async function listAllGateAccess() {
+  const r = await query(`
+    SELECT ga.*, u.username FROM gate_access ga
+    JOIN users u ON u.id = ga.user_id
+    ORDER BY ga.created_at DESC
+  `)
+  return r.rows
+}
+
+export async function deleteGateAccessById(id) {
+  await query('DELETE FROM gate_access WHERE id = $1', [id])
+}
+
+export async function checkGateAccessToday(userId, gateId) {
+  const r = await query('SELECT * FROM gate_access WHERE user_id = $1 AND gate_id = $2', [userId, gateId])
+  const record = r.rows[0]
+  if (!record) return false
+  try {
+    const days = JSON.parse(record.days || '[]')
+    const today = new Date().toISOString().split('T')[0]
+    return days.includes(today)
+  } catch { return false }
 }
 
 // --- Backup ---

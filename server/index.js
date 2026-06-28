@@ -44,6 +44,11 @@ import {
   listLives,
   deleteLive,
   clearLives,
+  setGateAccess,
+  listUserGateAccess,
+  listAllGateAccess,
+  deleteGateAccessById,
+  checkGateAccessToday,
   initDb,
 } from './db.js'
 import { startBot, stopBot } from './telegram-bot.js'
@@ -105,12 +110,7 @@ app.use(helmet({
 
 // Seguridad: CORS restringido
 const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'https://chk-no-face-clan.onrender.com',
   'https://nofacechk.com',
-  'https://admin.nofacechk.com',
-  'https://api.nofacechk.com',
 ]
 const corsOrigins = isProd ? allowedOrigins : [CLIENT_URL, ...allowedOrigins]
 app.use(cors({ origin: corsOrigins }))
@@ -975,6 +975,65 @@ app.post('/api/lives/clear', authMiddleware, async (req, res) => {
     await clearLives(req.user.id)
     res.json({ ok: true })
   } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// --- Gate Access API (renta de gates por d+�a) ---
+
+app.get('/api/admin/gate-access', authMiddleware, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' })
+    const records = await listAllGateAccess()
+    res.json(records)
+  } catch (err) {
+    console.error('[admin] gate-access list error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.post('/api/admin/gate-access', authMiddleware, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' })
+    const { userId, gateId, days } = req.body
+    if (!userId || !gateId || !Array.isArray(days)) {
+      return res.status(400).json({ error: 'userId, gateId, and days array required' })
+    }
+    await setGateAccess(Number(userId), gateId, days)
+    res.json({ ok: true })
+  } catch (err) {
+    console.error('[admin] gate-access set error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.delete('/api/admin/gate-access/:id', authMiddleware, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin only' })
+    await deleteGateAccessById(Number(req.params.id))
+    res.json({ ok: true })
+  } catch (err) {
+    console.error('[admin] gate-access delete error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.get('/api/gate-access/my', authMiddleware, async (req, res) => {
+  try {
+    const records = await listUserGateAccess(req.user.id)
+    res.json(records)
+  } catch (err) {
+    console.error('[gate-access] my error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.get('/api/gate-access/check/:gateId', authMiddleware, async (req, res) => {
+  try {
+    const hasAccess = await checkGateAccessToday(req.user.id, req.params.gateId)
+    res.json({ hasAccess, today: new Date().toISOString().split('T')[0] })
+  } catch (err) {
+    console.error('[gate-access] check error:', err.message)
     res.status(500).json({ error: err.message })
   }
 })

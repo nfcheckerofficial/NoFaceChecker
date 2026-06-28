@@ -324,7 +324,7 @@ function DropdownPanel({
       className={clsx(
         'absolute right-0 sm:right-0 -right-3 sm:-right-0 top-full mt-2 bg-cyber-dark border border-cyber-border border-t-2 rounded-lg shadow-2xl shadow-black/50 overflow-hidden animate-fade-in z-50',
         ACCENT_BORDER[accent],
-        'w-[calc(100vw-24px)] sm:w-80'
+        'w-[calc(100vw_-_24px)] sm:w-80'
       )}
     >
       {title && (

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { Mail, RefreshCw, Copy, Check, Trash2, ExternalLink, Inbox, Loader2, MessageSquare, ChevronLeft, User, Clock } from 'lucide-react'
+import { Mail, RefreshCw, Copy, Check, Trash2, Inbox, Loader2, MessageSquare, ChevronLeft, User, Clock } from 'lucide-react'
 
 const BASE = 'https://www.1secmail.com/api/v1'
 

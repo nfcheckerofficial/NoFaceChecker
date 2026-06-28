@@ -1,15 +1,15 @@
 // ---------------------------------------------------------------------------
-// Capa de base de datos (SQLite v+¡a better-sqlite3).
+// Capa de base de datos (SQLite v+ï¿½a better-sqlite3).
 //
-// CUMPLIMIENTO PCI-DSS ÔÇö qu+® se guarda aqu+¡:
-//   Ô£ô Token del m+®todo de pago de Stripe (pm_xxx)  -> referencia opaca
-//   Ô£ô Token del customer de Stripe (cus_xxx)
-//   Ô£ô +Ültimos 4 d+¡gitos, marca, expiraci+¦n, funding, pa+¡s  -> metadatos
+// CUMPLIMIENTO PCI-DSS ï¿½ï¿½ï¿½ qu+ï¿½ se guarda aqu+ï¿½:
+//   Ô£ï¿½ Token del m+ï¿½todo de pago de Stripe (pm_xxx)  -> referencia opaca
+//   Ô£ï¿½ Token del customer de Stripe (cus_xxx)
+//   Ô£ï¿½ +ï¿½ltimos 4 d+ï¿½gitos, marca, expiraci+ï¿½n, funding, pa+ï¿½s  -> metadatos
 //
 // LO QUE NUNCA SE GUARDA (prohibido por PCI-DSS):
-//   Ô£ù N+¦mero de tarjeta completo (PAN)
-//   Ô£ù CVC / CVV
-//   Ô£ù Banda magn+®tica / datos del chip / PIN
+//   Ô£ï¿½ N+ï¿½mero de tarjeta completo (PAN)
+//   Ô£ï¿½ CVC / CVV
+//   Ô£ï¿½ Banda magn+ï¿½tica / datos del chip / PIN
 //
 // El PAN nunca llega a este servidor: vive solo en el iframe de Stripe.
 // ---------------------------------------------------------------------------
@@ -21,7 +21,7 @@ import { mkdirSync, existsSync } from 'fs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-// Render monta un disco persistente y define RENDER_DISK_MOUNT_PATH autom+íticamente.
+// Render monta un disco persistente y define RENDER_DISK_MOUNT_PATH autom+ï¿½ticamente.
 // Si no hay disco, usa la ruta local por defecto.
 const diskPath = process.env.RENDER_DISK_MOUNT_PATH
 const dbDir = diskPath || __dirname
@@ -38,13 +38,13 @@ db.exec(`
     stripe_customer TEXT,                   -- cus_xxx
     email           TEXT,
     brand           TEXT,
-    last4           TEXT,                    -- solo +¦ltimos 4, permitido
+    last4           TEXT,                    -- solo +ï¿½ltimos 4, permitido
     exp_month       INTEGER,
     exp_year        INTEGER,
     funding         TEXT,                    -- credit / debit / prepaid
     country         TEXT,
     cvc_check       TEXT,                    -- pass / fail / unavailable
-    three_d_secure  TEXT,                    -- estado de la autenticaci+¦n
+    three_d_secure  TEXT,                    -- estado de la autenticaci+ï¿½n
     validated_at    TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
@@ -92,8 +92,18 @@ db.exec(`
     processed_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
-  -- Recibos de cobros off-session a un m+®todo de pago guardado.
-  -- Cada fila es una transacci+¦n real autorizada por el titular.
+  -- Acceso de usuarios a gates por d+ï¿½a (renta por d+ï¿½a).
+  CREATE TABLE IF NOT EXISTS gate_access (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id         INTEGER NOT NULL,
+    gate_id         TEXT NOT NULL,
+    days            TEXT NOT NULL DEFAULT '[]',
+    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(user_id, gate_id)
+  );
+
+  -- Recibos de cobros off-session a un m+ï¿½todo de pago guardado.
+  -- Cada fila es una transacci+ï¿½n real autorizada por el titular.
   CREATE TABLE IF NOT EXISTS charges (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     stripe_pi_id    TEXT NOT NULL UNIQUE,   -- pi_xxx (PaymentIntent)
@@ -139,7 +149,7 @@ export function markEventProcessed(eventId) {
 }
 
 /**
- * Guarda (o actualiza) un m+®todo de pago validado.
+ * Guarda (o actualiza) un m+ï¿½todo de pago validado.
  * Recibe SOLO tokens y metadatos seguros, nunca datos sensibles.
  */
 export function saveValidatedCard(data) {
@@ -210,7 +220,7 @@ export function listCharges(email) {
   return db.prepare('SELECT * FROM charges ORDER BY created_at DESC').all()
 }
 
-/** Lista los m+®todos de pago guardados (datos seguros para mostrar). */
+/** Lista los m+ï¿½todos de pago guardados (datos seguros para mostrar). */
 export function listValidatedCards(email) {
   if (email) {
     return db
@@ -323,7 +333,7 @@ export function updateUserCredits(username, credits) {
   const before = db.prepare('SELECT credits FROM users WHERE username = ?').get(username)
   db.prepare('UPDATE users SET credits = ? WHERE username = ?').run(credits, username)
   saveCreditsBackup()
-  console.log(`[credits] ${username}: ${before?.credits ?? '?'} ÔåÆ ${credits}`)
+  console.log(`[credits] ${username}: ${before?.credits ?? '?'} ï¿½ï¿½ï¿½ ${credits}`)
 }
 
 export function resetAllCredits() {
@@ -451,8 +461,47 @@ export function clearLives(userId) {
   db.prepare('DELETE FROM lives WHERE user_id = ?').run(userId)
 }
 
+// --- Gate Access ---
+
+export function setGateAccess(userId, gateId, days) {
+  const daysStr = JSON.stringify(days)
+  db.prepare(`
+    INSERT INTO gate_access (user_id, gate_id, days)
+    VALUES (?, ?, ?)
+    ON CONFLICT(user_id, gate_id) DO UPDATE SET days = excluded.days
+  `).run(userId, gateId, daysStr)
+}
+
+export function getGateAccess(userId, gateId) {
+  return db.prepare('SELECT * FROM gate_access WHERE user_id = ? AND gate_id = ?').get(userId, gateId)
+}
+
+export function listUserGateAccess(userId) {
+  return db.prepare('SELECT * FROM gate_access WHERE user_id = ?').all(userId)
+}
+
+export function listAllGateAccess() {
+  return db.prepare(`
+    SELECT ga.*, u.username FROM gate_access ga
+    JOIN users u ON u.id = ga.user_id
+    ORDER BY ga.created_at DESC
+  `).all()
+}
+
+export function deleteGateAccessById(id) {
+  db.prepare('DELETE FROM gate_access WHERE id = ?').run(id)
+}
+
+export function checkGateAccessToday(userId, gateId) {
+  const record = db.prepare('SELECT * FROM gate_access WHERE user_id = ? AND gate_id = ?').get(userId, gateId)
+  if (!record) return false
+  try {
+    const days = JSON.parse(record.days || '[]')
+    const today = new Date().toISOString().split('T')[0]
+    return days.includes(today)
+  } catch { return false }
+}
+
 export default db
 
 export function initDb() { return Promise.resolve() }
-
-export function restoreCreditsFromBackup() { return false }

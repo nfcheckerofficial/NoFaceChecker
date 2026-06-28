@@ -3,19 +3,22 @@ import { clsx } from 'clsx'
 import {
   Users, UserPlus, Ban, AlertTriangle, DollarSign, Plus,
   Search, Edit, Trash2, Shield, Minus, Check, X,
+  Calendar, CalendarDays,
 } from 'lucide-react'
-import { useAdminStore, type User } from '@/features/admin/adminStore'
+import { useAdminStore, type User, type GateAccessRecord } from '@/features/admin/adminStore'
+import { GATE_CATALOG } from '@/features/checker/config/gateCatalog'
 
-type ModalType = 'add' | 'edit' | 'ban' | 'delete' | 'credits' | null
+type ModalType = 'add' | 'edit' | 'ban' | 'delete' | 'credits' | 'gate-access' | null
 
 interface UserForm { username: string; email: string; credits: number; role: 'admin' | 'user' }
 const emptyUser: UserForm = { username: '', email: '', credits: 0, role: 'user' }
 
 export function ControlPanelPage() {
-  const { users, fetchUsers, addUser, updateUser, deleteUser, toggleBan, addCredits, removeCredits, resetAllCredits } = useAdminStore()
+  const { users, fetchUsers, addUser, updateUser, deleteUser, toggleBan, addCredits, removeCredits, resetAllCredits, gateAccess, fetchGateAccess, setGateAccess, deleteGateAccess, getUserGateAccess } = useAdminStore()
 
   useEffect(() => {
     fetchUsers()
+    fetchGateAccess()
     const interval = setInterval(fetchUsers, 3000)
     return () => clearInterval(interval)
   }, [])
@@ -31,6 +34,10 @@ export function ControlPanelPage() {
   const [creditsMode, setCreditsMode] = useState<'add' | 'remove'>('add')
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
+  // Gate access state
+  const [gateSelections, setGateSelections] = useState<Record<string, string[]>>({})
+  const [newDateInput, setNewDateInput] = useState('')
+
   const showNotif = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message })
     setTimeout(() => setNotification(null), 3000)
@@ -44,6 +51,15 @@ export function ControlPanelPage() {
     if (type === 'ban') setBanReason('')
     if (type === 'delete') setDeleteConfirm('')
     if (type === 'credits' && user) { setCreditsAmount(10); setCreditsMode('add') }
+    if (type === 'gate-access' && user) {
+      const userAccess = getUserGateAccess(Number(user.id))
+      const selections: Record<string, string[]> = {}
+      for (const r of userAccess) {
+        try { selections[r.gate_id] = JSON.parse(r.days) } catch { selections[r.gate_id] = [] }
+      }
+      setGateSelections(selections)
+      setNewDateInput('')
+    }
   }
 
   const handleAdd = () => {
@@ -83,6 +99,54 @@ export function ControlPanelPage() {
       if (!removeCredits(selectedUser.id, creditsAmount)) return showNotif('error', 'Insufficient credits')
       showNotif('success', `Removed ${creditsAmount} credits from ${selectedUser.username}`)
     }
+    setModal(null)
+  }
+
+  const toggleGateSelection = (gateId: string) => {
+    setGateSelections(prev => {
+      if (prev[gateId]) {
+        const next = { ...prev }
+        delete next[gateId]
+        return next
+      }
+      return { ...prev, [gateId]: [] }
+    })
+  }
+
+  const addDateToGate = (gateId: string) => {
+    const dateStr = newDateInput.trim()
+    if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      return showNotif('error', 'Invalid date format (YYYY-MM-DD)')
+    }
+    setGateSelections(prev => {
+      const dates = prev[gateId] || []
+      if (dates.includes(dateStr)) return prev
+      return { ...prev, [gateId]: [...dates, dateStr].sort() }
+    })
+    setNewDateInput('')
+  }
+
+  const removeDateFromGate = (gateId: string, date: string) => {
+    setGateSelections(prev => ({
+      ...prev,
+      [gateId]: (prev[gateId] || []).filter(d => d !== date),
+    }))
+  }
+
+  const handleSaveGateAccess = async () => {
+    if (!selectedUser) return
+    const userId = Number(selectedUser.id)
+    for (const [gateId, days] of Object.entries(gateSelections)) {
+      await setGateAccess(userId, gateId, days)
+    }
+    // Delete access for gates that were unselected
+    const userAccess = getUserGateAccess(userId)
+    for (const r of userAccess) {
+      if (!gateSelections[r.gate_id]) {
+        await deleteGateAccess(r.id)
+      }
+    }
+    showNotif('success', `Gate access updated for ${selectedUser.username}`)
     setModal(null)
   }
 
@@ -217,6 +281,9 @@ export function ControlPanelPage() {
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center justify-end gap-2">
+                      <button onClick={() => openModal('gate-access', user)} className="p-2 rounded-lg hover:bg-cyber-dark text-cyber-text-muted hover:text-cyber-yellow transition-colors" title="Gate Access">
+                        <Calendar size={14} />
+                      </button>
                       <button onClick={() => openModal('credits', user)} className="p-2 rounded-lg hover:bg-cyber-dark text-cyber-text-muted hover:text-cyber-green transition-colors" title="Manage Credits">
                         <DollarSign size={14} />
                       </button>
@@ -324,6 +391,85 @@ export function ControlPanelPage() {
           <ModalActions>
             <ModalBtn label="Cancel" onClick={() => setModal(null)} variant="ghost" />
             <ModalBtn label="Delete" onClick={handleDelete} variant="danger" disabled={deleteConfirm !== selectedUser.username} />
+          </ModalActions>
+        </Modal>
+      )}
+
+      {/* Gate Access Modal */}
+      {modal === 'gate-access' && selectedUser && (
+        <Modal title={`Gate Access — ${selectedUser.username}`} onClose={() => setModal(null)}>
+          <p className="text-sm text-cyber-text-muted mb-4">
+            Select gates and add specific days (YYYY-MM-DD) the user has rented access.
+          </p>
+
+          <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+            {Object.entries(GATE_CATALOG).map(([gateId, gate]) => {
+              const selected = gateId in gateSelections
+              const dates = gateSelections[gateId] || []
+              return (
+                <div key={gateId} className="rounded-lg border border-cyber-border bg-cyber-black/50 overflow-hidden">
+                  <button
+                    onClick={() => toggleGateSelection(gateId)}
+                    className={clsx(
+                      'flex items-center justify-between w-full px-4 py-3 text-sm transition-all',
+                      selected ? 'bg-cyber-blue/10 border-l-2 border-l-cyber-blue' : 'hover:bg-cyber-panel/30'
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={clsx('w-2 h-2 rounded-full', selected ? 'bg-cyber-green' : 'bg-cyber-border')} />
+                      <span className="font-medium text-cyber-text">{gate.name}</span>
+                      <span className="text-[10px] text-cyber-text-muted font-mono">({gateId})</span>
+                    </div>
+                    {selected && (
+                      <span className="text-xs text-cyber-blue">{dates.length} day{dates.length !== 1 ? 's' : ''}</span>
+                    )}
+                  </button>
+
+                  {selected && (
+                    <div className="px-4 pb-3 pt-1 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="date"
+                          value={newDateInput}
+                          onChange={(e) => setNewDateInput(e.target.value)}
+                          className="flex-1 px-3 py-1.5 bg-cyber-dark border border-cyber-border rounded-lg text-xs text-cyber-text focus:outline-none focus:border-cyber-blue"
+                        />
+                        <button
+                          onClick={() => addDateToGate(gateId)}
+                          className="px-3 py-1.5 bg-cyber-blue/20 border border-cyber-blue/50 rounded-lg text-xs text-cyber-blue hover:bg-cyber-blue/30 transition-colors"
+                        >
+                          Add
+                        </button>
+                      </div>
+                      {dates.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {dates.map((date) => (
+                            <span
+                              key={date}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyber-green/10 border border-cyber-green/30 text-xs text-cyber-green"
+                            >
+                              <CalendarDays size={10} />
+                              {date}
+                              <button
+                                onClick={() => removeDateFromGate(gateId, date)}
+                                className="ml-0.5 text-cyber-red hover:text-cyber-red/80"
+                              >
+                                <X size={10} />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          <ModalActions>
+            <ModalBtn label="Cancel" onClick={() => setModal(null)} variant="ghost" />
+            <ModalBtn label="Save Access" onClick={handleSaveGateAccess} variant="primary" />
           </ModalActions>
         </Modal>
       )}

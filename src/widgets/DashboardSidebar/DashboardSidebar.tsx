@@ -54,11 +54,11 @@ export function DashboardSidebar({ open, onClose, className }: DashboardSidebarP
   return (
       <aside
         className={clsx(
-          'flex flex-col w-[280px] shrink-0',
+          'flex-col w-[280px] shrink-0',
           'overflow-x-hidden overflow-y-auto',
-          // Desktop: sticky sidebar
-          'hidden lg:flex sticky top-0 lg:max-h-screen',
-          // Mobile: fixed overlay sidebar with slide animation
+          // Desktop: always visible
+          'lg:flex lg:sticky lg:top-0 lg:max-h-screen',
+          // Mobile: overlay when open, hidden when closed
           open
             ? 'fixed inset-y-0 left-0 z-50 flex max-h-screen motion-safe:animate-[slideInLeft_0.25s_ease-out]'
             : 'hidden',

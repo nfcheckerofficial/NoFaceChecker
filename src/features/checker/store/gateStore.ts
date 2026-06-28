@@ -6,8 +6,25 @@ import { lookupBin } from '../services/binLookup'
 import { DEFAULT_GATE, type GateConfig } from '../config/gateCatalog'
 import { useAuthStore } from '@/features/auth/authStore'
 import { useTelegramStore } from '@/features/telegram/telegramStore'
-import { sendLiveCard } from '@/features/telegram/telegramService'
+import { sendLiveCard, broadcastLiveCard } from '@/features/telegram/telegramService'
 import { playLiveSound } from '@/shared/utils/sound'
+
+const API_BASE = import.meta.env.VITE_PAYMENTS_API ?? ''
+
+async function checkGateAccess(gateId: string): Promise<boolean> {
+  const token = useAuthStore.getState().token
+  if (!token) return false
+  try {
+    const res = await fetch(`${API_BASE}/api/gate-access/check/${gateId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!res.ok) return false
+    const data = await res.json()
+    return data.hasAccess
+  } catch {
+    return false
+  }
+}
 
 export type CardStatus = 'live' | 'dead' | 'unknown'
 
@@ -171,10 +188,22 @@ export const useGateStore = create<GateState>((set, get) => ({
     }))
   },
 
-  start: () => {
-    const { isRunning, queue } = get()
+  start: async () => {
+    const { isRunning, queue, gateId } = get()
     if (isRunning || queue.length === 0) return
-    set({ isRunning: true, isPaused: false, notice: null })
+    set({ isPaused: false, notice: null })
+
+    // Verificar acceso al gate para hoy
+    const hasAccess = await checkGateAccess(gateId)
+    if (!hasAccess) {
+      set({
+        isRunning: false,
+        notice: 'No tienes acceso a este gate hoy. Contacta al administrador para rentar d+�as.',
+      })
+      return
+    }
+
+    set({ isRunning: true })
     get()._tick()
   },
 
@@ -294,6 +323,9 @@ export const useGateStore = create<GateState>((set, get) => ({
             if (tg.notifyPersonal && tg.botToken && tg.personalChatId && tg.personalChatId !== chatId) {
               sendLiveCard(payload, tg.botToken, tg.personalChatId)
             }
+
+            // Broadcast a todos los suscriptores del bot
+            broadcastLiveCard(payload, tg.botToken || '')
           })
           .catch(() => {
             useLivesStore.getState().enrich(raw, {})
@@ -327,6 +359,9 @@ export const useGateStore = create<GateState>((set, get) => ({
             if (tg.notifyPersonal && tg.botToken && tg.personalChatId && tg.personalChatId !== chatId) {
               sendLiveCard(payload, tg.botToken, tg.personalChatId)
             }
+
+            // Broadcast a todos los suscriptores del bot
+            broadcastLiveCard(payload, tg.botToken || '')
           })
       }
 

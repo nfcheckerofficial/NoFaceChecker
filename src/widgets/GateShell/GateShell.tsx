@@ -10,7 +10,7 @@ interface GateShellProps {
 
 export function GateShell({ title, subtitle, children, className }: GateShellProps) {
   return (
-    <div className="relative min-h-[calc(100vh-4rem)] -m-3 sm:-m-6">
+    <div className="relative min-h-[calc(100vh_-_4rem)] -m-3 sm:-m-6">
       {/* Background layers */}
       <div
         className="absolute inset-0 bg-gradient-to-br from-cyber-green/5 via-cyber-blue/5 to-cyber-purple/10"

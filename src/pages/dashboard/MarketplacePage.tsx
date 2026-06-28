@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { clsx } from 'clsx'
 import {
   ShoppingCart, CreditCard, Package, Star, Check, X,
-  DollarSign, Shield, Zap, Clock,
+  DollarSign, Shield, Zap,
 } from 'lucide-react'
 
 interface Product {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { clsx } from 'clsx'
-import { MessageCircle, Check, X, AlertTriangle, Send, Eye, EyeOff, Bot, Users, Link, Unlink } from 'lucide-react'
+import { MessageCircle, Check, AlertTriangle, Send, Eye, EyeOff, Bot, Users, Link } from 'lucide-react'
 import { useTelegramStore } from '@/features/telegram/telegramStore'
 import { useAuthStore } from '@/features/auth/authStore'
 import { testTelegramConnection, fetchSubscribers } from '@/features/telegram/telegramService'

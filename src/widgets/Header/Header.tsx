@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Logo } from '@/shared/ui/Logo'
-import { Lock, User, Bell, AlertTriangle, X, Check } from 'lucide-react'
+import { Lock, User, Bell, AlertTriangle, X, Check, Menu } from 'lucide-react'
 import { clsx } from 'clsx'
 
 interface HeaderProps {
@@ -22,9 +22,11 @@ const MOCK_WARNINGS = [
 export function Header({ className }: HeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false)
   const [showWarnings, setShowWarnings] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS)
   const notifRef = useRef<HTMLDivElement>(null)
   const warningsRef = useRef<HTMLDivElement>(null)
+  const mobileRef = useRef<HTMLDivElement>(null)
 
   const unreadCount = notifications.filter(n => !n.read).length
 
@@ -36,10 +38,18 @@ export function Header({ className }: HeaderProps) {
       if (warningsRef.current && !warningsRef.current.contains(e.target as Node)) {
         setShowWarnings(false)
       }
+      if (mobileRef.current && !mobileRef.current.contains(e.target as Node)) {
+        setMobileMenuOpen(false)
+      }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  useEffect(() => {
+    document.body.style.overflow = mobileMenuOpen ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [mobileMenuOpen])
 
   const markAsRead = (id: number) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
@@ -49,8 +59,8 @@ export function Header({ className }: HeaderProps) {
     { label: 'DEPLOYMENT', href: '/checker' },
     { label: 'BULK', href: '/checker/bulk' },
     { label: 'GENERATOR', href: '/generator' },
-    { label: 'INTELLIGENCE', href: '/' },
-    { label: 'ASSETS', href: '/' },
+    { label: 'INTELLIGENCE', href: '/checker' },
+    { label: 'ASSETS', href: '/generator' },
   ]
 
   return (
@@ -87,6 +97,32 @@ export function Header({ className }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-4">
+          {/* Mobile hamburger */}
+          <div ref={mobileRef} className="md:hidden relative">
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 text-cyber-text-muted hover:text-cyber-red transition-colors"
+            >
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+            {mobileMenuOpen && (
+              <>
+                <div className="fixed inset-0 top-16 bg-black/60 backdrop-blur-sm z-30" onClick={() => setMobileMenuOpen(false)} />
+                <div className="absolute right-0 top-full mt-2 w-[calc(100vw-32px)] sm:w-56 bg-cyber-dark border border-cyber-border/50 rounded-lg shadow-xl overflow-hidden z-40 motion-safe:animate-[fadeIn_0.2s_ease-out]">
+                  {navLinks.map((link) => (
+                    <Link
+                      key={link.label}
+                      to={link.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block px-4 py-3 text-xs font-mono text-cyber-text-muted hover:text-cyber-red hover:bg-cyber-red/5 transition-colors border-b border-cyber-border/30 last:border-0 tracking-wider"
+                    >
+                      [{link.label}]
+                    </Link>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
           {/* Warnings Dropdown */}
           <div ref={warningsRef} className="relative">
             <button
@@ -106,8 +142,8 @@ export function Header({ className }: HeaderProps) {
               )}
             </button>
 
-            {showWarnings && (
-              <div className="absolute right-0 top-full mt-2 w-80 bg-cyber-dark border border-cyber-border rounded-lg shadow-xl overflow-hidden">
+              {showWarnings && (
+              <div className="absolute right-0 sm:right-0 top-full mt-2 w-[calc(100vw-32px)] sm:w-80 bg-cyber-dark border border-cyber-border rounded-lg shadow-xl overflow-hidden">
                 <div className="px-4 py-3 border-b border-cyber-border flex items-center justify-between">
                   <span className="text-sm font-semibold text-cyber-text">Warnings</span>
                   <button onClick={() => setShowWarnings(false)} className="text-cyber-text-muted hover:text-cyber-text">
@@ -152,7 +188,7 @@ export function Header({ className }: HeaderProps) {
             </button>
 
             {showNotifications && (
-              <div className="absolute right-0 top-full mt-2 w-80 bg-cyber-dark border border-cyber-border rounded-lg shadow-xl overflow-hidden">
+              <div className="absolute right-0 sm:right-0 top-full mt-2 w-[calc(100vw-32px)] sm:w-80 bg-cyber-dark border border-cyber-border rounded-lg shadow-xl overflow-hidden">
                 <div className="px-4 py-3 border-b border-cyber-border flex items-center justify-between">
                   <span className="text-sm font-semibold text-cyber-text">Notifications</span>
                   <button onClick={() => setShowNotifications(false)} className="text-cyber-text-muted hover:text-cyber-text">

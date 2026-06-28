@@ -28,6 +28,15 @@ export interface Gate {
   description: string
 }
 
+export interface GateAccessRecord {
+  id: string
+  user_id: number
+  gate_id: string
+  days: string
+  created_at: string
+  username?: string
+}
+
 export interface Country {
   id: string
   name: string
@@ -51,6 +60,7 @@ interface AdminState {
   users: User[]
   gates: Gate[]
   countries: Country[]
+  gateAccess: GateAccessRecord[]
 
   fetchUsers: () => Promise<void>
   addUser: (u: Omit<User, 'id' | 'createdAt' | 'lastSession'>) => void
@@ -69,6 +79,11 @@ interface AdminState {
   updateCountry: (id: string, patch: Partial<Country>) => void
   deleteCountry: (id: string) => void
   toggleCountry: (id: string) => void
+
+  fetchGateAccess: () => Promise<void>
+  setGateAccess: (userId: number, gateId: string, days: string[]) => Promise<boolean>
+  deleteGateAccess: (id: string) => Promise<boolean>
+  getUserGateAccess: (userId: number) => GateAccessRecord[]
 }
 
 export const useAdminStore = create<AdminState>((set, get) => ({
@@ -77,8 +92,9 @@ export const useAdminStore = create<AdminState>((set, get) => ({
     { id: '2', username: 'jatin029', email: 'jatin@example.com', credits: 15420, role: 'user', telegram_id: null, banned: false, createdAt: '2024-03-15', lastSession: '2024-12-19' },
     { id: '3', username: 'Thejacker', email: 'jacker@example.com', credits: 10400, role: 'user', telegram_id: null, banned: false, createdAt: '2024-02-20', lastSession: '2024-12-18' },
     { id: '4', username: 'M3LECI0', email: 'm3l@example.com', credits: 9300, role: 'user', telegram_id: null, banned: true, banReason: 'Spamming gates', createdAt: '2024-04-10', lastSession: '2024-11-30' },
-    { id: '5', username: 'Hector32', email: 'hector@example.com', credits: 8900, role: 'user', telegram_id: null, banned: false, createdAt: '2024-01-25', lastSession: '2024-12-20' },
+    { id: '5', username: 'Hector32', email: 'hector@example.com', credits: 8900, role: 'user', telegram_id: null, banned: false,       createdAt: '2024-01-25', lastSession: '2024-12-20' },
   ],
+  gateAccess: [],
   gates: [
     { id: '1', name: 'Vice Gate', category: 'Stripe CCN', endpoint: '/api/gates/vice', status: 'active', cost: 5, description: 'High success rate Stripe checker' },
     { id: '2', name: 'Ocean Gate', category: 'Stripe CCN', endpoint: '/api/gates/ocean', status: 'active', cost: 8, description: 'Premium Stripe authentication' },
@@ -200,4 +216,57 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   toggleCountry: (id) => set((s) => ({
     countries: s.countries.map((c) => (c.id === id ? { ...c, active: !c.active } : c)),
   })),
+
+  fetchGateAccess: async () => {
+    const token = useAuthStore.getState().token
+    if (!token) return
+    try {
+      const res = await fetch(`${SERVER_URL}/api/admin/gate-access`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        set({ gateAccess: data })
+      }
+    } catch (err) {
+      console.error('[admin] fetchGateAccess error:', err)
+    }
+  },
+
+  setGateAccess: async (userId, gateId, days) => {
+    const token = useAuthStore.getState().token
+    if (!token) return false
+    try {
+      const res = await fetch(`${SERVER_URL}/api/admin/gate-access`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ userId, gateId, days }),
+      })
+      if (res.ok) {
+        await get().fetchGateAccess()
+        return true
+      }
+      return false
+    } catch { return false }
+  },
+
+  deleteGateAccess: async (id) => {
+    const token = useAuthStore.getState().token
+    if (!token) return false
+    try {
+      const res = await fetch(`${SERVER_URL}/api/admin/gate-access/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.ok) {
+        await get().fetchGateAccess()
+        return true
+      }
+      return false
+    } catch { return false }
+  },
+
+  getUserGateAccess: (userId) => {
+    return get().gateAccess.filter((r) => r.user_id === userId)
+  },
 }))
