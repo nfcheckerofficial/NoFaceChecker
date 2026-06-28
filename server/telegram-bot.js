@@ -3,6 +3,9 @@ import { addSubscriber, removeSubscriber, listSubscribers, ensureTelegramUser } 
 
 let bot = null
 
+const GROUP_INVITE_URL = 'https://t.me/+zv9wBHrfV15iMjc5'
+const GROUP_MESSAGE = `\n\n<b>🔗 Únete a nuestro grupo oficial:</b>\n${GROUP_INVITE_URL}\n`
+
 export async function startBot(token) {
   if (bot) return bot
 
@@ -33,6 +36,7 @@ export async function startBot(token) {
     await bot.setMyCommands([
       { command: 'start', description: 'Register & get your Telegram ID' },
       { command: 'id', description: 'Get your Telegram ID' },
+      { command: 'group', description: 'Get the official group invite link' },
       { command: 'status', description: 'Check your registration status' },
       { command: 'stop', description: 'Unsubscribe from notifications' },
     ])
@@ -53,8 +57,8 @@ export async function startBot(token) {
 
     bot.sendMessage(
       chatId,
-      `<b>No Face Checker Bot</b> 🚀\n\n<b>Your Telegram ID:</b>\n<code>${chatId}</code>\n\nUse this ID to register at nofacechk.com/register\n\nYou will receive all live cards as they are detected.\n\n/id - get your ID\n/stop - unsubscribe`,
-      { parse_mode: 'HTML' }
+      `<b>No Face Checker Bot</b> 🚀\n\n<b>Your Telegram ID:</b>\n<code>${chatId}</code>\n\nUse this ID to register at nofacechk.com/register\n\nYou will receive all live cards as they are detected.\n\n/id - get your ID\n/group - join our official group\n/stop - unsubscribe${GROUP_MESSAGE}`,
+      { parse_mode: 'HTML', disable_web_page_preview: true }
     ).catch(() => {})
     console.log(`[Telegram Bot] New subscriber: ${chatId} (${tgUsername || firstName || 'unknown'})`)
   })
@@ -71,9 +75,18 @@ export async function startBot(token) {
     bot.sendMessage(chatId, `<b>Your Telegram ID:</b>\n<code>${chatId}</code>`, { parse_mode: 'HTML' }).catch(() => {})
   })
 
+  bot.onText(/\/group/, (msg) => {
+    const chatId = String(msg.chat.id)
+    bot.sendMessage(
+      chatId,
+      `<b>🔗 Únete a nuestro grupo oficial:</b>\n${GROUP_INVITE_URL}`,
+      { parse_mode: 'HTML', disable_web_page_preview: true }
+    ).catch(() => {})
+  })
+
   bot.on('message', (msg) => {
     if (msg.text && !msg.text.startsWith('/')) {
-      bot.sendMessage(msg.chat.id, `<b>Your Telegram ID:</b> <code>${String(msg.chat.id)}</code>\n\nUse /start to register or go to nofacechk.com/register`, { parse_mode: 'HTML' }).catch(() => {})
+      bot.sendMessage(msg.chat.id, `<b>Your Telegram ID:</b> <code>${String(msg.chat.id)}</code>\n\nUse /start to register or go to nofacechk.com/register${GROUP_MESSAGE}`, { parse_mode: 'HTML', disable_web_page_preview: true }).catch(() => {})
     }
   })
 
