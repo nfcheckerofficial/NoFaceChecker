@@ -86,7 +86,7 @@ export async function startBot(token) {
     ).catch(() => {})
   })
 
-  // /gen <bin>  o  .gen <bin>  → lookup exacto + 40 BINs cercanos
+  // /gen <bin>  o  .gen <bin>  → info del BIN + BINs cercanos
   const handleGen = async (msg) => {
     const chatId = String(msg.chat.id)
     const text = msg.text || ''
@@ -105,41 +105,63 @@ export async function startBot(token) {
       if (result.error) {
         return bot.sendMessage(chatId, `❌ ${result.error}`, { parse_mode: 'HTML' }).catch(() => {})
       }
-      const lines = []
+
+      const SEP = '━━━━━━━━━━━━━━'
+      const parts = []
+
+      // ----- Bloque 1: header con el BIN pedido -----
+      parts.push(
+        `<b>⌥ NoFace Gen | Extrap Database</b>`,
+        SEP,
+        `-${bin}|xx|xx|info-`,
+        SEP
+      )
+
+      // ----- Bloque 2: info del BIN exacto -----
       if (result.exact) {
         const e = result.exact
-        lines.push(
-          `<b>🎯 BIN Exacto: <code>${e.bin}</code></b>`,
-          `├ Marca:  <b>${e.brand || '—'}</b>`,
-          `├ Tipo:   ${e.type || '—'}`,
-          `├ Banco:  ${e.bankName || '—'}`,
-          `├ País:   ${e.countryEmoji || ''} ${e.countryName || '—'} (${e.countryCode || '—'})`,
-          `└ Moneda: ${e.currency || '—'}`,
-          ``
+        const bank = e.bankName || 'UNKNOWN'
+        const brand = (e.brand || '—').toUpperCase()
+        const type = (e.type || '—').toUpperCase()
+        const category = (e.category || '').toUpperCase()
+        const country = `${e.countryEmoji || ''} ${(e.countryName || '—').toUpperCase()}`.trim()
+        const code = e.countryCode || '—'
+        parts.push(
+          `<b>🔎 Bin: <code>${e.bin}</code>  |  Info:</b>`,
+          `${bank} | ${brand} | ${type}${category ? ' | ' + category : ''} | ${country} (${code})`,
+          SEP
         )
       } else {
-        lines.push(`<i>Sin datos para el BIN exacto ${bin}.</i>`, ``)
+        parts.push(`<i>Sin datos para el BIN exacto ${bin}.</i>`, SEP)
       }
+
+      // ----- Bloque 3: BINs cercanos con datos -----
       if (result.nearby && result.nearby.length > 0) {
-        lines.push(`<b>📡 BINs cercanos (${result.nearby.length}):</b>`)
-        for (const n of result.nearby.slice(0, 20)) {
-          lines.push(
-            `<code>${n.bin}</code>  ${n.brand || '—'} · ${n.bankName || '—'} · ${n.countryEmoji || ''} ${n.countryName || '—'}`
+        parts.push(`<b>📡 BINs cercanos (${result.nearby.length}):</b>`)
+        for (const n of result.nearby.slice(0, 25)) {
+          const nb = n.bankName || '—'
+          const nm = (n.brand || '—').toUpperCase()
+          const nt = (n.type || '—').toUpperCase()
+          const nc = `${n.countryEmoji || ''} ${(n.countryName || '—').toUpperCase()}`.trim()
+          parts.push(
+            `<code>${n.bin}</code>  ${nb} | ${nm} | ${nt} | ${nc}`
           )
         }
-        if (result.nearby.length > 20) {
-          lines.push(`<i>... y ${result.nearby.length - 20} más</i>`)
+        if (result.nearby.length > 25) {
+          parts.push(`<i>... y ${result.nearby.length - 25} más</i>`)
         }
-      } else if (result.exact) {
-        lines.push(`<i>No se encontraron BINs cercanos con datos.</i>`)
+        parts.push(SEP)
       }
+
+      parts.push(`<i>bot by : @NoFaceChecker 🌐</i>`)
+
+      const out = parts.join('\n')
       // Telegram limita a 4096 chars; dividimos si hace falta
-      const text = lines.join('\n')
-      if (text.length <= 4000) {
-        await bot.sendMessage(chatId, text, { parse_mode: 'HTML', disable_web_page_preview: true })
+      if (out.length <= 4000) {
+        await bot.sendMessage(chatId, out, { parse_mode: 'HTML', disable_web_page_preview: true })
       } else {
-        await bot.sendMessage(chatId, text.slice(0, 4000), { parse_mode: 'HTML', disable_web_page_preview: true })
-        await bot.sendMessage(chatId, text.slice(4000), { parse_mode: 'HTML', disable_web_page_preview: true })
+        await bot.sendMessage(chatId, out.slice(0, 4000), { parse_mode: 'HTML', disable_web_page_preview: true })
+        await bot.sendMessage(chatId, out.slice(4000), { parse_mode: 'HTML', disable_web_page_preview: true })
       }
     } catch (err) {
       console.error('[Telegram Bot] /gen error:', err.message)
