@@ -56,7 +56,12 @@ export const NAV_GROUPS: NavGroup[] = [
       },
       {
         label: 'Amazon', icon: Package, color: 'text-orange-500',
-        children: [],
+        children: [
+          { label: 'Amazon GC $5', href: '/dashboard/amazon/gc-5' },
+          { label: 'Amazon GC $10', href: '/dashboard/amazon/gc-10' },
+          { label: 'Amazon GC $25', href: '/dashboard/amazon/gc-25' },
+          { label: 'Amazon GC $50', href: '/dashboard/amazon/gc-50' },
+        ],
       },
       {
         label: 'Charge Gates', icon: Swords, color: 'text-orange-500',

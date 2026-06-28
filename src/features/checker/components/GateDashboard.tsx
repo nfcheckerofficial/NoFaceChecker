@@ -7,7 +7,7 @@ import { CardGenerator } from './CardGenerator'
 import { useGateStore, type CardStatus } from '../store/gateStore'
 import { useUserStore } from '../store/userStore'
 import { useLivesStore } from '../store/livesStore'
-import { getGateConfig, getGatesSortedByRate, getBestGate } from '../config/gateCatalog'
+import { getGateConfig, getGatesSortedByRate, getBestGate, isAmazonGate } from '../config/gateCatalog'
 import { initAudio } from '@/shared/utils/sound'
 
 type Tab = 'live' | 'dead' | 'unknown'
@@ -60,8 +60,11 @@ export function GateDashboard({ gateId }: GateDashboardProps) {
   const [tab, setTab] = useState<Tab>('live')
   const [copied, setCopied] = useState(false)
   const [gateSelectorOpen, setGateSelectorOpen] = useState(false)
+  const [amazonCookie, setAmazonCookie] = useState('')
   const time = useClock()
   const feedRef = useRef<HTMLDivElement>(null)
+
+  const isAmazon = isAmazonGate(gateId || useGateStore.getState().gateId)
 
   useEffect(() => {
     configure(getGateConfig(gateId || getBestGate().id))
@@ -101,8 +104,15 @@ export function GateDashboard({ gateId }: GateDashboardProps) {
 
   const handleStart = async () => {
     initAudio()
-    if (isPaused) resume()
-    else await start()
+    if (isPaused) {
+      resume()
+      return
+    }
+    if (isAmazon && amazonCookie.trim() === '') {
+      useGateStore.setState({ notice: 'Se requiere la cookie de Amazon para procesar.' })
+      return
+    }
+    await start()
   }
 
   const handleGenerated = (lines: string[]) => {
@@ -218,6 +228,35 @@ export function GateDashboard({ gateId }: GateDashboardProps) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-8">
         {/* Left panel: cards list + controls */}
         <div className="flex flex-col">
+          {/* Amazon cookie input */}
+          {isAmazon && (
+            <div className="mb-3">
+              <label className="block text-xs text-cyber-text-muted mb-1 uppercase tracking-wider">
+                Amazon Cookie (sessi+�n)
+              </label>
+              <textarea
+                value={amazonCookie}
+                onChange={e => setAmazonCookie(e.target.value)}
+                readOnly={isRunning}
+                spellCheck={false}
+                placeholder={'Pega aqu+� la cookie de Amazon (session-id, ubid, etc.)...'}
+                className={clsx(
+                  'w-full h-[70px] resize-none rounded-xl border border-cyber-border/60 bg-cyber-dark/80 p-3',
+                  'text-xs font-mono text-cyber-text/90 leading-relaxed',
+                  'placeholder:text-cyber-text-muted/30',
+                  'focus:outline-none focus:border-cyber-yellow/50',
+                  isRunning && 'opacity-80'
+                )}
+              />
+              {amazonCookie.trim() === '' && (
+                <p className="text-[10px] text-cyber-yellow/70 mt-1 flex items-center gap-1">
+                  <AlertTriangle size={10} />
+                  Se requiere la cookie de Amazon para procesar las tarjetas
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Textarea */}
           <div className="relative group/ta">
             <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-r from-cyber-blue/30 via-cyber-purple/20 to-cyber-blue/30 opacity-0 group-focus-within/ta:opacity-100 transition-opacity duration-500 blur-sm" />

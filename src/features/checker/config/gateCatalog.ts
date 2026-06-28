@@ -61,8 +61,18 @@ export const GATE_CATALOG: Record<string, GateConfig> = {
   // Brute Gates
   'brute-1': { id: 'brute-1', name: 'Brute Gate #1', liveCost: 1, deadCost: 0, liveRate: 0.08, unknownRate: 0.04, speedMs: 600 },
 
+  // Amazon GC (Gift Card) — requiere cookie de sesi+�n de Amazon
+  'amazon-gc-5': { id: 'amazon-gc-5', name: 'Amazon GC $5', liveCost: 5, deadCost: 0, liveRate: 0.15, unknownRate: 0.10, speedMs: 1300 },
+  'amazon-gc-10': { id: 'amazon-gc-10', name: 'Amazon GC $10', liveCost: 7, deadCost: 0, liveRate: 0.18, unknownRate: 0.08, speedMs: 1400 },
+  'amazon-gc-25': { id: 'amazon-gc-25', name: 'Amazon GC $25', liveCost: 10, deadCost: 1, liveRate: 0.20, unknownRate: 0.07, speedMs: 1600 },
+  'amazon-gc-50': { id: 'amazon-gc-50', name: 'Amazon GC $50', liveCost: 15, deadCost: 1, liveRate: 0.22, unknownRate: 0.06, speedMs: 1800 },
+
   // Achiever's Gate
   achievers: { id: 'achievers', name: "Achiever's Gate", liveCost: 0, deadCost: 0, liveRate: 0.3, unknownRate: 0.05, speedMs: 1000 },
+}
+
+export function isAmazonGate(gateId: string): boolean {
+  return gateId.startsWith('amazon-')
 }
 
 export function getBestGate(): GateConfig {
