@@ -42,6 +42,13 @@ export function ControlPanelPage() {
     setTimeout(() => setNotification(null), 3000)
   }
 
+  const todayISO = () => new Date().toISOString().split('T')[0]
+  const addDaysISO = (n: number) => {
+    const d = new Date()
+    d.setDate(d.getDate() + n)
+    return d.toISOString().split('T')[0]
+  }
+
   const openModal = (type: ModalType, user?: User) => {
     setSelectedUser(user ?? null)
     setModal(type)
@@ -111,8 +118,7 @@ export function ControlPanelPage() {
     })
   }
 
-  const addDateToGate = (gateId: string) => {
-    const dateStr = newDateInput.trim()
+  const addDateToGate = (gateId: string, dateStr: string) => {
     if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
       return showNotif('error', 'Invalid date format (YYYY-MM-DD)')
     }
@@ -420,18 +426,44 @@ export function ControlPanelPage() {
                     )}
                   </button>
 
-                  {selected && (
+                      {selected && (
                     <div className="px-4 pb-3 pt-1 space-y-2">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <button
+                          onClick={() => addDateToGate(gateId, todayISO())}
+                          className="px-2 py-1 bg-cyber-green/20 border border-cyber-green/50 rounded text-[10px] text-cyber-green hover:bg-cyber-green/30 transition-colors font-semibold"
+                        >
+                          Today
+                        </button>
+                        <button
+                          onClick={() => addDateToGate(gateId, addDaysISO(1))}
+                          className="px-2 py-1 bg-cyber-blue/20 border border-cyber-blue/50 rounded text-[10px] text-cyber-blue hover:bg-cyber-blue/30 transition-colors font-semibold"
+                        >
+                          +1 day
+                        </button>
+                        <button
+                          onClick={() => addDateToGate(gateId, addDaysISO(7))}
+                          className="px-2 py-1 bg-cyber-blue/20 border border-cyber-blue/50 rounded text-[10px] text-cyber-blue hover:bg-cyber-blue/30 transition-colors font-semibold"
+                        >
+                          +7 days
+                        </button>
+                        <button
+                          onClick={() => addDateToGate(gateId, addDaysISO(30))}
+                          className="px-2 py-1 bg-cyber-purple/20 border border-cyber-purple/50 rounded text-[10px] text-cyber-purple hover:bg-cyber-purple/30 transition-colors font-semibold"
+                        >
+                          +30 days
+                        </button>
+                        <span className="text-[10px] text-cyber-text-muted/60 mx-1">or</span>
                         <input
                           type="date"
                           value={newDateInput}
                           onChange={(e) => setNewDateInput(e.target.value)}
-                          className="flex-1 px-3 py-1.5 bg-cyber-dark border border-cyber-border rounded-lg text-xs text-cyber-text focus:outline-none focus:border-cyber-blue"
+                          className="px-2 py-1 bg-cyber-dark border border-cyber-border rounded text-[10px] text-cyber-text focus:outline-none focus:border-cyber-blue"
                         />
                         <button
-                          onClick={() => addDateToGate(gateId)}
-                          className="px-3 py-1.5 bg-cyber-blue/20 border border-cyber-blue/50 rounded-lg text-xs text-cyber-blue hover:bg-cyber-blue/30 transition-colors"
+                          onClick={() => addDateToGate(gateId, newDateInput.trim())}
+                          disabled={!newDateInput.trim()}
+                          className="px-2 py-1 bg-cyber-border/40 border border-cyber-border rounded text-[10px] text-cyber-text-muted hover:text-cyber-text transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           Add
                         </button>
