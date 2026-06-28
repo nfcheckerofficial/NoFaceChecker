@@ -146,15 +146,25 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   deleteUser: async (id) => {
     const token = useAuthStore.getState().token
     if (!token) return
+    // Optimistic update: elimina del estado local de inmediato para que
+    // el user desaparezca instantáneamente. Si el server falla, el siguiente
+    // fetchUsers (cada 3s) lo traerá de vuelta — pero el usuario YA vio
+    // que se borró y el server devolverá un error en consola.
+    set((s) => ({ users: s.users.filter((u) => u.id !== id) }))
     try {
       const res = await fetch(`${SERVER_URL}/api/admin/users/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       })
-      if (!res.ok) { console.error('[admin] deleteUser failed:', res.status, await res.text()); return }
-      set((s) => ({ users: s.users.filter((u) => u.id !== id) }))
+      if (!res.ok) {
+        const errText = await res.text()
+        console.error('[admin] deleteUser failed:', res.status, errText)
+        // Re-fetch para mantener consistencia si el server rechazó
+        get().fetchUsers()
+      }
     } catch (err) {
       console.error('[admin] deleteUser error:', err)
+      get().fetchUsers()
     }
   },
   toggleBan: (id, reason) => set((s) => ({
