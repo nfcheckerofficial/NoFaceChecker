@@ -60,7 +60,7 @@ interface UserState {
   setProfile: (patch: Partial<UserProfile>) => void
   addLives: (n?: number) => void
   recordResult: (status: 'live' | 'dead' | 'unknown') => Promise<void>
-  spendCredits: (n: number) => boolean
+  spendCredits: (n: number) => Promise<boolean>
   addCredits: (n: number) => void
   syncFromAuth: (user: { id: number; username: string; credits: number; role: string; telegram_id: string | null; created_at: string }) => void
   fetchStats: () => Promise<void>
@@ -142,15 +142,41 @@ export const useUserStore = create<UserState>((set, get) => ({
     } catch {}
   },
 
-  spendCredits: (n) => {
+  spendCredits: async (n) => {
     const { profile } = get()
     if (profile.credits < n) return false
-    const credits = profile.credits - n
-    set({ profile: { ...profile, credits } })
-    saveCredits(credits)
-    saveCreditsBackup(credits)
-    syncAdminCredits(profile.username, credits)
-    persistCredits(credits)
+    // Optimistic: descuento local inmediato
+    const localCredits = profile.credits - n
+    set({ profile: { ...profile, credits: localCredits } })
+    saveCredits(localCredits)
+    saveCreditsBackup(localCredits)
+    syncAdminCredits(profile.username, localCredits)
+    // Persistir en el server
+    const token = useAuthStore.getState().token
+    if (!token) return true
+    try {
+      const res = await fetch(`${SERVER_URL}/api/auth/spend`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ amount: n }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (typeof data.credits === 'number') {
+          set({ profile: { ...get().profile, credits: data.credits } })
+          saveCredits(data.credits)
+          saveCreditsBackup(data.credits)
+          syncAdminCredits(profile.username, data.credits)
+        }
+      } else {
+        // Si el server rechaza (ej 402 insufficient), revertir
+        console.warn('[credits] spend rejected by server, reverting')
+        set({ profile: { ...get().profile, credits: profile.credits } })
+        saveCredits(profile.credits)
+      }
+    } catch (err) {
+      console.warn('[credits] spend network error, keeping local value', err)
+    }
     return true
   },
 
@@ -161,15 +187,10 @@ export const useUserStore = create<UserState>((set, get) => ({
     saveCredits(credits)
     saveCreditsBackup(credits)
     syncAdminCredits(profile.username, credits)
-    persistCredits(credits)
   },
 
   syncFromAuth: (user) => {
-    let credits = user.credits
-    if (credits === 0) {
-      const backup = loadCreditsBackup()
-      if (backup > 0) credits = backup
-    }
+    const credits = user.credits
     saveCredits(credits)
     saveCreditsBackup(credits)
     const localSt = loadStats()
@@ -191,17 +212,5 @@ function syncAdminCredits(username: string, credits: number) {
     const user = mod.useAdminStore.getState().users.find((x) => x.username === username)
     if (user) mod.useAdminStore.getState().updateUser(user.id, { credits })
   })
-}
-
-async function persistCredits(credits: number) {
-  const token = useAuthStore.getState().token
-  if (!token) return
-  try {
-    await fetch(`${SERVER_URL}/api/auth/credits`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ credits }),
-    })
-  } catch {}
 }
 

@@ -389,6 +389,30 @@ app.put('/api/auth/credits', authMiddleware, async (req, res) => {
   res.json({ ok: true, username, credits })
 })
 
+// Endpoint para que el USER pueda gastar sus propios créditos.
+// Body: { amount: number } → descuenta 'amount' de los créditos del user actual.
+// Retorna { ok, credits (nuevo saldo) } o 402 si no tiene suficientes.
+app.post('/api/auth/spend', authMiddleware, async (req, res) => {
+  try {
+    const { amount } = req.body
+    if (typeof amount !== 'number' || amount <= 0) {
+      return res.status(400).json({ error: 'Invalid amount' })
+    }
+    const user = await getUserById(req.user.id)
+    if (!user) return res.status(404).json({ error: 'User not found' })
+    if (user.credits < amount) {
+      return res.status(402).json({ error: 'Insufficient credits', credits: user.credits })
+    }
+    const newCredits = user.credits - amount
+    await updateUserCredits(user.username, newCredits)
+    console.log(`[credits] ${user.username}: ${user.credits} → ${newCredits} (spent ${amount})`)
+    res.json({ ok: true, credits: newCredits, spent: amount })
+  } catch (err) {
+    console.error('[credits] spend error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // --- Idempotencia persistente: evita procesar el mismo evento dos veces ---
 // Stripe puede reenviar eventos. markEventProcessed usa UNIQUE(event_id)
 // en SQLite, así que sobrevive a reinicios del servidor.

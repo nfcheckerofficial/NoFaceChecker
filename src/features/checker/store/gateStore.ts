@@ -254,7 +254,7 @@ export const useGateStore = create<GateState>((set, get) => ({
     const number = parseLine(raw)
     set({ currentCard: raw, queue: rest })
 
-    setTimeout(() => {
+    setTimeout(async () => {
       const s = get()
       if (s.isPaused) {
         // Devuelve la tarjeta al frente de la cola si se pausó a mitad.
@@ -270,7 +270,10 @@ export const useGateStore = create<GateState>((set, get) => ({
         : status === 'dead' ? activeConfig.deadCost
           : 0
       if (cost > 0) {
-        const ok = useUserStore.getState().spendCredits(cost)
+        // spendCredits hace optimistic update local y luego persiste en server.
+        // Devuelve Promise<boolean>; si rechaza (sin créditos), revierte.
+        let ok = false
+        try { ok = await useUserStore.getState().spendCredits(cost) } catch { ok = false }
         if (!ok) {
           // Sin créditos: devuelve la tarjeta a la cola y detiene el gate.
           set((cur) => ({
