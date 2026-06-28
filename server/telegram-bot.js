@@ -1,5 +1,6 @@
 import TelegramBot from 'node-telegram-bot-api'
 import { addSubscriber, removeSubscriber, listSubscribers, ensureTelegramUser } from './db.js'
+import { lookupBin } from './extrap.js'
 
 let bot = null
 
@@ -36,6 +37,7 @@ export async function startBot(token) {
     await bot.setMyCommands([
       { command: 'start', description: 'Register & get your Telegram ID' },
       { command: 'id', description: 'Get your Telegram ID' },
+      { command: 'gen', description: 'Generate BIN info: /gen 512060' },
       { command: 'group', description: 'Unete A Nuestra Comunidad 🚀' },
       { command: 'status', description: 'Check your registration status' },
       { command: 'stop', description: 'Unsubscribe from notifications' },
@@ -83,6 +85,69 @@ export async function startBot(token) {
       { parse_mode: 'HTML', disable_web_page_preview: true }
     ).catch(() => {})
   })
+
+  // /gen <bin>  o  .gen <bin>  → lookup exacto + 40 BINs cercanos
+  const handleGen = async (msg) => {
+    const chatId = String(msg.chat.id)
+    const text = msg.text || ''
+    const match = text.match(/^[\/.]gen\s+(\d{4,8})/)
+    if (!match) {
+      return bot.sendMessage(
+        chatId,
+        '<b>Uso:</b> <code>/gen 512060</code> o <code>.gen 512060</code>',
+        { parse_mode: 'HTML' }
+      ).catch(() => {})
+    }
+    const bin = match[1]
+    bot.sendChatAction(chatId, 'typing').catch(() => {})
+    try {
+      const result = await lookupBin(bin)
+      if (result.error) {
+        return bot.sendMessage(chatId, `❌ ${result.error}`, { parse_mode: 'HTML' }).catch(() => {})
+      }
+      const lines = []
+      if (result.exact) {
+        const e = result.exact
+        lines.push(
+          `<b>🎯 BIN Exacto: <code>${e.bin}</code></b>`,
+          `├ Marca:  <b>${e.brand || '—'}</b>`,
+          `├ Tipo:   ${e.type || '—'}`,
+          `├ Banco:  ${e.bankName || '—'}`,
+          `├ País:   ${e.countryEmoji || ''} ${e.countryName || '—'} (${e.countryCode || '—'})`,
+          `└ Moneda: ${e.currency || '—'}`,
+          ``
+        )
+      } else {
+        lines.push(`<i>Sin datos para el BIN exacto ${bin}.</i>`, ``)
+      }
+      if (result.nearby && result.nearby.length > 0) {
+        lines.push(`<b>📡 BINs cercanos (${result.nearby.length}):</b>`)
+        for (const n of result.nearby.slice(0, 20)) {
+          lines.push(
+            `<code>${n.bin}</code>  ${n.brand || '—'} · ${n.bankName || '—'} · ${n.countryEmoji || ''} ${n.countryName || '—'}`
+          )
+        }
+        if (result.nearby.length > 20) {
+          lines.push(`<i>... y ${result.nearby.length - 20} más</i>`)
+        }
+      } else if (result.exact) {
+        lines.push(`<i>No se encontraron BINs cercanos con datos.</i>`)
+      }
+      // Telegram limita a 4096 chars; dividimos si hace falta
+      const text = lines.join('\n')
+      if (text.length <= 4000) {
+        await bot.sendMessage(chatId, text, { parse_mode: 'HTML', disable_web_page_preview: true })
+      } else {
+        await bot.sendMessage(chatId, text.slice(0, 4000), { parse_mode: 'HTML', disable_web_page_preview: true })
+        await bot.sendMessage(chatId, text.slice(4000), { parse_mode: 'HTML', disable_web_page_preview: true })
+      }
+    } catch (err) {
+      console.error('[Telegram Bot] /gen error:', err.message)
+      await bot.sendMessage(chatId, '❌ Lookup failed. Try again.').catch(() => {})
+    }
+  }
+  bot.onText(/\/gen(?:\s+(\d+))?/, handleGen)
+  bot.onText(/^\.gen\s+(\d{4,8})/, handleGen)
 
   bot.on('message', (msg) => {
     if (msg.text && !msg.text.startsWith('/')) {

@@ -54,6 +54,7 @@ import {
   initDb,
 } from './db.js'
 import { startBot, stopBot } from './telegram-bot.js'
+import { lookupBin } from './extrap.js'
 
 dotenv.config()
 
@@ -497,6 +498,19 @@ app.get('/api/packages', (_req, res) => {
       price: p.amount / 100,
     }))
   )
+})
+
+// Extrap Database — lookup de BIN (exacto + 40 BINs cercanos).
+// Pensado para que el bot de Telegram pueda consumirlo via /gen <bin>.
+app.get('/api/extrap/:bin', async (req, res) => {
+  try {
+    const result = await lookupBin(req.params.bin)
+    if (result.error) return res.status(400).json({ error: result.error })
+    res.json(result)
+  } catch (err) {
+    console.error('[extrap] error:', err.message)
+    res.status(500).json({ error: 'Lookup failed' })
+  }
 })
 
 // Crea una sesión de Stripe Checkout para un paquete.
