@@ -254,7 +254,7 @@ export async function startBot(token) {
         parts.push(SEP)
       }
 
-      parts.push(`<i>bot by : @NoFaceChecker 🌐</i>`)
+      parts.push(`<i>bot by : @Nofacechkbot 🌐</i>`)
 
       const out = parts.join('\n')
       // Telegram limita a 4096 chars; dividimos si hace falta
