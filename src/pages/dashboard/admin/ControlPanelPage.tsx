@@ -443,7 +443,7 @@ export function ControlPanelPage() {
                         </button>
                         <button
                           onClick={() => addDateToGate(gateId, addDaysISO(7))}
-                          className="px-2 py-1 bg-cyber-blue/20 border border-cyber-blue/50 rounded text-[10px] text-cyber-blue hover:bg-cyber-blue/30 transition-colors font-semibold"
+                          className="px-2 py-1 bg-cyber-yellow/20 border border-cyber-yellow/50 rounded text-[10px] text-cyber-yellow hover:bg-cyber-yellow/30 transition-colors font-semibold"
                         >
                           +7 days
                         </button>
