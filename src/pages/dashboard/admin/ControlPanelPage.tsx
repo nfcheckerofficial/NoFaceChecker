@@ -156,15 +156,26 @@ export function ControlPanelPage() {
   const handleSaveGateAccess = async () => {
     if (!selectedUser) return
     const userId = Number(selectedUser.id)
+    if (!Number.isFinite(userId) || userId <= 0) {
+      return showNotif('error', 'Invalid user id')
+    }
+    let failed = 0
     for (const [gateId, days] of Object.entries(gateSelections)) {
-      await setGateAccess(userId, gateId, days)
+      const ok = await setGateAccess(userId, gateId, days)
+      if (!ok) failed++
     }
     // Delete access for gates that were unselected
     const userAccess = getUserGateAccess(userId)
     for (const r of userAccess) {
       if (!gateSelections[r.gate_id]) {
-        await deleteGateAccess(r.id)
+        const ok = await deleteGateAccess(r.id)
+        if (!ok) failed++
       }
+    }
+    // Refrescar para que el cambio se vea de inmediato
+    await fetchGateAccess()
+    if (failed > 0) {
+      return showNotif('error', `Some updates failed (${failed}). Please retry.`)
     }
     showNotif('success', `Gate access updated for ${selectedUser.username}`)
     setModal(null)
