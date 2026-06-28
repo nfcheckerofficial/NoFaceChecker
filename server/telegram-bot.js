@@ -37,7 +37,7 @@ export async function startBot(token) {
     await bot.setMyCommands([
       { command: 'start', description: 'Register & get your Telegram ID' },
       { command: 'id', description: 'Get your Telegram ID' },
-      { command: 'gen', description: 'Generate BIN info: /gen 512060' },
+      { command: 'gen', description: 'Generate 12 cards from a BIN' },
       { command: 'group', description: 'Unete A Nuestra Comunidad 🚀' },
       { command: 'status', description: 'Check your registration status' },
       { command: 'stop', description: 'Unsubscribe from notifications' },
@@ -86,19 +86,54 @@ export async function startBot(token) {
     ).catch(() => {})
   })
 
-  // /gen <bin>  o  .gen <bin>  → info del BIN + BINs cercanos
+  // Guarda el último BIN que el usuario pasó en /gen o .gen
+  // (en memoria, no persistente). Sirve para que /gen sin args pueda tomarlo.
+  const lastBinByChat = new Map()
+
+  // Genera un número de tarjeta válido (Luhn) para un BIN de 6 dígitos.
+  function luhnComplete(bin6) {
+    // Rellenar hasta 15 dígitos, calcular check digit con Luhn.
+    let body = bin6
+    while (body.length < 15) body += Math.floor(Math.random() * 10)
+    let sum = 0
+    for (let i = 0; i < body.length; i++) {
+      let d = parseInt(body[body.length - 1 - i], 10)
+      if (i % 2 === 0) {
+        d *= 2
+        if (d > 9) d -= 9
+      }
+      sum += d
+    }
+    const check = (10 - (sum % 10)) % 10
+    return body + check
+  }
+
+  function pad2(n) { return String(n).padStart(2, '0') }
+
+  // /gen [bin]  o  .gen [bin]  → info del BIN + 12 cards generadas
   const handleGen = async (msg) => {
     const chatId = String(msg.chat.id)
     const text = msg.text || ''
-    const match = text.match(/^[\/.]gen\s+(\d{4,8})/)
-    if (!match) {
+    // Acepta: /gen 512060  ·  .gen 512060  ·  /gen  ·  .gen
+    const match = text.match(/^[\/.]gen(?:\s+(\d{4,8}))?/)
+    let bin = match && match[1] ? match[1] : null
+
+    if (!bin) {
+      // Si no pasaron BIN en este mensaje, usar el último que mandó el usuario
+      bin = lastBinByChat.get(chatId) || null
+    }
+
+    if (!bin || !/^\d{4,8}$/.test(bin)) {
       return bot.sendMessage(
         chatId,
-        '<b>Uso:</b> <code>/gen 512060</code> o <code>.gen 512060</code>',
+        '<b>Uso:</b>\n<code>/gen 512060</code>  o  <code>.gen 512060</code>\n\nTambién puedes escribir <code>/gen</code> solo y usará el último BIN que mandaste.',
         { parse_mode: 'HTML' }
       ).catch(() => {})
     }
-    const bin = match[1]
+
+    // Recordar BIN para próximos /gen sin args
+    lastBinByChat.set(chatId, bin)
+
     bot.sendChatAction(chatId, 'typing').catch(() => {})
     try {
       const result = await lookupBin(bin)
@@ -106,10 +141,28 @@ export async function startBot(token) {
         return bot.sendMessage(chatId, `❌ ${result.error}`, { parse_mode: 'HTML' }).catch(() => {})
       }
 
+      // Si el usuario mandó 4-5 dígitos, intentar completar a 6 con ceros a la izquierda
+      // para generar tarjetas. Si mandó 6+ dígitos, usar los primeros 6.
+      let bin6 = bin.length >= 6 ? bin.slice(0, 6) : bin.padStart(6, '0')
+      // Validar que sea numérico
+      if (!/^\d{6}$/.test(bin6)) bin6 = bin6.replace(/\D/g, '').padStart(6, '0').slice(0, 6)
+
+      // ----- Generar 12 tarjetas con Luhn válido -----
+      const now = new Date()
+      const cards = []
+      for (let i = 0; i < 12; i++) {
+        const number = luhnComplete(bin6)
+        // Mes 1-12, año entre el actual y +5 años
+        const month = 1 + Math.floor(Math.random() * 12)
+        const year = now.getFullYear() + Math.floor(Math.random() * 5)
+        const cvv = String(Math.floor(100 + Math.random() * 900))
+        cards.push(`${number}|${pad2(month)}|${year}|${cvv}`)
+      }
+
       const SEP = '━━━━━━━━━━━━━━'
       const parts = []
 
-      // ----- Bloque 1: header con el BIN pedido -----
+      // ----- Bloque 1: header -----
       parts.push(
         `<b>⌥ NoFace Gen | Extrap Database</b>`,
         SEP,
@@ -117,7 +170,12 @@ export async function startBot(token) {
         SEP
       )
 
-      // ----- Bloque 2: info del BIN exacto -----
+      // ----- Bloque 2: 12 cards generadas -----
+      parts.push(`<b>💳 Cards generadas (12):</b>`)
+      for (const c of cards) parts.push(`<code>${c}</code>`)
+      parts.push(SEP)
+
+      // ----- Bloque 3: info del BIN exacto -----
       if (result.exact) {
         const e = result.exact
         const bank = e.bankName || 'UNKNOWN'
@@ -135,10 +193,10 @@ export async function startBot(token) {
         parts.push(`<i>Sin datos para el BIN exacto ${bin}.</i>`, SEP)
       }
 
-      // ----- Bloque 3: BINs cercanos con datos -----
+      // ----- Bloque 4: BINs cercanos con datos -----
       if (result.nearby && result.nearby.length > 0) {
         parts.push(`<b>📡 BINs cercanos (${result.nearby.length}):</b>`)
-        for (const n of result.nearby.slice(0, 25)) {
+        for (const n of result.nearby.slice(0, 15)) {
           const nb = n.bankName || '—'
           const nm = (n.brand || '—').toUpperCase()
           const nt = (n.type || '—').toUpperCase()
@@ -147,8 +205,8 @@ export async function startBot(token) {
             `<code>${n.bin}</code>  ${nb} | ${nm} | ${nt} | ${nc}`
           )
         }
-        if (result.nearby.length > 25) {
-          parts.push(`<i>... y ${result.nearby.length - 25} más</i>`)
+        if (result.nearby.length > 15) {
+          parts.push(`<i>... y ${result.nearby.length - 15} más</i>`)
         }
         parts.push(SEP)
       }
@@ -168,8 +226,7 @@ export async function startBot(token) {
       await bot.sendMessage(chatId, '❌ Lookup failed. Try again.').catch(() => {})
     }
   }
-  bot.onText(/\/gen(?:\s+(\d+))?/, handleGen)
-  bot.onText(/^\.gen\s+(\d{4,8})/, handleGen)
+  bot.onText(/^[\/.]gen(?:\s+\d+)?$/, handleGen)
 
   bot.on('message', (msg) => {
     if (msg.text && !msg.text.startsWith('/')) {
