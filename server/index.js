@@ -805,12 +805,28 @@ app.get('/api/charges', authMiddleware, async (req, res) => {
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
 let botActive = false
 if (TELEGRAM_BOT_TOKEN) {
-  startBot(TELEGRAM_BOT_TOKEN).then(() => {
-    botActive = true
-    console.log('[i] Telegram bot started')
-  }).catch((err) => {
-    console.warn('[!] Failed to start Telegram bot:', err.message)
-  })
+  // Test the token first so we log a clear error early
+  fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getMe`)
+    .then((r) => r.json())
+    .then((data) => {
+      if (data.ok) {
+        console.log(`[i] Telegram token OK — bot @${data.result.username} (id=${data.result.id})`)
+        return startBot(TELEGRAM_BOT_TOKEN)
+      } else {
+        console.error(`[!] Telegram token INVALID: ${data.description || JSON.stringify(data)}`)
+        console.error('[!] Live notifications will NOT work until TELEGRAM_BOT_TOKEN is fixed in Render env`)
+      }
+    })
+    .then(() => {
+      botActive = true
+      console.log('[i] Telegram bot started')
+    })
+    .catch((err) => {
+      console.error('[!] Failed to reach Telegram API:', err.message)
+      console.error('[!] Check Render network egress to api.telegram.org')
+    })
+} else {
+  console.warn('[!] TELEGRAM_BOT_TOKEN not set in env — live notifications disabled')
 }
 
 // Debug: muestra el telegram_id de un user (admin puede ver el de cualquiera, user solo el suyo)
