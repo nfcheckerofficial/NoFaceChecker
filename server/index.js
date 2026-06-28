@@ -34,6 +34,7 @@ import {
   linkTelegramToUser,
   claimBotUser,
   resetAllCredits,
+  removeSubscriber,
   restoreCreditsFromBackup,
   listUsers,
   recordCheck,
@@ -257,10 +258,24 @@ app.post('/api/auth/login', async (req, res) => {
     const match = await bcrypt.compare(password, user.password_hash)
     if (!match) return res.status(401).json({ error: 'Invalid credentials' })
 
+    // Auto-vincular telegram: si el user no tiene telegram_id pero existe
+    // un subscriber del bot con el mismo username, vincular su chat_id.
+    let telegramId = user.telegram_id
+    if (!telegramId) {
+      const subs = await listSubscribers(false)
+      const match = subs.find((s) => s.username && s.username.toLowerCase() === user.username.toLowerCase())
+      if (match) {
+        telegramId = match.chat_id
+        await linkTelegramToUser(user.id, telegramId)
+        await addSubscriber(telegramId, user.username, user.username)
+        console.log(`[auth] auto-linked telegram for ${user.username} → ${telegramId}`)
+      }
+    }
+
     const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, _JWT_SECRET, { expiresIn: '7d', algorithm: 'HS256' })
     res.json({
       token,
-      user: { id: user.id, username: user.username, credits: user.credits, role: user.role, telegram_id: user.telegram_id, created_at: user.created_at },
+      user: { id: user.id, username: user.username, credits: user.credits, role: user.role, telegram_id: telegramId, created_at: user.created_at },
     })
   } catch (err) {
     console.error('[auth] login error:', err.message)
@@ -798,6 +813,15 @@ if (TELEGRAM_BOT_TOKEN) {
   })
 }
 
+// Debug: muestra el telegram_id de un user (admin puede ver el de cualquiera, user solo el suyo)
+app.get('/api/telegram/my-id', authMiddleware, async (req, res) => {
+  res.json({
+    username: req.user.username,
+    userId: req.user.id,
+    telegram_id: req.user.telegram_id || null,
+  })
+})
+
 // Broadcast a live card to all subscribers
 app.post('/api/telegram/broadcast', authMiddleware, express.json(), async (req, res) => {
   try {
@@ -893,8 +917,10 @@ app.post('/api/telegram/send-personal', authMiddleware, express.json(), async (r
 
     if (!r.ok) {
       const err = await r.json().catch(() => ({}))
+      console.warn(`[Telegram] send-personal FAILED: userId=${req.user.id} (${req.user.username}) chatId=${chatId} → ${err.description || r.status}`)
       return res.status(400).json({ error: err.description || 'Failed to send' })
     }
+    console.log(`[Telegram] send-personal OK: userId=${req.user.id} (${req.user.username}) chatId=${chatId}`)
     res.json({ sent: 1 })
   } catch (err) {
     console.error('[Telegram] Send personal error:', err.message)
