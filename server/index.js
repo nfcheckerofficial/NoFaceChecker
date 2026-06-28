@@ -32,6 +32,7 @@ import {
   setUserRole,
   deleteUser,
   linkTelegramToUser,
+  claimBotUser,
   resetAllCredits,
   restoreCreditsFromBackup,
   listUsers,
@@ -217,10 +218,20 @@ app.post('/api/auth/register', async (req, res) => {
     if (existing) return res.status(409).json({ error: 'Username already taken' })
 
     const existingTg = await getUserByTelegramId(telegram_id)
-    if (existingTg) return res.status(409).json({ error: 'Telegram ID already linked to another account' })
+    if (existingTg && !existingTg.username?.startsWith('tg_')) {
+      return res.status(409).json({ error: 'Telegram ID already linked to another account' })
+    }
 
     const passwordHash = await bcrypt.hash(password, 10)
-    const user = await createUser(username, passwordHash, telegram_id)
+    let user
+    if (existingTg && existingTg.username?.startsWith('tg_')) {
+      // Reclama el usuario auto-creado por el bot (/start) para que pase
+      // a ser un usuario web con su username y password elegidos.
+      user = await claimBotUser(telegram_id, username, passwordHash)
+      if (!user) user = await createUser(username, passwordHash, telegram_id)
+    } else {
+      user = await createUser(username, passwordHash, telegram_id)
+    }
     if (!user) return res.status(500).json({ error: 'Failed to create user' })
 
     await addSubscriber(telegram_id, username, username)

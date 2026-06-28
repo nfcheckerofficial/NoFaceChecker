@@ -313,6 +313,23 @@ export async function linkTelegramToUser(userId, telegramId) {
   await query('UPDATE users SET telegram_id = $1 WHERE id = $2', [telegramId, userId])
 }
 
+// Reclama un usuario auto-generado por el bot (tg_<chatId>) y le asigna
+// un username, password y rol nuevos. Mantiene el telegram_id y los créditos/stats.
+// Devuelve el usuario actualizado, o null si no se encontró un bot-user con ese id.
+export async function claimBotUser(telegramId, newUsername, newPasswordHash) {
+  const existing = await getUserByTelegramId(telegramId)
+  if (!existing) return null
+  if (!existing.username?.startsWith('tg_')) return null
+  const r = await query(
+    `UPDATE users
+        SET username = $1, password_hash = $2
+      WHERE id = $3
+      RETURNING id, username, credits, role, telegram_id, created_at`,
+    [newUsername, newPasswordHash, existing.id]
+  )
+  return r.rows[0] || null
+}
+
 // --- Lives ---
 
 export async function saveLive(userId, live) {

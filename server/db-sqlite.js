@@ -435,6 +435,17 @@ export function linkTelegramToUser(userId, telegramId) {
   db.prepare('UPDATE users SET telegram_id = ? WHERE id = ?').run(telegramId, userId)
 }
 
+// Reclama un usuario auto-generado por el bot (tg_<chatId>) y le asigna
+// un username y password nuevos. Mantiene telegram_id, créditos y stats.
+// Devuelve el usuario actualizado, o null si no se encontró un bot-user con ese id.
+export function claimBotUser(telegramId, newUsername, newPasswordHash) {
+  const existing = getUserByTelegramId(telegramId)
+  if (!existing) return null
+  if (!existing.username?.startsWith('tg_')) return null
+  db.prepare('UPDATE users SET username = ?, password_hash = ? WHERE id = ?').run(newUsername, newPasswordHash, existing.id)
+  return getUserById(existing.id)
+}
+
 // --- Lives ---
 
 export function saveLive(userId, live) {

@@ -41,6 +41,7 @@ export const {
   setUserRole,
   deleteUser,
   linkTelegramToUser,
+  claimBotUser,
   resetAllCredits,
   restoreCreditsFromBackup,
   listUsers,
