@@ -30,6 +30,7 @@ import {
   getUserByTelegramId,
   updateUserCredits,
   setUserRole,
+  deleteUser,
   linkTelegramToUser,
   resetAllCredits,
   restoreCreditsFromBackup,
