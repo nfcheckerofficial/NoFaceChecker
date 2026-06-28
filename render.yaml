@@ -14,7 +14,7 @@ services:
       - key: CLIENT_URL
         value: https://nofacechk.com
       - key: ADMIN_PASS
-        generateValue: true
+        sync: false
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
