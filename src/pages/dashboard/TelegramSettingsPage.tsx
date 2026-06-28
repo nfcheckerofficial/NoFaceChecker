@@ -9,9 +9,9 @@ export function TelegramSettingsPage() {
   const { user, linkTelegram, error } = useAuthStore()
   const {
     botToken, chatId, enabled, lastSentAt, subscribers, subscriberCount,
-    personalChatId, notifyPersonal,
+    personalChatId, notifyPersonal, broadcastEnabled,
     setBotToken, setChatId, setEnabled, setSubscribers,
-    setPersonalChatId, setNotifyPersonal,
+    setPersonalChatId, setNotifyPersonal, setBroadcastEnabled,
   } = useTelegramStore()
 
   const [showToken, setShowToken] = useState(false)
@@ -213,6 +213,31 @@ export function TelegramSettingsPage() {
           </label>
           <span className="text-sm text-cyber-text-muted">
             {notifyPersonal ? 'Live cards will be sent to your chat' : 'Disabled'}
+          </span>
+        </div>
+      </div>
+
+      {/* Broadcast Toggle */}
+      <div className="rounded-lg border border-cyber-border bg-cyber-panel/70 backdrop-blur-sm p-5 space-y-3">
+        <h3 className="text-sm font-semibold text-cyber-text flex items-center gap-2">
+          <Users size={16} className="text-cyber-red" />
+          Broadcast to ALL subscribers
+        </h3>
+        <p className="text-xs text-cyber-text-muted">
+          When enabled, every live card found by ANY user gets sent to ALL bot subscribers. Disable to keep lives private (only the user who found it gets notified).
+        </p>
+        <div className="flex items-center gap-3">
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={broadcastEnabled}
+              onChange={(e) => setBroadcastEnabled(e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-10 h-5 bg-cyber-dark border border-cyber-border rounded-full peer peer-checked:bg-cyber-red peer-checked:border-cyber-red/50 after:content-[''] after:absolute after:top-0.5 after:start-[3px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-[19px]" />
+          </label>
+          <span className="text-sm text-cyber-text-muted">
+            {broadcastEnabled ? 'Broadcasting live cards to ALL subscribers' : 'Broadcast disabled — lives are private'}
           </span>
         </div>
       </div>

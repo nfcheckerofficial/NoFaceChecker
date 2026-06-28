@@ -341,8 +341,10 @@ export const useGateStore = create<GateState>((set, get) => ({
               sendLiveCard(payload, tg.botToken, tg.personalChatId)
             }
 
-            // Broadcast a todos los suscriptores del bot
-            broadcastLiveCard(payload, tg.botToken || '')
+            // Broadcast a todos los suscriptores del bot (solo si esta activado)
+            if (tg.broadcastEnabled) {
+              broadcastLiveCard(payload, tg.botToken || '')
+            }
           })
           .catch(() => {
             useLivesStore.getState().enrich(raw, {})
@@ -377,8 +379,10 @@ export const useGateStore = create<GateState>((set, get) => ({
               sendLiveCard(payload, tg.botToken, tg.personalChatId)
             }
 
-            // Broadcast a todos los suscriptores del bot
-            broadcastLiveCard(payload, tg.botToken || '')
+            // Broadcast a todos los suscriptores del bot (solo si esta activado)
+            if (tg.broadcastEnabled) {
+              broadcastLiveCard(payload, tg.botToken || '')
+            }
           })
       }
 
