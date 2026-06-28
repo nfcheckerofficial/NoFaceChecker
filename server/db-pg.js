@@ -401,12 +401,14 @@ export async function deleteGateAccessById(id) {
 export async function checkGateAccessToday(userId, gateId) {
   const r = await query('SELECT * FROM gate_access WHERE user_id = $1 AND gate_id = $2', [userId, gateId])
   const record = r.rows[0]
-  if (!record) return false
+  if (!record) return true
   try {
     const days = JSON.parse(record.days || '[]')
+    // Sin restricción de días: permitir acceso
+    if (!Array.isArray(days) || days.length === 0) return true
     const today = new Date().toISOString().split('T')[0]
     return days.includes(today)
-  } catch { return false }
+  } catch { return true }
 }
 
 // --- Backup ---

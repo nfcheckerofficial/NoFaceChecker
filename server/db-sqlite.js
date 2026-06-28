@@ -521,12 +521,13 @@ export function deleteGateAccessById(id) {
 
 export function checkGateAccessToday(userId, gateId) {
   const record = db.prepare('SELECT * FROM gate_access WHERE user_id = ? AND gate_id = ?').get(userId, gateId)
-  if (!record) return false
+  if (!record) return true
   try {
     const days = JSON.parse(record.days || '[]')
+    if (!Array.isArray(days) || days.length === 0) return true
     const today = new Date().toISOString().split('T')[0]
     return days.includes(today)
-  } catch { return false }
+  } catch { return true }
 }
 
 export default db

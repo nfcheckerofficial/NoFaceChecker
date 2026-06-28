@@ -162,8 +162,8 @@ export async function startBot(token) {
   const handleGen = async (msg) => {
     const chatId = String(msg.chat.id)
     const text = msg.text || ''
-    // Acepta: /gen 512060  ·  .gen 512060  ·  /gen  ·  .gen
-    const match = text.match(/^[\/.]gen(?:\s+(\d{4,8}))?/)
+    // Acepta: /gen 512060  ·  .gen 512060  ·  /gen  ·  .gen  ·  /gen@bot 512060
+    const match = text.match(/^[\/.]gen(?:@\w+)?(?:\s+(\d{4,8}))?/)
     let bin = match && match[1] ? match[1] : null
 
     if (!bin) {
@@ -269,12 +269,16 @@ export async function startBot(token) {
       await bot.sendMessage(chatId, '❌ Lookup failed. Try again.').catch(() => {})
     }
   }
-  bot.onText(/^[\/.]gen(?:\s+\d+)?$/, handleGen)
+  // Acepta: /gen  ·  /gen 512060  ·  /gen@bot 512060  ·  .gen  ·  .gen 512060
+  bot.onText(/^[\/.]gen(?:@\w+)?(?:\s+(\d{4,8}))?$/, handleGen)
 
   bot.on('message', (msg) => {
-    if (msg.text && !msg.text.startsWith('/')) {
-      bot.sendMessage(msg.chat.id, `<b>Your Telegram ID:</b> <code>${String(msg.chat.id)}</code>\n\nUse /start to register or go to nofacechk.com/register${GROUP_MESSAGE}`, { parse_mode: 'HTML', disable_web_page_preview: true }).catch(() => {})
-    }
+    const t = (msg.text || '').trim()
+    // No responder a comandos (ya tienen su handler)
+    if (!t) return
+    if (t.startsWith('/')) return
+    if (t.startsWith('.')) return
+    bot.sendMessage(msg.chat.id, `<b>Your Telegram ID:</b> <code>${String(msg.chat.id)}</code>\n\nUse /start to register or go to nofacechk.com/register${GROUP_MESSAGE}`, { parse_mode: 'HTML', disable_web_page_preview: true }).catch(() => {})
   })
 
   bot.onText(/\/status/, (msg) => {
