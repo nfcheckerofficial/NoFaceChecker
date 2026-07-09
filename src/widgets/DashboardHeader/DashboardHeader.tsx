@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { clsx } from 'clsx'
+import { useShallow } from 'zustand/react/shallow'
 import {
   Bell, AlertTriangle, Zap, X, Check,
   User, ChevronDown, Settings, LogOut, CircleDot, Menu, Shield,
@@ -39,8 +40,8 @@ const WARNINGS: WarningItem[] = [
 type Panel = 'notifications' | 'warnings' | 'profile' | null
 
 export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
-  const { profile } = useUserStore()
-  const { user, logout } = useAuthStore()
+  const profile = useUserStore((s) => s.profile)
+  const { user, logout } = useAuthStore(useShallow((s) => ({ user: s.user, logout: s.logout })))
   const navigate = useNavigate()
   const isAdmin = user?.role === 'admin'
   const [panel, setPanel] = useState<Panel>(null)

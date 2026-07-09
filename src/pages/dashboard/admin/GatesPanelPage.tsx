@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { clsx } from 'clsx'
+import { useShallow } from 'zustand/react/shallow'
 import { Network, Plus, Edit, Trash2, Search, Zap, Settings, X, Check, AlertTriangle } from 'lucide-react'
 import { useAdminStore, type Gate } from '@/features/admin/adminStore'
 
@@ -11,7 +12,12 @@ interface GateForm { name: string; category: string; endpoint: string; status: '
 const emptyGate: GateForm = { name: '', category: CATEGORIES[0], endpoint: '', status: 'active', cost: 1, description: '' }
 
 export function GatesPanelPage() {
-  const { gates, addGate, updateGate, deleteGate } = useAdminStore()
+  const { gates, addGate, updateGate, deleteGate } = useAdminStore(useShallow((s) => ({
+    gates: s.gates,
+    addGate: s.addGate,
+    updateGate: s.updateGate,
+    deleteGate: s.deleteGate,
+  })))
   const [search, setSearch] = useState('')
   const [selectedGate, setSelectedGate] = useState<Gate | null>(null)
   const [modal, setModal] = useState<ModalType>(null)

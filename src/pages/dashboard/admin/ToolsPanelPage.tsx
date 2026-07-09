@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { clsx } from 'clsx'
+import { useShallow } from 'zustand/react/shallow'
 import { Database, Plus, Edit, Trash2, Search, Globe, X, Check, AlertTriangle } from 'lucide-react'
 import { useAdminStore, type Country } from '@/features/admin/adminStore'
 
@@ -8,7 +9,12 @@ type ModalType = 'add' | 'edit' | 'delete' | null
 const emptyCountry = { name: '', code: '', endpoint: '', active: true }
 
 export function ToolsPanelPage() {
-  const { countries, addCountry, updateCountry, deleteCountry } = useAdminStore()
+  const { countries, addCountry, updateCountry, deleteCountry } = useAdminStore(useShallow((s) => ({
+    countries: s.countries,
+    addCountry: s.addCountry,
+    updateCountry: s.updateCountry,
+    deleteCountry: s.deleteCountry,
+  })))
   const [search, setSearch] = useState('')
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null)
   const [modal, setModal] = useState<ModalType>(null)

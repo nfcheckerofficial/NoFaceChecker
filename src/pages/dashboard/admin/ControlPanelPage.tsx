@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { clsx } from 'clsx'
+import { useShallow } from 'zustand/react/shallow'
 import {
   Users, UserPlus, Ban, AlertTriangle, DollarSign, Plus,
   Search, Edit, Trash2, Shield, Minus, Check, X,
@@ -14,7 +15,22 @@ interface UserForm { username: string; email: string; credits: number; role: 'ad
 const emptyUser: UserForm = { username: '', email: '', credits: 0, role: 'user' }
 
 export function ControlPanelPage() {
-  const { users, fetchUsers, addUser, updateUser, deleteUser, toggleBan, addCredits, removeCredits, resetAllCredits, gateAccess, fetchGateAccess, setGateAccess, deleteGateAccess, getUserGateAccess } = useAdminStore()
+  const { users, fetchUsers, addUser, updateUser, deleteUser, toggleBan, addCredits, removeCredits, resetAllCredits, gateAccess, fetchGateAccess, setGateAccess, deleteGateAccess, getUserGateAccess } = useAdminStore(useShallow((s) => ({
+    users: s.users,
+    fetchUsers: s.fetchUsers,
+    addUser: s.addUser,
+    updateUser: s.updateUser,
+    deleteUser: s.deleteUser,
+    toggleBan: s.toggleBan,
+    addCredits: s.addCredits,
+    removeCredits: s.removeCredits,
+    resetAllCredits: s.resetAllCredits,
+    gateAccess: s.gateAccess,
+    fetchGateAccess: s.fetchGateAccess,
+    setGateAccess: s.setGateAccess,
+    deleteGateAccess: s.deleteGateAccess,
+    getUserGateAccess: s.getUserGateAccess,
+  })))
 
   useEffect(() => {
     fetchUsers()

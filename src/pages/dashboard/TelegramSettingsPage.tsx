@@ -1,18 +1,40 @@
 import { useState, useEffect } from 'react'
 import { clsx } from 'clsx'
+import { useShallow } from 'zustand/react/shallow'
 import { MessageCircle, Check, AlertTriangle, Send, Eye, EyeOff, Bot, Users, Link } from 'lucide-react'
 import { useTelegramStore } from '@/features/telegram/telegramStore'
 import { useAuthStore } from '@/features/auth/authStore'
 import { testTelegramConnection, fetchSubscribers } from '@/features/telegram/telegramService'
 
 export function TelegramSettingsPage() {
-  const { user, linkTelegram, error } = useAuthStore()
+  const { user, linkTelegram, error } = useAuthStore(useShallow((s) => ({
+    user: s.user,
+    linkTelegram: s.linkTelegram,
+    error: s.error,
+  })))
   const {
     botToken, chatId, enabled, lastSentAt, subscribers, subscriberCount,
     personalChatId, notifyPersonal, broadcastEnabled,
     setBotToken, setChatId, setEnabled, setSubscribers,
     setPersonalChatId, setNotifyPersonal, setBroadcastEnabled,
-  } = useTelegramStore()
+  } = useTelegramStore(useShallow((s) => ({
+    botToken: s.botToken,
+    chatId: s.chatId,
+    enabled: s.enabled,
+    lastSentAt: s.lastSentAt,
+    subscribers: s.subscribers,
+    subscriberCount: s.subscriberCount,
+    personalChatId: s.personalChatId,
+    notifyPersonal: s.notifyPersonal,
+    broadcastEnabled: s.broadcastEnabled,
+    setBotToken: s.setBotToken,
+    setChatId: s.setChatId,
+    setEnabled: s.setEnabled,
+    setSubscribers: s.setSubscribers,
+    setPersonalChatId: s.setPersonalChatId,
+    setNotifyPersonal: s.setNotifyPersonal,
+    setBroadcastEnabled: s.setBroadcastEnabled,
+  })))
 
   const [showToken, setShowToken] = useState(false)
   const [testing, setTesting] = useState(false)

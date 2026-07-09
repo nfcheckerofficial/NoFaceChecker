@@ -2,16 +2,17 @@ import { lazy, Suspense, useEffect, useRef } from 'react'
 import { Route, Routes, useParams, useLocation } from 'react-router-dom'
 import NProgress from 'nprogress'
 import { LandingPage } from '@/pages/LandingPage'
-import { LoginPage } from '@/pages/LoginPage'
-import { RegisterPage } from '@/pages/RegisterPage'
-import { CheckerPage } from '@/pages/CheckerPage'
-import { BulkCheckerPage } from '@/pages/BulkCheckerPage'
-import { GeneratorPage } from '@/pages/GeneratorPage'
 import { DashboardLayout } from '@/widgets/DashboardLayout/DashboardLayout'
 import { ProtectedRoute } from '@/features/auth/components/ProtectedRoute'
 import { AdminRoute } from '@/features/auth/components/AdminRoute'
 import { GateDashboard } from '@/features/checker/components/GateDashboard'
 import { VersionChecker } from '@/features/version/VersionChecker'
+
+const LoginPage = lazy(() => import('@/pages/LoginPage').then(m => ({ default: m.LoginPage })))
+const RegisterPage = lazy(() => import('@/pages/RegisterPage').then(m => ({ default: m.RegisterPage })))
+const CheckerPage = lazy(() => import('@/pages/CheckerPage').then(m => ({ default: m.CheckerPage })))
+const BulkCheckerPage = lazy(() => import('@/pages/BulkCheckerPage').then(m => ({ default: m.BulkCheckerPage })))
+const GeneratorPage = lazy(() => import('@/pages/GeneratorPage').then(m => ({ default: m.GeneratorPage })))
 
 const OverviewPage = lazy(() => import('@/pages/dashboard/OverviewPage').then(m => ({ default: m.OverviewPage })))
 const GeneratorDashboardPage = lazy(() => import('@/pages/dashboard/GeneratorDashboardPage').then(m => ({ default: m.GeneratorDashboardPage })))
@@ -69,13 +70,13 @@ export function AppRoutes() {
       <RouteChangeTracker />
       <Routes>
       <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/login" element={<SuspenseWrapper><LoginPage /></SuspenseWrapper>} />
+      <Route path="/register" element={<SuspenseWrapper><RegisterPage /></SuspenseWrapper>} />
 
       {/* Rutas legacy (sin sidebar) */}
-      <Route path="/checker" element={<CheckerPage />} />
-      <Route path="/checker/bulk" element={<BulkCheckerPage />} />
-      <Route path="/generator" element={<GeneratorPage />} />
+      <Route path="/checker" element={<SuspenseWrapper><CheckerPage /></SuspenseWrapper>} />
+      <Route path="/checker/bulk" element={<SuspenseWrapper><BulkCheckerPage /></SuspenseWrapper>} />
+      <Route path="/generator" element={<SuspenseWrapper><GeneratorPage /></SuspenseWrapper>} />
 
       {/* Dashboard (requiere login) */}
       <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
@@ -83,15 +84,7 @@ export function AppRoutes() {
         <Route path="profile" element={<SuspenseWrapper><ProfilePage /></SuspenseWrapper>} />
         <Route path="marketplace" element={<SuspenseWrapper><MarketplacePage /></SuspenseWrapper>} />
 
-        <Route path="stripe-ccn/:id" element={<><RouteChangeTracker /><ParamGate prefix="stripe-ccn" param="id" /></>} />
-        <Route path="stripe-auth/:id" element={<><RouteChangeTracker /><ParamGate prefix="stripe-auth" param="id" /></>} />
-        <Route path="amazon/:mode" element={<ParamGate prefix="amazon" param="mode" />} />
-        <Route path="charge/:id" element={<ParamGate prefix="charge" param="id" />} />
-        <Route path="paypal/:id" element={<ParamGate prefix="paypal" param="id" />} />
-        <Route path="special/:id" element={<ParamGate prefix="special" param="id" />} />
-        <Route path="auth-gates/:id" element={<GateDashboard gateId="auth-gates-pool" />} />
-        <Route path="brute/:id" element={<ParamGate prefix="brute" param="id" />} />
-        <Route path="achievers" element={<GateDashboard gateId="achievers" />} />
+        <Route path="gate/money" element={<GateDashboard gateId="money-gate" />} />
 
         <Route path="verification/:id" element={<SuspenseWrapper><PlaceholderPage title="Temporary Verification" description="SMS / number pool" /></SuspenseWrapper>} />
         <Route path="bin-lookup" element={<SuspenseWrapper><BinLookupPage /></SuspenseWrapper>} />

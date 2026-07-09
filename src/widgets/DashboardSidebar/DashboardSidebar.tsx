@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { clsx } from 'clsx'
+import { useShallow } from 'zustand/react/shallow'
 import { ChevronRight, X } from 'lucide-react'
 import { NAV_GROUPS, type NavItem } from './navConfig'
 import { useAuthStore } from '@/features/auth/authStore'
@@ -25,7 +26,7 @@ interface DashboardSidebarProps {
 export function DashboardSidebar({ open, onClose, className }: DashboardSidebarProps) {
   const location = useLocation()
   const [expanded, setExpanded] = useState<string | null>(null)
-  const { user } = useAuthStore()
+  const user = useAuthStore((s) => s.user)
   const isAdmin = user?.role === 'admin'
 
   // Close sidebar on route change (mobile)

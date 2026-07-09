@@ -111,6 +111,16 @@ interface GateState {
 /** Config del gate activo (no es estado reactivo: el motor la lee directo). */
 let activeConfig: GateConfig = DEFAULT_GATE
 
+/** ID del setTimeout pendiente (delay corto antes de ejecutar el check). */
+let tickDelayId: ReturnType<typeof setTimeout> | null = null
+/** ID del setTimeout pendiente (espera entre checks). */
+let tickNextId: ReturnType<typeof setTimeout> | null = null
+
+function clearTickTimers() {
+  if (tickDelayId !== null) { clearTimeout(tickDelayId); tickDelayId = null }
+  if (tickNextId !== null) { clearTimeout(tickNextId); tickNextId = null }
+}
+
 const parseLine = (raw: string): string => raw.split('|')[0]?.trim() ?? raw.trim()
 
 /**
@@ -227,6 +237,7 @@ export const useGateStore = create<GateState>((set, get) => ({
   pause: () => {
     if (!get().isRunning) return
     set({ isPaused: true })
+    clearTickTimers()
   },
 
   resume: () => {
@@ -237,8 +248,14 @@ export const useGateStore = create<GateState>((set, get) => ({
   },
 
   reset: () => {
+    clearTickTimers()
     saveGateResults(get().gateId, [])
     set({ ...EMPTY_STATE })
+  },
+
+  stop: () => {
+    clearTickTimers()
+    set({ isRunning: false, isPaused: false, currentCard: null, notice: null })
   },
 
   _tick: () => {
@@ -254,13 +271,15 @@ export const useGateStore = create<GateState>((set, get) => ({
     const number = parseLine(raw)
     set({ currentCard: raw, queue: rest })
 
-    setTimeout(async () => {
+    tickDelayId = setTimeout(async () => {
+      tickDelayId = null
       const s = get()
       if (s.isPaused) {
         // Devuelve la tarjeta al frente de la cola si se pausó a mitad.
         set({ queue: [raw, ...s.queue], currentCard: null })
         return
       }
+      if (!s.isRunning) return
 
       const { status, message } = simulateCheck(number, activeConfig)
       const card: GateCard = { raw, number, status, message, checkedAt: Date.now() }
@@ -315,8 +334,8 @@ export const useGateStore = create<GateState>((set, get) => ({
             })
 
             // Telegram: el server se encarga de TODO (enviar al user + broadcast a subscribers)
-            const authUser = useAuthStore.getState().user
             const authToken = useAuthStore.getState().token
+            if (!authToken) return
             const digits = number.replace(/\D/g, '')
             const payload = {
               raw,
@@ -332,19 +351,14 @@ export const useGateStore = create<GateState>((set, get) => ({
               message,
               checkedAt: Date.now(),
             }
-            if (authToken) {
-              notifyLiveCard(payload, authToken).then((r) => {
-                if (r.ok) useTelegramStore.getState().markSent()
-              })
-            } else {
-              console.log(`[Telegram] no auth token, cannot notify`)
-            }
+            notifyLiveCard(payload, authToken).then((r) => {
+              if (r.ok) useTelegramStore.getState().markSent()
+            })
           })
           .catch(() => {
             useLivesStore.getState().enrich(raw, {})
-
-            const authUser = useAuthStore.getState().user
             const authToken = useAuthStore.getState().token
+            if (!authToken) return
             const digits = number.replace(/\D/g, '')
             const payload = {
               raw,
@@ -360,11 +374,9 @@ export const useGateStore = create<GateState>((set, get) => ({
               message,
               checkedAt: Date.now(),
             }
-            if (authToken) {
-              notifyLiveCard(payload, authToken).then((r) => {
-                if (r.ok) useTelegramStore.getState().markSent()
-              })
-            }
+            notifyLiveCard(payload, authToken).then((r) => {
+              if (r.ok) useTelegramStore.getState().markSent()
+            })
           })
       }
 
@@ -385,7 +397,24 @@ export const useGateStore = create<GateState>((set, get) => ({
         }
       })
 
-      setTimeout(() => get()._tick(), activeConfig.speedMs)
+      tickNextId = setTimeout(() => {
+        tickNextId = null
+        if (get().isRunning && !get().isPaused) get()._tick()
+      }, activeConfig.speedMs)
     }, activeConfig.speedMs * 0.4)
   },
 }))
+
+// Cancelar timers si la tab se cierra o se oculta.
+if (typeof window !== 'undefined') {
+  const cleanup = () => {
+    clearTickTimers()
+    if (useGateStore.getState().isRunning) {
+      useGateStore.setState({ isRunning: false, isPaused: false, currentCard: null })
+    }
+  }
+  window.addEventListener('pagehide', cleanup)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') cleanup()
+  })
+}

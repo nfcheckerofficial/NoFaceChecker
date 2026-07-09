@@ -310,13 +310,41 @@ export function getUserByTelegramId(telegramId) {
 
 const BACKUP_FILE = join(dbDir, 'credits_backup.json')
 
+let backupPending = false
+let backupTimer = null
+
+function scheduleBackup() {
+  if (backupTimer) return
+  backupPending = true
+  backupTimer = setTimeout(() => {
+    backupTimer = null
+    if (!backupPending) return
+    backupPending = false
+    saveCreditsBackup()
+  }, 5000)
+  if (typeof backupTimer.unref === 'function') backupTimer.unref()
+}
+
 function saveCreditsBackup() {
   try {
     const users = db.prepare('SELECT username, credits FROM users').all()
     const data = Object.fromEntries(users.map(u => [u.username, u.credits]))
-    fs.writeFileSync(BACKUP_FILE, JSON.stringify(data, null, 2))
+    fs.writeFile(BACKUP_FILE, JSON.stringify(data, null, 2), (err) => {
+      if (err) console.error('[credits] Backup failed:', err.message)
+    })
   } catch (err) {
     console.error('[credits] Backup failed:', err.message)
+  }
+}
+
+function flushBackup() {
+  if (backupTimer) {
+    clearTimeout(backupTimer)
+    backupTimer = null
+  }
+  if (backupPending) {
+    backupPending = false
+    saveCreditsBackup()
   }
 }
 
@@ -344,14 +372,30 @@ function restoreCreditsFromBackup() {
 export function updateUserCredits(username, credits) {
   const before = db.prepare('SELECT credits FROM users WHERE username = ?').get(username)
   db.prepare('UPDATE users SET credits = ? WHERE username = ?').run(credits, username)
-  saveCreditsBackup()
-  console.log(`[credits] ${username}: ${before?.credits ?? '?'} ��� ${credits}`)
+  scheduleBackup()
+  console.log(`[credits] ${username}: ${before?.credits ?? '?'} → ${credits}`)
+}
+
+export function spendUserCredits(userId, amount) {
+  const tx = db.transaction((uid, amt) => {
+    const row = db.prepare('SELECT credits, username FROM users WHERE id = ?').get(uid)
+    if (!row) return { ok: false, reason: 'not_found' }
+    if (row.credits < amt) return { ok: false, reason: 'insufficient', credits: row.credits }
+    db.prepare('UPDATE users SET credits = credits - ? WHERE id = ?').run(amt, uid)
+    return { ok: true, credits: row.credits - amt, username: row.username, before: row.credits }
+  })
+  const result = tx(userId, amount)
+  if (result.ok) {
+    scheduleBackup()
+    console.log(`[credits] ${result.username}: ${result.before} → ${result.credits} (spent ${amount})`)
+  }
+  return result
 }
 
 export function resetAllCredits() {
   console.warn(`[credits] RESET ALL to 0 at ${new Date().toISOString()}`)
   db.prepare('UPDATE users SET credits = 0').run()
-  saveCreditsBackup()
+  scheduleBackup()
 }
 
 export { restoreCreditsFromBackup }

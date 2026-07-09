@@ -81,3 +81,50 @@ function calculateLuhnCheckDigit(partialNumber: string): string {
   const checkDigit = (10 - (sum % 10)) % 10
   return checkDigit.toString()
 }
+
+/**
+ * Validar varias numeraciones usando Luhn.
+ *
+ * @param numbers Lista de numeraciones a validar.
+ * @returns Lista booleana con los resultados de Luhn.
+ */
+export function validateMultipleLuhn(numbers: string[]): boolean[] {
+  return numbers.map((number) => validateLuhn(number))
+}
+
+/**
+ * Calcular suma Luhn para un número dado.
+ *
+ * @param cardNumber El número de tarjeta.
+ * @returns La suma Luhn calculada.
+ */
+export function calculateLuhnSum(cardNumber: string): number {
+  const digits = cardNumber.replace(/\D/g, '')
+
+  if (digits.length < 13 || digits.length > 19) {
+    return -1
+  }
+
+  let sum = 0
+  let isSecond = false
+
+  for (let i = digits.length - 1; i >= 0; i--) {
+    let digit = parseInt(digits[i], 10)
+
+    if (isNaN(digit)) {
+      return -1
+    }
+
+    if (isSecond) {
+      digit *= 2
+      if (digit > 9) {
+        digit -= 9
+      }
+    }
+
+    sum += digit
+    isSecond = !isSecond
+  }
+
+  return sum
+}

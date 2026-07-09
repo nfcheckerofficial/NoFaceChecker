@@ -96,11 +96,7 @@ export const useAdminStore = create<AdminState>((set, get) => ({
   ],
   gateAccess: [],
   gates: [
-    { id: '1', name: 'Vice Gate', category: 'Stripe CCN', endpoint: '/api/gates/vice', status: 'active', cost: 5, description: 'High success rate Stripe checker' },
-    { id: '2', name: 'Ocean Gate', category: 'Stripe CCN', endpoint: '/api/gates/ocean', status: 'active', cost: 8, description: 'Premium Stripe authentication' },
-    { id: '3', name: 'Horus Gate', category: 'Charge', endpoint: '/api/gates/horus', status: 'active', cost: 10, description: 'PayPal charge verification' },
-    { id: '4', name: 'Auth Gate', category: 'Stripe Auth', endpoint: '/api/gates/auth', status: 'maintenance', cost: 15, description: '3D Secure authentication' },
-    { id: '5', name: 'AllBirds', category: 'Special', endpoint: '/api/gates/allbirds', status: 'inactive', cost: 20, description: 'Shopify special gate' },
+    { id: '1', name: 'Money Gate', category: 'Stripe CCN', endpoint: '/api/gates/money', status: 'active', cost: 5, description: 'Money Gate - high success rate Stripe checker' },
   ],
   countries: [
     { id: '1', name: 'United States', code: 'US', endpoint: '/api/random/us', active: true },

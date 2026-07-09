@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useShallow } from 'zustand/react/shallow'
 import { useAuthStore } from '@/features/auth/authStore'
 import { MatrixRain } from '@/shared/ui/MatrixRain'
 import { ScanLines } from '@/shared/ui/ScanLines'
@@ -84,7 +85,13 @@ function Particles() {
 }
 
 export function LoginPage() {
-  const { login, loginWithTelegram, loading, error, clearError } = useAuthStore()
+  const { login, loginWithTelegram, loading, error, clearError } = useAuthStore(useShallow((s) => ({
+    login: s.login,
+    loginWithTelegram: s.loginWithTelegram,
+    loading: s.loading,
+    error: s.error,
+    clearError: s.clearError,
+  })))
   const navigate = useNavigate()
   const [mode, setMode] = useState<'password' | 'telegram'>('password')
   const [username, setUsername] = useState('')

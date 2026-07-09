@@ -1,21 +1,19 @@
 import type { LucideIcon } from 'lucide-react'
 import {
-  Home, ShoppingCart, CreditCard, Shield, ShieldCheck, Package,
-  Swords, Zap, Wallet, Gem, Sparkles, Fingerprint, Skull, Award,
+  Home, ShoppingCart, CreditCard, ShieldCheck,
+  Gem, Fingerprint, Skull, Award,
   MessageSquare, Search, Database, ScanLine, HardDrive,
   Tag, HelpCircle, LifeBuoy, LogOut, Vault,
-  Settings, Users, Network, Wrench, ChevronDown, MessageCircle, Mail, Key, Lock, Crosshair, Terminal, Bug,
+  Settings, Users, Network, Wrench,
+  MessageCircle, Mail, Key, Lock, Crosshair, Terminal, Bug,
 } from 'lucide-react'
 
 export interface NavItem {
   label: string
   icon: LucideIcon
-  /** Color del icono (clase tailwind text-*). */
   color: string
-  /** Ruta relativa bajo /dashboard. Si tiene hijos, es expandible. */
   href?: string
   children?: { label: string; href: string }[]
-  /** Solo visible para admins. */
   adminOnly?: boolean
 }
 
@@ -34,84 +32,9 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     items: [
       {
-        label: 'Stripe CCN', icon: CreditCard, color: 'text-orange-500',
+        label: 'Gate', icon: CreditCard, color: 'text-cyber-green',
         children: [
-          { label: 'Vice Gate', href: '/dashboard/stripe-ccn/vice' },
-          { label: 'Ocean Gate', href: '/dashboard/stripe-ccn/ocean' },
-          { label: 'Chinesse Gate', href: '/dashboard/stripe-ccn/chinesse' },
-          { label: 'Emotion Gate', href: '/dashboard/stripe-ccn/emotion' },
-          { label: 'Sky Gate', href: '/dashboard/stripe-ccn/sky' },
-          { label: 'Sunder Gate', href: '/dashboard/stripe-ccn/sunder' },
-          { label: 'ThorGate', href: '/dashboard/stripe-ccn/thor' },
-          { label: 'Sugar Gate', href: '/dashboard/stripe-ccn/sugar' },
-        ],
-      },
-      {
-        label: 'Stripe Auth', icon: Shield, color: 'text-orange-500',
-        children: [
-          { label: 'Auth Gate', href: '/dashboard/stripe-auth/auth' },
-          { label: 'Inferno Gate', href: '/dashboard/stripe-auth/inferno' },
-          { label: 'Sova Gate', href: '/dashboard/stripe-auth/sova' },
-        ],
-      },
-      {
-        label: 'Amazon', icon: Package, color: 'text-orange-500',
-        children: [
-          { label: 'Amazon GC $5', href: '/dashboard/amazon/gc-5' },
-          { label: 'Amazon GC $10', href: '/dashboard/amazon/gc-10' },
-          { label: 'Amazon GC $25', href: '/dashboard/amazon/gc-25' },
-          { label: 'Amazon GC $50', href: '/dashboard/amazon/gc-50' },
-        ],
-      },
-      {
-        label: 'Charge Gates', icon: Swords, color: 'text-orange-500',
-        children: [
-          { label: 'Horus Gate (Paypal)', href: '/dashboard/charge/horus' },
-          { label: 'Payflow 3', href: '/dashboard/charge/payflow3' },
-          { label: 'Payflow 2', href: '/dashboard/charge/payflow2' },
-          { label: 'Payflow', href: '/dashboard/charge/payflow' },
-          { label: 'B3 Gate 2', href: '/dashboard/charge/b3gate2' },
-          { label: 'B3 Gate', href: '/dashboard/charge/b3gate' },
-          { label: 'Bird Gate (Authorize)', href: '/dashboard/charge/bird' },
-        ],
-      },
-      {
-        label: 'Paypal Charge', icon: Wallet, color: 'text-cyber-blue',
-        children: [
-          { label: '5 Paypal', href: '/dashboard/paypal/5' },
-          { label: 'Paypal 1', href: '/dashboard/paypal/1' },
-          { label: '0.01 Paypal', href: '/dashboard/paypal/001' },
-        ],
-      },
-      {
-        label: 'Gates Especiales', icon: Gem, color: 'text-orange-500',
-        children: [
-          { label: 'AllBirds', href: '/dashboard/special/allbirds' },
-          { label: 'MisShopifyCVV', href: '/dashboard/special/misshopifycvv' },
-          { label: 'MejorShopify[JOYAS]', href: '/dashboard/special/mejorshopify' },
-          { label: 'FashionNovaShopify', href: '/dashboard/special/fashionnova' },
-          { label: 'RedBull', href: '/dashboard/special/redbull' },
-          { label: 'Shopify[GOLD]', href: '/dashboard/special/shopifygold' },
-          { label: 'Adobe', href: '/dashboard/special/adobe' },
-        ],
-      },
-      {
-        label: 'Auth Gates', icon: Fingerprint, color: 'text-cyber-green',
-        children: [],
-      },
-      {
-        label: 'BruteGates', icon: Skull, color: 'text-cyber-red',
-        children: [],
-      },
-      { label: "Achiever's Gate", icon: Award, color: 'text-cyber-purple', href: '/dashboard/achievers' },
-    ],
-  },
-  {
-    items: [
-      {
-        label: 'Temporary Verification', icon: MessageSquare, color: 'text-cyber-purple',
-        children: [
-          { label: 'SMS Pool', href: '/dashboard/verification/sms' },
+          { label: 'Money Gate', href: '/dashboard/gate/money' },
         ],
       },
       { label: 'Live Vault', icon: Vault, color: 'text-cyber-green', href: '/dashboard/live-vault' },

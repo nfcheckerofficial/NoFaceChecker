@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useShallow } from 'zustand/react/shallow'
 import { useAuthStore } from '@/features/auth/authStore'
 import { MatrixRain } from '@/shared/ui/MatrixRain'
 import { ScanLines } from '@/shared/ui/ScanLines'
@@ -61,7 +62,12 @@ function Particles() {
 }
 
 export function RegisterPage() {
-  const { register, loading, error, clearError } = useAuthStore()
+  const { register, loading, error, clearError } = useAuthStore(useShallow((s) => ({
+    register: s.register,
+    loading: s.loading,
+    error: s.error,
+    clearError: s.clearError,
+  })))
   const navigate = useNavigate()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')

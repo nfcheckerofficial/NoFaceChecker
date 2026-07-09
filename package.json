@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "server": "node server/index.js",
+    "server:no-bot": "node -e \"delete process.env.TELEGRAM_BOT_TOKEN; require('child_process').spawnSync('node', ['server/index.js'], { stdio: 'inherit', env: process.env })\"",
     "dev:all": "concurrently \"npm run dev\" \"npm run server\"",
+    "dev:all:no-bot": "concurrently \"npm run dev\" \"npm run server:no-bot\"",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint src --ext ts,tsx",
@@ -21,6 +23,7 @@
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.11.1",
     "clsx": "^2.1.0",
+    "compression": "^1.8.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",

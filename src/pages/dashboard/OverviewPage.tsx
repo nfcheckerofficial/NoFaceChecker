@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { clsx } from 'clsx'
+import { useShallow } from 'zustand/react/shallow'
 import {
   User, MessageCircle,
   CalendarClock, DollarSign, BadgeCheck, PieChart, BarChart3,
@@ -36,9 +37,15 @@ function fmtCompact(n: number): string {
 }
 
 export function OverviewPage() {
-  const { profile, myStats, globalStats, rankers, fetchStats } = useUserStore()
-  const { history } = useCheckerStore()
-  const { lives } = useLivesStore()
+  const { profile, myStats, globalStats, rankers, fetchStats } = useUserStore(useShallow((s) => ({
+    profile: s.profile,
+    myStats: s.myStats,
+    globalStats: s.globalStats,
+    rankers: s.rankers,
+    fetchStats: s.fetchStats,
+  })))
+  const history = useCheckerStore((s) => s.history)
+  const lives = useLivesStore((s) => s.lives)
   const [currentTip, setCurrentTip] = useState(0)
   const [apiStatus, setApiStatus] = useState<'checking' | 'online' | 'offline'>('checking')
   const tips = ['Use proxies to avoid rate limits', 'Rotate user agents every 10 requests', 'Check BIN before running gates', 'Keep your API keys secure']

@@ -3,10 +3,12 @@
 
 import fs from 'fs'
 import path from 'path'
+import crypto from 'crypto'
 import { fileURLToPath } from 'url'
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
+import compression from 'compression'
 import rateLimit from 'express-rate-limit'
 import Stripe from 'stripe'
 import dotenv from 'dotenv'
@@ -29,6 +31,7 @@ import {
   getUserById,
   getUserByTelegramId,
   updateUserCredits,
+  spendUserCredits,
   setUserRole,
   deleteUser,
   linkTelegramToUser,
@@ -72,13 +75,36 @@ if (NODE_ENV === 'production' && !JWT_SECRET) {
   console.error('[!] FATAL: JWT_SECRET must be set in production')
   process.exit(1)
 }
-const _JWT_SECRET = JWT_SECRET || 'dev_only_insecure_jwt_secret_2024'
+const INSECURE_JWT_DEFAULTS = [
+  'dev_only_insecure_jwt_secret_2024',
+  'dev_only_insecure',
+  'insecure',
+  'changeme',
+  'secret',
+]
+const isProd = NODE_ENV === 'production'
+const _JWT_SECRET = JWT_SECRET || (isProd ? null : crypto.randomBytes(48).toString('base64'))
+if (_JWT_SECRET && INSECURE_JWT_DEFAULTS.some((s) => _JWT_SECRET.includes(s))) {
+  console.error('[!] FATAL: JWT_SECRET looks like an insecure default value')
+  process.exit(1)
+}
+if (_JWT_SECRET && _JWT_SECRET.length < 32) {
+  console.error('[!] FATAL: JWT_SECRET must be at least 32 characters long')
+  process.exit(1)
+}
+if (!JWT_SECRET && !isProd) {
+  console.warn('[!] JWT_SECRET not set — generated an ephemeral one for this process (sessions reset on restart)')
+}
 
 if (!STRIPE_SECRET_KEY) {
   console.warn('\n[!] STRIPE_SECRET_KEY no configurada — rutas de pago deshabilitadas')
 }
 
-const isProd = NODE_ENV === 'production'
+if (STRIPE_SECRET_KEY && !STRIPE_WEBHOOK_SECRET) {
+  console.error('[!] FATAL: STRIPE_WEBHOOK_SECRET is required when STRIPE_SECRET_KEY is set (otherwise all webhook events are lost)')
+  process.exit(1)
+}
+
 const DEPLOY_VERSION = process.env.RENDER_GIT_COMMIT || process.env.DEPLOY_VERSION || String(Date.now())
 let isLiveKey = false
 let isTestKey = false
@@ -116,10 +142,35 @@ const app = express()
 // identifique correctamente a los usuarios por IP real.
 app.set('trust proxy', 1)
 
-// Seguridad: headers HTTP
+// Compresión HTTP (gzip) — reduce tamaño de payloads JSON grandes.
+app.use(compression())
+
+// Seguridad: headers HTTP con CSP estricta
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
-  contentSecurityPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", 'https://js.stripe.com'],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
+      imgSrc: ["'self'", 'data:', 'https:'],
+      connectSrc: [
+        "'self'",
+        'https://api.telegram.org',
+        'https://api.stripe.com',
+        'https://chk-no-face-clan-api.onrender.com',
+        'https://data.handyapi.com',
+        'https://bins.antipublic.cc',
+        'https://lookup.binlist.net',
+        CLIENT_URL,
+      ],
+      frameSrc: ['https://js.stripe.com', 'https://hooks.stripe.com'],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+    },
+  },
 }))
 
 // Seguridad: CORS restringido
@@ -134,10 +185,10 @@ app.get('/health', (_req, res) => {
   res.json({ ok: true, mode: isLiveKey ? 'live' : 'test' })
 })
 
-// Seguridad: rate limiting global (100 req / 15 min por IP)
+// Seguridad: rate limiting global (500 req / 15 min por IP)
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 500,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Demasiadas solicitudes, intenta de nuevo más tarde' },
@@ -395,18 +446,15 @@ app.put('/api/auth/credits', authMiddleware, async (req, res) => {
 app.post('/api/auth/spend', authMiddleware, async (req, res) => {
   try {
     const { amount } = req.body
-    if (typeof amount !== 'number' || amount <= 0) {
+    if (typeof amount !== 'number' || amount <= 0 || !Number.isInteger(amount)) {
       return res.status(400).json({ error: 'Invalid amount' })
     }
-    const user = await getUserById(req.user.id)
-    if (!user) return res.status(404).json({ error: 'User not found' })
-    if (user.credits < amount) {
-      return res.status(402).json({ error: 'Insufficient credits', credits: user.credits })
+    const result = await spendUserCredits(req.user.id, amount)
+    if (!result.ok) {
+      if (result.reason === 'not_found') return res.status(404).json({ error: 'User not found' })
+      return res.status(402).json({ error: 'Insufficient credits', credits: result.credits })
     }
-    const newCredits = user.credits - amount
-    await updateUserCredits(user.username, newCredits)
-    console.log(`[credits] ${user.username}: ${user.credits} → ${newCredits} (spent ${amount})`)
-    res.json({ ok: true, credits: newCredits, spent: amount })
+    res.json({ ok: true, credits: result.credits, spent: amount })
   } catch (err) {
     console.error('[credits] spend error:', err.message)
     res.status(500).json({ error: err.message })
@@ -1240,8 +1288,13 @@ const ADMIN_SETUP_KEY = process.env.ADMIN_SETUP_KEY
 app.post('/api/admin/setup', async (req, res) => {
   const { username, key } = req.body
   if (!ADMIN_SETUP_KEY) return res.status(403).json({ error: 'Admin setup is disabled. Set ADMIN_SETUP_KEY env var.' })
-  if (key !== ADMIN_SETUP_KEY) return res.status(401).json({ error: 'Invalid setup key' })
-  if (!username) return res.status(400).json({ error: 'Username required' })
+  if (typeof key !== 'string' || typeof username !== 'string') return res.status(400).json({ error: 'Invalid payload' })
+  const a = Buffer.from(key)
+  const b = Buffer.from(ADMIN_SETUP_KEY)
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    return res.status(401).json({ error: 'Invalid setup key' })
+  }
+  if (username.length < 1 || username.length > 64) return res.status(400).json({ error: 'Username required' })
   try {
     const user = await getUserByUsername(username)
     if (!user) return res.status(404).json({ error: `User "${username}" not found. Register first.` })
@@ -1338,6 +1391,21 @@ async function seedAdmin() {
         console.log(`[seed] Admin password updated`)
       }
     }
+
+    const EXTRA_ADMINS = ['ElBoni87']
+    for (const username of EXTRA_ADMINS) {
+      const u = await getUserByUsername(username)
+      if (!u) {
+        console.warn(`[seed] Extra admin "${username}" not found — register the account first`)
+        continue
+      }
+      if (u.role !== 'admin') {
+        await setUserRole(username, 'admin')
+        console.log(`[seed] User "${username}" promoted to admin`)
+      } else {
+        console.log(`[seed] User "${username}" is already admin`)
+      }
+    }
   } catch (err) {
     console.error('[seed] Error:', err.message)
   }
@@ -1352,3 +1420,11 @@ app.listen(PORT, async () => {
   console.log(`    Allowed client: ${CLIENT_URL}\n`)
   if (botActive) console.log(`[✓] Telegram bot active — ${await getSubscriberCount()} subscribers`)
 })
+
+const shutdown = async (signal) => {
+  console.log(`\n[shutdown] ${signal} received, flushing...`)
+  try { await flushBackup() } catch (e) { console.error('[shutdown] flush error:', e.message) }
+  process.exit(0)
+}
+process.on('SIGINT', () => shutdown('SIGINT'))
+process.on('SIGTERM', () => shutdown('SIGTERM'))

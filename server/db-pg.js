@@ -229,13 +229,13 @@ export async function getUserByTelegramId(telegramId) {
 
 export async function updateUserCredits(username, credits) {
   await query('UPDATE users SET credits = $1 WHERE username = $2', [credits, username])
-  await saveCreditsBackup()
+  scheduleBackup()
 }
 
 export async function resetAllCredits() {
   console.warn(`[credits] RESET ALL to 0 at ${new Date().toISOString()}`)
   await query('UPDATE users SET credits = 0')
-  await saveCreditsBackup()
+  scheduleBackup()
 }
 
 export async function ensureTelegramUser(chatId, username, firstName) {
@@ -413,14 +413,58 @@ export async function checkGateAccessToday(userId, gateId) {
 
 // --- Backup ---
 
+let backupPending = false
+let backupTimer = null
+
+function scheduleBackup() {
+  if (backupTimer) return
+  backupPending = true
+  backupTimer = setTimeout(() => {
+    backupTimer = null
+    if (!backupPending) return
+    backupPending = false
+    saveCreditsBackup()
+  }, 5000)
+  if (typeof backupTimer.unref === 'function') backupTimer.unref()
+}
+
 async function saveCreditsBackup() {
   try {
     const r = await query('SELECT username, credits FROM users')
     const data = Object.fromEntries(r.rows.map(u => [u.username, u.credits]))
-    writeFileSync(BACKUP_FILE, JSON.stringify(data, null, 2))
+    const { writeFile } = await import('fs')
+    writeFile(BACKUP_FILE, JSON.stringify(data, null, 2), (err) => {
+      if (err) console.error('[credits] Backup failed:', err.message)
+    })
   } catch (err) {
     console.error('[credits] Backup failed:', err.message)
   }
+}
+
+export function flushBackup() {
+  if (backupTimer) {
+    clearTimeout(backupTimer)
+    backupTimer = null
+  }
+  if (backupPending) {
+    backupPending = false
+    return saveCreditsBackup()
+  }
+}
+
+export async function spendUserCredits(userId, amount) {
+  const r = await query(
+    'UPDATE users SET credits = credits - $1 WHERE id = $2 AND credits >= $1 RETURNING credits, username',
+    [amount, userId]
+  )
+  if (r.rows.length === 0) {
+    const cur = await query('SELECT credits, username FROM users WHERE id = $1', [userId])
+    if (cur.rows.length === 0) return { ok: false, reason: 'not_found' }
+    return { ok: false, reason: 'insufficient', credits: cur.rows[0].credits, username: cur.rows[0].username }
+  }
+  scheduleBackup()
+  console.log(`[credits] ${r.rows[0].username}: ? → ${r.rows[0].credits} (spent ${amount})`)
+  return { ok: true, credits: r.rows[0].credits, username: r.rows[0].username }
 }
 
 export async function restoreCreditsFromBackup() {

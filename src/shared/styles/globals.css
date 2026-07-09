@@ -8,24 +8,38 @@
   --color-cyber-border: #1a1a2e;
   --color-cyber-red: #ff0040;
   --color-cyber-red-dark: #cc0033;
+  --color-cyber-red-glow: rgba(255, 0, 64, 0.6);
   --color-cyber-green: #00ff88;
   --color-cyber-green-dark: #00cc6a;
+  --color-cyber-green-glow: rgba(0, 255, 136, 0.6);
   --color-cyber-blue: #00d4ff;
+  --color-cyber-blue-dark: #00b4e0;
+  --color-cyber-blue-glow: rgba(0, 212, 255, 0.6);
   --color-cyber-purple: #9d00ff;
+  --color-cyber-purple-dark: #8400e6;
+  --color-cyber-purple-glow: rgba(157, 0, 255, 0.6);
   --color-cyber-yellow: #ffcc00;
+  --color-cyber-yellow-dark: #e6b800;
+  --color-cyber-yellow-glow: rgba(255, 204, 0, 0.6);
   --color-cyber-text: #e0e0e0;
-  --color-cyber-text-muted: #666680;
+  --color-cyber-text-muted: #a0a0b8;
+  --color-cyber-text-header: #ffffff;
 
   --font-mono: 'JetBrains Mono', monospace;
   --font-orbitron: 'Orbitron', sans-serif;
 
   --animate-glitch: glitch 0.3s infinite;
   --animate-pulse-neon: pulseNeon 2s infinite;
+  --animate-neonPulse-strong: neonPulseStrong 2s ease-in-out infinite;
   --animate-scanline: scanline 8s linear infinite;
   --animate-float: float 3s ease-in-out infinite;
+  --animate-float-up: floatUp 15s linear infinite;
   --animate-flicker: flicker 0.15s infinite;
   --animate-gradient: gradient 4s ease infinite;
   --animate-pulse-glow: pulseGlow 2s ease-in-out infinite;
+  --animate-gradient-shift: gradient 8s ease infinite;
+  --animate-shimmer: shimmer 3s infinite;
+  --animate-border-glow: borderGlow 3s ease-in-out infinite;
 }
 
 * {

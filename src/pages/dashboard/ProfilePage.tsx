@@ -4,12 +4,17 @@ import {
   Activity, Skull, HelpCircle, Copy,
 } from 'lucide-react'
 import { clsx } from 'clsx'
+import { useShallow } from 'zustand/react/shallow'
 import { GateShell } from '@/widgets/GateShell/GateShell'
 import { useUserStore } from '@/features/checker/store/userStore'
 import { useLivesStore } from '@/features/checker/store/livesStore'
 
 export function ProfilePage() {
-  const { profile, myStats, setProfile } = useUserStore()
+  const { profile, myStats, setProfile } = useUserStore(useShallow((s) => ({
+    profile: s.profile,
+    myStats: s.myStats,
+    setProfile: s.setProfile,
+  })))
   const lives = useLivesStore((s) => s.lives)
 
   const [editing, setEditing] = useState(false)

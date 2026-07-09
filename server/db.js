@@ -38,6 +38,7 @@ export const {
   getUserById,
   getUserByTelegramId,
   updateUserCredits,
+  spendUserCredits,
   setUserRole,
   deleteUser,
   linkTelegramToUser,
@@ -61,6 +62,7 @@ export const {
   listAllGateAccess,
   deleteGateAccessById,
   checkGateAccessToday,
+  flushBackup,
 } = db
 
 // Ensure the default export exists (pool for PG, db instance for SQLite)
