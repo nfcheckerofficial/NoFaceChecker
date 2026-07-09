@@ -31,19 +31,20 @@ export function SidebarIntel({ className }: SidebarIntelProps) {
   return (
     <div
       className={clsx(
-        'bg-cyber-panel/90 backdrop-blur-sm',
-        'border border-cyber-border rounded-sm',
-        'overflow-hidden',
+        'glass rounded-xl overflow-hidden',
         className
       )}
     >
       <div
-        className="flex items-center justify-between cursor-pointer px-4 py-3 border-b border-cyber-border bg-cyber-dark/50 hover:bg-cyber-dark/70 transition-colors"
+        className="flex items-center justify-between cursor-pointer px-4 py-3.5 border-b border-white/5 hover:bg-white/[0.02] transition-colors"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <GlitchText intensity="low" className="text-xs text-cyber-red font-bold tracking-wider">
-          OPERATIONAL INTEL
-        </GlitchText>
+        <div className="flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-cyber-red motion-safe:animate-pulse" />
+          <GlitchText intensity="low" className="text-[11px] text-cyber-red font-bold tracking-wider">
+            OPERATIONAL INTEL
+          </GlitchText>
+        </div>
         <span className="text-cyber-text-muted text-xs font-mono">
           {isExpanded ? '[-]' : '[+]'}
         </span>
@@ -51,22 +52,20 @@ export function SidebarIntel({ className }: SidebarIntelProps) {
 
       {isExpanded && (
         <div className="p-4">
-          <div className="text-[10px] text-cyber-text-muted/60 mb-3 uppercase tracking-wider">
-            NEWSFEED
+          <div className="text-[9px] text-cyber-text-muted/50 mb-3 uppercase tracking-widest">
+            LIVE NEWSFEED
           </div>
           <div className="space-y-3">
             {news.map((item) => (
-              <div key={item.id} className="group">
-                <div className="flex items-start gap-2">
-                  <span className="text-cyber-red mt-0.5 text-xs">*</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-cyber-text group-hover:text-cyber-red transition-colors leading-relaxed">
-                      {item.text}
-                    </p>
-                    <span className="text-[10px] text-cyber-text-muted/50 mt-0.5 block">
-                      {item.time}
-                    </span>
-                  </div>
+              <div key={item.id} className="group relative pl-3 border-l border-white/5 hover:border-cyber-red/40 transition-colors">
+                <span className="absolute left-[-2.5px] top-1.5 w-1 h-1 rounded-full bg-cyber-red/30 group-hover:bg-cyber-red transition-colors" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] text-cyber-text/70 group-hover:text-cyber-text transition-colors leading-relaxed">
+                    {item.text}
+                  </p>
+                  <span className="text-[9px] text-cyber-text-muted/40 mt-1 block">
+                    {item.time}
+                  </span>
                 </div>
               </div>
             ))}

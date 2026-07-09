@@ -17,32 +17,37 @@ export function SidebarProtocol({ className }: SidebarProtocolProps) {
   return (
     <div
       className={clsx(
-        'bg-cyber-panel/90 backdrop-blur-sm',
-        'border border-cyber-border rounded-sm',
-        'overflow-hidden',
+        'glass rounded-xl overflow-hidden',
         className
       )}
     >
-      <div className="px-4 py-3 border-b border-cyber-border bg-cyber-dark/50">
-        <GlitchText intensity="low" className="text-xs text-cyber-red font-bold tracking-wider">
+      <div className="px-4 py-3.5 border-b border-white/5 flex items-center gap-2">
+        <span className="w-1.5 h-1.5 rounded-full bg-cyber-blue motion-safe:animate-pulse" />
+        <GlitchText intensity="low" className="text-[11px] text-cyber-blue font-bold tracking-wider">
           PROTOCOL DETAILS
         </GlitchText>
       </div>
 
       <div className="p-4 space-y-4">
         {protocolDetails.map((detail, index) => (
-          <div key={index} className="flex flex-col gap-1">
-            <span className="text-[10px] text-cyber-text-muted/60 uppercase tracking-wider">
+          <div key={index} className="flex flex-col gap-1.5">
+            <span className="text-[9px] text-cyber-text-muted/50 uppercase tracking-widest">
               {detail.label}
             </span>
-            <span className="text-xs text-cyber-text/90 leading-relaxed">
+            <span className="text-[11px] text-cyber-text/80 leading-relaxed">
               {detail.value}
             </span>
+            {index < protocolDetails.length - 1 && (
+              <div className="w-full h-[1px] bg-gradient-to-r from-white/5 to-transparent mt-1.5" />
+            )}
           </div>
         ))}
 
-        <div className="pt-3 border-t border-cyber-border/50">
-          <Badge variant="live">ACTIVE</Badge>
+        <div className="pt-2">
+          <div className="flex items-center gap-2">
+            <Badge variant="live">ACTIVE</Badge>
+            <span className="text-[9px] text-cyber-text-muted/40">Node connected</span>
+          </div>
         </div>
       </div>
     </div>

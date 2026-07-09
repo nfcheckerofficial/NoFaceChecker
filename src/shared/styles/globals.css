@@ -39,17 +39,15 @@
   --animate-pulse-glow: pulseGlow 2s ease-in-out infinite;
   --animate-shimmer: shimmer 3s infinite;
   --animate-border-glow: borderGlow 3s ease-in-out infinite;
+  --animate-orb: orbFloat 12s ease-in-out infinite;
+  --animate-grid: gridMove 20s linear infinite;
+  --animate-pulse-ring: pulseRing 3s ease-in-out infinite;
+  --animate-morph: morphBlob 8s ease-in-out infinite;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-html {
-  scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 body {
   background-color: var(--color-cyber-black);
@@ -58,35 +56,50 @@ body {
   overflow-x: hidden;
 }
 
-::-webkit-scrollbar {
-  width: 6px;
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--color-cyber-dark); }
+::-webkit-scrollbar-thumb { background: var(--color-cyber-red); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-cyber-red-dark); }
+
+::selection { background-color: var(--color-cyber-red); color: white; }
+
+input::placeholder, textarea::placeholder { color: var(--color-cyber-text-muted); }
+
+.glass {
+  background: rgba(18, 18, 24, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-::-webkit-scrollbar-track {
-  background: var(--color-cyber-dark);
+.glass-strong {
+  background: rgba(18, 18, 24, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-::-webkit-scrollbar-thumb {
-  background: var(--color-cyber-red);
-  border-radius: 3px;
+.text-gradient-red {
+  background: linear-gradient(135deg, #ff0040, #ff6b35);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-cyber-red-dark);
+.text-gradient-blue {
+  background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-::selection {
-  background-color: var(--color-cyber-red);
-  color: white;
-}
-
-input::placeholder,
-textarea::placeholder {
-  color: var(--color-cyber-text-muted);
+.text-gradient-green {
+  background: linear-gradient(135deg, #00ff88, #00d4ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
+  html { scroll-behavior: auto; }
 }
