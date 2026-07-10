@@ -340,13 +340,13 @@ function SidebarRow({
             {item.children!.map((child, ci) => {
               const childColor = (child as any).color || 'text-cyber-text'
               const active = childActive(child.href)
-              const colorValues: Record<string, { bg: string; border: string; dot: string; shadow: string }> = {
-                'text-cyber-red': { bg: 'bg-cyber-red/15', border: 'border-cyber-red/40', dot: 'bg-cyber-red', shadow: 'shadow-[0_0_12px_rgba(255,0,64,0.25)]' },
-                'text-cyber-blue': { bg: 'bg-cyber-blue/15', border: 'border-cyber-blue/40', dot: 'bg-cyber-blue', shadow: 'shadow-[0_0_12px_rgba(0,212,255,0.25)]' },
-                'text-cyber-green': { bg: 'bg-cyber-green/15', border: 'border-cyber-green/40', dot: 'bg-cyber-green', shadow: 'shadow-[0_0_12px_rgba(0,255,136,0.25)]' },
-                'text-cyber-purple': { bg: 'bg-cyber-purple/15', border: 'border-cyber-purple/40', dot: 'bg-cyber-purple', shadow: 'shadow-[0_0_12px_rgba(157,0,255,0.25)]' },
-                'text-cyber-yellow': { bg: 'bg-cyber-yellow/15', border: 'border-cyber-yellow/40', dot: 'bg-cyber-yellow', shadow: 'shadow-[0_0_12px_rgba(255,204,0,0.25)]' },
-                'text-orange-500': { bg: 'bg-orange-500/15', border: 'border-orange-500/40', dot: 'bg-orange-500', shadow: 'shadow-[0_0_12px_rgba(249,115,22,0.25)]' },
+              const colorValues: Record<string, { bg: string; border: string; dot: string; dotMuted: string; shadow: string }> = {
+                'text-cyber-red': { bg: 'bg-cyber-red/15', border: 'border-cyber-red/40', dot: 'bg-cyber-red', dotMuted: 'bg-cyber-red/40', shadow: 'shadow-[0_0_12px_rgba(255,0,64,0.25)]' },
+                'text-cyber-blue': { bg: 'bg-cyber-blue/15', border: 'border-cyber-blue/40', dot: 'bg-cyber-blue', dotMuted: 'bg-cyber-blue/40', shadow: 'shadow-[0_0_12px_rgba(0,212,255,0.25)]' },
+                'text-cyber-green': { bg: 'bg-cyber-green/15', border: 'border-cyber-green/40', dot: 'bg-cyber-green', dotMuted: 'bg-cyber-green/40', shadow: 'shadow-[0_0_12px_rgba(0,255,136,0.25)]' },
+                'text-cyber-purple': { bg: 'bg-cyber-purple/15', border: 'border-cyber-purple/40', dot: 'bg-cyber-purple', dotMuted: 'bg-cyber-purple/40', shadow: 'shadow-[0_0_12px_rgba(157,0,255,0.25)]' },
+                'text-cyber-yellow': { bg: 'bg-cyber-yellow/15', border: 'border-cyber-yellow/40', dot: 'bg-cyber-yellow', dotMuted: 'bg-cyber-yellow/40', shadow: 'shadow-[0_0_12px_rgba(255,204,0,0.25)]' },
+                'text-orange-500': { bg: 'bg-orange-500/15', border: 'border-orange-500/40', dot: 'bg-orange-500', dotMuted: 'bg-orange-500/40', shadow: 'shadow-[0_0_12px_rgba(249,115,22,0.25)]' },
               }
               const cv = colorValues[childColor] || { bg: 'bg-white/10', border: 'border-white/30', dot: 'bg-white/50', shadow: '' }
               return (
@@ -366,7 +366,8 @@ function SidebarRow({
                 >
                   <span className={clsx(
                     'w-2.5 h-2.5 rounded-full shrink-0 transition-all duration-300',
-                    active ? cv.dot : 'bg-white/30',
+                    cv.dotMuted,
+                    active && cv.dot,
                     active && 'shadow-[0_0_12px_currentColor]'
                   )} />
                   <span className={clsx('transition-all duration-300', active ? childColor : 'text-cyber-text-muted/80')}>
