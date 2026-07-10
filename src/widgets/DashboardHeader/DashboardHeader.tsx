@@ -80,18 +80,18 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
       </div>
 
       {/* Center: Brand with animated logo */}
-      <div className="flex items-center gap-3 absolute left-1/2 -translate-x-1/2">
-        <div className="relative flex items-center justify-center motion-safe:animate-[float_3s_ease-in-out_infinite]">
-          <div className="absolute w-7 h-7 rounded-full bg-gradient-to-r from-cyber-red via-cyber-purple to-cyber-blue motion-safe:animate-[spin_3s_linear_infinite] opacity-70" />
-          <div className="absolute w-7 h-7 rounded-full bg-gradient-to-r from-cyber-red via-cyber-purple to-cyber-blue motion-safe:animate-[spin_3s_linear_infinite] opacity-30 blur-sm" />
-          <Shield size={14} className="relative text-cyber-red motion-safe:animate-[flicker_2s_ease-in-out_infinite]" />
+      <div className="flex items-center gap-3 absolute left-1/2 -translate-x-1/2 select-none">
+        <div className="relative flex items-center justify-center motion-safe:animate-[float_4s_ease-in-out_infinite]">
+          <div className="absolute w-8 h-8 rounded-full bg-gradient-to-r from-cyber-red via-cyber-purple to-cyber-blue motion-safe:animate-[spin_4s_linear_infinite] opacity-40 blur-[2px]" />
+          <div className="absolute w-6 h-6 rounded-full bg-gradient-to-r from-cyber-red via-cyber-purple to-cyber-blue motion-safe:animate-[spin_4s_linear_infinite] opacity-60" />
+          <Shield size={13} className="relative text-white drop-shadow-[0_0_8px_rgba(255,0,64,0.6)]" />
         </div>
         <div className="flex flex-col leading-tight">
-          <span className="font-orbitron font-bold text-cyber-text tracking-wider text-sm bg-gradient-to-r from-cyber-red via-cyber-purple to-cyber-blue bg-clip-text text-transparent bg-[length:200%_auto] motion-safe:animate-[gradient_3s_ease_infinite]">
+          <span className="font-orbitron font-bold tracking-wider text-sm bg-gradient-to-r from-cyber-red via-cyber-purple to-cyber-blue bg-clip-text text-transparent bg-[length:200%_auto] motion-safe:animate-[gradient_4s_ease_infinite]">
             NO FACE
           </span>
-          <span className="text-[10px] text-cyber-red/70 tracking-[0.2em] font-orbitron motion-safe:animate-pulse">
-            // CHECKER
+          <span className="text-[9px] text-cyber-text-muted/50 tracking-[0.25em] font-mono">
+            // SECURE TERMINAL
           </span>
         </div>
       </div>

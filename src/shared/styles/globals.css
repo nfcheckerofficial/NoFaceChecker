@@ -2,11 +2,11 @@
 @import "./animations.css";
 
 @theme {
-  --color-cyber-black: #0a0a0a;
-  --color-cyber-dark: #0d0d0d;
-  --color-cyber-panel: #121218;
-  --color-cyber-panel-light: #1a1a24;
-  --color-cyber-border: #1a1a2e;
+  --color-cyber-black: #08080e;
+  --color-cyber-dark: #0c0c14;
+  --color-cyber-panel: #10101a;
+  --color-cyber-panel-light: #181826;
+  --color-cyber-border: #181830;
   --color-cyber-red: #ff0040;
   --color-cyber-red-dark: #cc0033;
   --color-cyber-red-glow: rgba(255, 0, 64, 0.6);
@@ -22,8 +22,8 @@
   --color-cyber-yellow: #ffcc00;
   --color-cyber-yellow-dark: #e6b800;
   --color-cyber-yellow-glow: rgba(255, 204, 0, 0.6);
-  --color-cyber-text: #e0e0e0;
-  --color-cyber-text-muted: #a0a0b8;
+  --color-cyber-text: #e8e8f0;
+  --color-cyber-text-muted: #9090b0;
 
   --font-mono: 'JetBrains Mono', monospace;
   --font-orbitron: 'Orbitron', sans-serif;
@@ -43,6 +43,11 @@
   --animate-grid: gridMove 20s linear infinite;
   --animate-pulse-ring: pulseRing 3s ease-in-out infinite;
   --animate-morph: morphBlob 8s ease-in-out infinite;
+  --animate-aurora: aurora 18s ease-in-out infinite;
+  --animate-breathe: breathe 4s ease-in-out infinite;
+  --animate-glow-pulse: glowPulse 3s ease-in-out infinite;
+  --animate-slide-up: slideUp 0.5s ease-out forwards;
+  --animate-slide-down: slideDown 0.4s ease-out forwards;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -56,27 +61,45 @@ body {
   overflow-x: hidden;
 }
 
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--color-cyber-dark); }
-::-webkit-scrollbar-thumb { background: var(--color-cyber-red); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--color-cyber-red-dark); }
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: linear-gradient(180deg, var(--color-cyber-red), var(--color-cyber-purple)); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-cyber-red); }
 
 ::selection { background-color: var(--color-cyber-red); color: white; }
 
 input::placeholder, textarea::placeholder { color: var(--color-cyber-text-muted); }
 
+focus-visible {
+  outline: 2px solid var(--color-cyber-red);
+  outline-offset: 2px;
+}
+
 .glass {
-  background: rgba(18, 18, 24, 0.6);
+  background: rgba(16, 16, 26, 0.55);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .glass-strong {
-  background: rgba(18, 18, 24, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(12, 12, 20, 0.88);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.glass-card {
+  background: rgba(16, 16, 26, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .text-gradient-red {
@@ -98,6 +121,24 @@ input::placeholder, textarea::placeholder { color: var(--color-cyber-text-muted)
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+.text-gradient-purple {
+  background: linear-gradient(135deg, #9d00ff, #ff0040);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-gold {
+  background: linear-gradient(135deg, #ffcc00, #ff8800);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.border-gradient {
+  border-image: linear-gradient(135deg, var(--color-cyber-red), var(--color-cyber-purple), var(--color-cyber-blue)) 1;
 }
 
 @media (prefers-reduced-motion: reduce) {

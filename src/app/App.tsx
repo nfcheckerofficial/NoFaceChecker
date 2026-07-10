@@ -59,7 +59,6 @@ function AppContent() {
     <>
       <AdminRedirect />
       <div className="min-h-screen bg-cyber-black text-cyber-text font-mono relative overflow-x-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-cyber-red/10 via-transparent to-transparent animate-pulse" />
         <ScanLines />
         <AppRoutes />
       </div>
