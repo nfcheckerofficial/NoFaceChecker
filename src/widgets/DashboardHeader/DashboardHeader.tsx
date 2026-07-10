@@ -67,7 +67,7 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
 
   return (
-    <header className="h-16 shrink-0 sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 border-b border-cyber-border bg-cyber-dark/80 backdrop-blur-md">
+    <header className="h-16 shrink-0 sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 border-b border-white/[0.04] bg-[#08080f]/80 backdrop-blur-xl">
       {/* Left: hamburger (mobile) + spacer (desktop) */}
       <div className="flex items-center gap-2">
         <button
