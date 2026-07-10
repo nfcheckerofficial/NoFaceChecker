@@ -69,7 +69,7 @@ export const NAV_GROUPS: NavGroup[] = [
         ],
       },
       {
-        label: 'PayPal', icon: Wallet, color: 'text-cyber-blue',
+        label: 'Paypal Gates', icon: Wallet, color: 'text-cyber-blue',
         children: [
           { label: '$5', href: '/dashboard/paypal/5', color: 'text-cyber-red' },
           { label: '$1', href: '/dashboard/paypal/1', color: 'text-cyber-blue' },
