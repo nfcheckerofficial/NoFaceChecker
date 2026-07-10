@@ -336,17 +336,25 @@ function SidebarRow({
           {content}
         </button>
         {isOpen && !collapsed && (
-          <div className="ml-10 pl-3 mt-0.5 flex flex-col gap-1 border-l border-white/[0.06]">
-            {item.children!.map(child => {
+          <div className="ml-9 pl-2 mt-1 flex flex-col gap-1.5 border-l border-white/0">
+            {item.children!.map((child, ci) => {
               const childColor = (child as any).color || 'text-cyber-text-muted'
               const active = childActive(child.href)
               const dotColors: Record<string, string> = {
-                'text-cyber-red': 'bg-cyber-red shadow-[0_0_6px_rgba(255,0,64,0.5)]',
-                'text-cyber-blue': 'bg-cyber-blue shadow-[0_0_6px_rgba(0,212,255,0.5)]',
-                'text-cyber-green': 'bg-cyber-green shadow-[0_0_6px_rgba(0,255,136,0.5)]',
-                'text-cyber-purple': 'bg-cyber-purple shadow-[0_0_6px_rgba(157,0,255,0.5)]',
-                'text-cyber-yellow': 'bg-cyber-yellow shadow-[0_0_6px_rgba(255,204,0,0.5)]',
-                'text-orange-500': 'bg-orange-500 shadow-[0_0_6px_rgba(249,115,22,0.5)]',
+                'text-cyber-red': 'bg-cyber-red shadow-[0_0_8px_rgba(255,0,64,0.5)]',
+                'text-cyber-blue': 'bg-cyber-blue shadow-[0_0_8px_rgba(0,212,255,0.5)]',
+                'text-cyber-green': 'bg-cyber-green shadow-[0_0_8px_rgba(0,255,136,0.5)]',
+                'text-cyber-purple': 'bg-cyber-purple shadow-[0_0_8px_rgba(157,0,255,0.5)]',
+                'text-cyber-yellow': 'bg-cyber-yellow shadow-[0_0_8px_rgba(255,204,0,0.5)]',
+                'text-orange-500': 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]',
+              }
+              const bgColor: Record<string, string> = {
+                'text-cyber-red': 'from-cyber-red/10 to-cyber-red/5 border-cyber-red/20',
+                'text-cyber-blue': 'from-cyber-blue/10 to-cyber-blue/5 border-cyber-blue/20',
+                'text-cyber-green': 'from-cyber-green/10 to-cyber-green/5 border-cyber-green/20',
+                'text-cyber-purple': 'from-cyber-purple/10 to-cyber-purple/5 border-cyber-purple/20',
+                'text-cyber-yellow': 'from-cyber-yellow/10 to-cyber-yellow/5 border-cyber-yellow/20',
+                'text-orange-500': 'from-orange-500/10 to-orange-500/5 border-orange-500/20',
               }
               return (
                 <Link
@@ -354,27 +362,29 @@ function SidebarRow({
                   to={child.href}
                   onClick={onClick}
                   className={clsx(
-                    'relative flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs transition-all duration-300',
-                    'hover:bg-white/[0.03]',
+                    'relative flex items-center justify-center gap-2.5 px-3 py-2.5 rounded-xl text-xs transition-all duration-300',
+                    'border backdrop-blur-sm',
                     active
-                      ? `${childColor} font-semibold bg-white/[0.04]`
-                      : 'text-cyber-text-muted/60 hover:text-cyber-text/80'
+                      ? clsx('bg-gradient-to-br', bgColor[childColor] || 'from-white/10 to-white/5', childColor, 'font-semibold shadow-[0_0_15px_rgba(0,0,0,0.2)]')
+                      : 'border-white/[0.04] bg-white/[0.02] text-cyber-text-muted/60 hover:bg-white/[0.04] hover:text-cyber-text/80 hover:border-white/[0.08] hover:shadow-[0_0_20px_rgba(0,0,0,0.15)]',
+                    'motion-safe:animate-slide-up'
                   )}
+                  style={{ animationDelay: `${ci * 0.05}s` }}
                 >
                   <span className={clsx(
-                    'w-1.5 h-1.5 rounded-full shrink-0 transition-all duration-300',
+                    'w-2 h-2 rounded-full shrink-0 transition-all duration-300',
                     dotColors[childColor] || 'bg-cyber-text-muted/30',
                     active && 'scale-125'
                   )} />
-                  {active && (
-                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-4 rounded-r-full bg-current opacity-60 shadow-[0_0_6px_currentColor]" />
-                  )}
                   <span className={clsx(
                     'transition-all duration-300',
                     active ? childColor : ''
                   )}>
                     {child.label}
                   </span>
+                  {active && (
+                    <span className={clsx('absolute inset-0 rounded-xl ring-1 ring-inset ring-current/20')} />
+                  )}
                 </Link>
               )
             })}
