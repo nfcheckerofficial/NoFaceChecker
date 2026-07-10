@@ -10,19 +10,19 @@ interface SectionProps {
 }
 
 const ACCENT_LINE: Record<string, string> = {
-  red: 'border-cyber-red/30',
-  purple: 'border-cyber-purple/30',
-  blue: 'border-cyber-blue/30',
-  green: 'border-cyber-green/30',
-  yellow: 'border-cyber-yellow/30',
+  red: 'border-cyber-red/40',
+  purple: 'border-cyber-purple/40',
+  blue: 'border-cyber-blue/40',
+  green: 'border-cyber-green/40',
+  yellow: 'border-cyber-yellow/40',
 }
 
 const ACCENT_ICON: Record<string, string> = {
-  red: 'text-cyber-red/70',
-  purple: 'text-cyber-text-muted/70',
-  blue: 'text-cyber-blue/70',
-  green: 'text-cyber-green/70',
-  yellow: 'text-cyber-yellow/70',
+  red: 'text-cyber-red',
+  purple: 'text-cyber-text-muted',
+  blue: 'text-cyber-blue',
+  green: 'text-cyber-green',
+  yellow: 'text-cyber-yellow',
 }
 
 export function Section({ title, icon, children, className, accent = 'purple', transparent }: SectionProps) {
