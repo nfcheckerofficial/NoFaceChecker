@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { useAuthStore } from '@/features/auth/authStore'
 import { MatrixRain } from '@/shared/ui/MatrixRain'
 import { ScanLines } from '@/shared/ui/ScanLines'
+import { Particles } from '@/shared/ui/Particles'
 import { Eye, EyeOff, LogIn, AlertTriangle, MessageCircle, Terminal, Shield, Activity, Users, Zap } from 'lucide-react'
 
 const API_BASE = import.meta.env.VITE_PAYMENTS_API ?? ''
@@ -14,75 +15,6 @@ const tabClass = (active: boolean) =>
       ? 'bg-gradient-to-r from-cyber-red/15 to-cyber-purple/15 text-cyber-red border-b-2 border-cyber-red shadow-[0_0_20px_rgba(255,0,64,0.2)]'
       : 'text-cyber-text-muted/50 border-b-2 border-transparent hover:text-cyber-text/70 hover:border-cyber-text-muted/20'
   }`
-
-function Particles() {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    canvas.width = window.innerWidth
-    canvas.height = window.innerHeight
-
-    const isMobile = window.innerWidth < 640
-    const colors = ['#ff0040', '#00d4ff', '#9d00ff', '#00ff88', '#ffcc00']
-
-    const particles: { x: number; y: number; vx: number; vy: number; size: number; color: string; alpha: number }[] = []
-    const count = isMobile ? 12 : 50
-    for (let i = 0; i < count; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * (isMobile ? 0.3 : 0.5),
-        vy: (Math.random() - 0.5) * (isMobile ? 0.3 : 0.5),
-        size: Math.random() * (isMobile ? 1.5 : 2) + 0.5,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        alpha: Math.random() * (isMobile ? 0.3 : 0.5) + 0.1,
-      })
-    }
-
-    let animId: number
-    let lastTime = performance.now()
-    const interval = isMobile ? 50 : 16
-
-    const animate = (time: number) => {
-      if (time - lastTime < interval) { animId = requestAnimationFrame(animate); return }
-      lastTime = time
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-      particles.forEach((p) => {
-        p.x += p.vx
-        p.y += p.vy
-        if (p.x < 0) p.x = canvas.width
-        if (p.x > canvas.width) p.x = 0
-        if (p.y < 0) p.y = canvas.height
-        if (p.y > canvas.height) p.y = 0
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
-        ctx.fillStyle = p.color
-        ctx.globalAlpha = p.alpha
-        ctx.fill()
-      })
-      animId = requestAnimationFrame(animate)
-    }
-    animId = requestAnimationFrame(animate)
-
-    const handleResize = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
-    }
-    window.addEventListener('resize', handleResize)
-
-    return () => {
-      cancelAnimationFrame(animId)
-      window.removeEventListener('resize', handleResize)
-    }
-  }, [])
-
-  return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0" />
-}
 
 export function LoginPage() {
   const { login, loginWithTelegram, loading, error, clearError } = useAuthStore(useShallow((s) => ({

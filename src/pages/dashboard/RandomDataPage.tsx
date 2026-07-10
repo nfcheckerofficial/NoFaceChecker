@@ -1,78 +1,89 @@
 import { useState } from 'react'
-import { Database, RefreshCw, Copy, Check, Mail, Phone, MapPin, User, Calendar, Hash } from 'lucide-react'
+import { Database, RefreshCw, Copy, Check, Download } from 'lucide-react'
+import { clsx } from 'clsx'
 import { generateIdentity, type RandomIdentity } from '@/features/checker/services/randomData'
+import { Section, Card, Grid, Row } from '@/shared/ui/Section'
 
 export function RandomDataPage() {
   const [identity, setIdentity] = useState<RandomIdentity>(() => generateIdentity())
-  const [copied, setCopied] = useState(false)
+  const [copied, setCopied] = useState<string | null>(null)
 
   const regen = () => {
     setIdentity(generateIdentity())
-    setCopied(false)
+    setCopied(null)
   }
 
-  const copy = async () => {
-    const text = Object.entries(identity)
-      .map(([k, v]) => `${k}: ${v}`)
-      .join('\n')
+  const copyField = async (key: string, value: string) => {
+    await navigator.clipboard.writeText(value)
+    setCopied(key)
+    setTimeout(() => setCopied(null), 1500)
+  }
+
+  const copyAll = async () => {
+    const text = Object.entries(identity).map(([k, v]) => `${k}: ${v}`).join('\n')
     await navigator.clipboard.writeText(text)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1500)
+    setCopied('all')
+    setTimeout(() => setCopied(null), 1500)
   }
 
+  const exportJSON = () => {
+    const blob = new Blob([JSON.stringify(identity, null, 2)], { type: 'application/json' })
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'identity.json'; a.click()
+    URL.revokeObjectURL(blob as any)
+  }
+
+  const fields: [string, keyof RandomIdentity, string][] = [
+    ['User', 'fullName', 'text-cyber-text'],
+    ['Gender', 'gender', 'text-cyber-text-muted'],
+    ['Email', 'email', 'text-cyber-blue'],
+    ['Phone', 'phone', 'text-cyber-green'],
+    ['Street', 'street', 'text-cyber-text'],
+    ['City / State', 'city', 'text-cyber-text'],
+    ['ZIP', 'zip', 'text-cyber-yellow'],
+    ['Country', 'country', 'text-cyber-text'],
+    ['Birth Date', 'birthDate', 'text-cyber-text-muted'],
+    ['SSN-like', 'ssnLike', 'text-cyber-red'],
+  ]
+
+  const cityState = `${identity.city}, ${identity.state}`
+
   return (
-    <div className="max-w-[800px] mx-auto">
-      <header className="flex items-center gap-3 mb-6">
-        <span className="w-10 h-10 rounded-md bg-cyber-green/15 border border-cyber-green/40 flex items-center justify-center">
-          <Database size={20} className="text-cyber-green" />
-        </span>
-        <div>
-          <h1 className="text-xl font-orbitron font-bold text-cyber-text tracking-wide">Random Data</h1>
-          <p className="text-xs text-cyber-text-muted">Fictional identity generator for testing/QA</p>
+    <div className="max-w-[800px] mx-auto space-y-5">
+      <Section title="Random Data" icon={<Database size={14} />} accent="green">
+        <div className="flex items-center gap-3 mb-4">
+          <button onClick={copyAll}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/[0.06] text-xs text-cyber-text-muted/70 hover:text-cyber-text hover:bg-white/[0.03] transition-colors font-mono">
+            {copied === 'all' ? <Check size={12} className="text-cyber-green" /> : <Copy size={12} />}
+            {copied === 'all' ? 'Copied' : 'Copy All'}
+          </button>
+          <button onClick={exportJSON}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/[0.06] text-xs text-cyber-text-muted/70 hover:text-cyber-text hover:bg-white/[0.03] transition-colors font-mono">
+            <Download size={12} /> JSON
+          </button>
+          <button onClick={regen}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-cyber-green/20 bg-cyber-green/[0.04] text-xs text-cyber-green/70 hover:bg-cyber-green/[0.08] hover:text-cyber-green transition-colors font-mono ml-auto">
+            <RefreshCw size={12} /> Generate
+          </button>
         </div>
-      </header>
-
-      <div className="rounded-lg border border-cyber-border bg-cyber-panel/50 overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-3 border-b border-cyber-border">
-          <span className="text-sm font-semibold text-cyber-text">Generated Identity</span>
-          <div className="flex items-center gap-2">
-            <button onClick={copy}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs text-cyber-text-muted hover:text-cyber-text border border-cyber-border transition-colors">
-              {copied ? <Check size={13} className="text-cyber-green" /> : <Copy size={13} />}
-              {copied ? 'Copied' : 'Copy'}
-            </button>
-            <button onClick={regen}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs text-white bg-cyber-green-dark hover:bg-cyber-green hover:text-cyber-black transition-colors">
-              <RefreshCw size={13} /> New
-            </button>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {fields.map(([label, key, valueClass]) => {
+            const val = key === 'city' ? cityState : identity[key]
+            return (
+              <div key={key}
+                className="group flex items-start gap-3 rounded-xl bg-white/[0.02] border border-white/[0.04] px-4 py-3 hover:bg-white/[0.03] transition-colors">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] uppercase tracking-wider text-cyber-text-muted/50 font-mono">{label}</p>
+                  <p className={clsx('text-sm truncate font-mono mt-0.5', valueClass)}>{val || '—'}</p>
+                </div>
+                <button onClick={() => copyField(key, val)}
+                  className="p-1.5 rounded-lg text-cyber-text-muted/20 hover:text-cyber-text hover:bg-white/[0.05] transition-all opacity-0 group-hover:opacity-100 shrink-0">
+                  {copied === key ? <Check size={12} className="text-cyber-green" /> : <Copy size={12} />}
+                </button>
+              </div>
+            )
+          })}
         </div>
-
-        <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Row icon={<User size={15} />} label="Full Name" value={identity.fullName} />
-          <Row icon={<User size={15} />} label="Gender" value={identity.gender} />
-          <Row icon={<Mail size={15} />} label="Email" value={identity.email} />
-          <Row icon={<Phone size={15} />} label="Phone" value={identity.phone} />
-          <Row icon={<MapPin size={15} />} label="Street" value={identity.street} />
-          <Row icon={<MapPin size={15} />} label="City / State" value={`${identity.city}, ${identity.state}`} />
-          <Row icon={<MapPin size={15} />} label="ZIP" value={identity.zip} />
-          <Row icon={<MapPin size={15} />} label="Country" value={identity.country} />
-          <Row icon={<Calendar size={15} />} label="Birth Date" value={identity.birthDate} />
-          <Row icon={<Hash size={15} />} label="SSN-like" value={identity.ssnLike} />
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function Row({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div className="flex items-start gap-3">
-      <span className="text-cyber-text-muted mt-0.5">{icon}</span>
-      <div className="min-w-0">
-        <p className="text-[11px] uppercase tracking-wider text-cyber-text-muted">{label}</p>
-        <p className="text-sm text-cyber-text font-mono truncate">{value}</p>
-      </div>
+      </Section>
     </div>
   )
 }
