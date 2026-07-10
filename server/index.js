@@ -284,8 +284,11 @@ app.post(
           const packageId = parts[1]
           const pkg = PACKAGES[packageId]
           if (pkg && Number.isFinite(userId)) {
-            await addCredits(userId, pkg.credits)
-            console.log(`[oxapay-webhook] ✓ Acreditados ${pkg.credits} créditos al usuario ${userId}`)
+            const user = await getUserById(userId)
+            if (user) {
+              await updateUserCredits(user.username, user.credits + pkg.credits)
+              console.log(`[oxapay-webhook] ✓ Acreditados ${pkg.credits} créditos a ${user.username} (ID: ${userId})`)
+            }
           }
         }
       }
@@ -716,6 +719,7 @@ app.post('/api/oxapay/create-invoice', authMiddleware, async (req, res) => {
     const pkg = PACKAGES[packageId]
     if (!pkg) return res.status(400).json({ error: 'Invalid package' })
 
+    const apiUrl = `${req.protocol}://${req.get('host')}`
     const orderId = `${req.user.id}:${packageId}`
     const oxaRes = await fetch(`${OXAPAY_API}/payment/invoice`, {
       method: 'POST',
@@ -727,7 +731,7 @@ app.post('/api/oxapay/create-invoice', authMiddleware, async (req, res) => {
         amount: pkg.amount / 100,
         currency: 'USD',
         order_id: orderId,
-        callback_url: `${CLIENT_URL}/api/oxapay/webhook`,
+        callback_url: `${apiUrl}/api/oxapay/webhook`,
         return_url: `${CLIENT_URL}/dashboard/pay/success?oxapay=1`,
         description: pkg.name,
         lifetime: 60,
