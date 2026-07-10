@@ -8,16 +8,10 @@ import {
   CheckCircle, XCircle, Loader, History, Gauge,
 } from 'lucide-react'
 import { StreamRank } from '@/shared/ui/StreamRank'
+import { Section, Grid, Card, Divider } from '@/shared/ui/Section'
 import { useUserStore } from '@/features/checker/store/userStore'
 import { useCheckerStore } from '@/features/checker/store/checkerStore'
 import { useLivesStore } from '@/features/checker/store/livesStore'
-
-const EXTRA_BASES = [
-  { label: 'BIN Pool', value: '527601, 492937, 453201', color: 'text-cyber-blue' },
-  { label: 'Proxy List', value: '24 active · 12 dead', color: 'text-cyber-green' },
-  { label: 'User Agents', value: '142 freshly scraped', color: 'text-cyber-purple' },
-  { label: 'DNS Records', value: '36 resolved', color: 'text-cyber-yellow' },
-]
 
 const QUICK_ACTIONS = [
   { label: 'Card Checker', icon: Terminal, href: '/dashboard', color: 'text-cyber-blue', desc: 'Verify single cards' },
