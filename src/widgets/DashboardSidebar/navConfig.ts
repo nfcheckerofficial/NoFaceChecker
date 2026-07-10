@@ -36,24 +36,24 @@ export const NAV_GROUPS: NavGroup[] = [
       {
         label: 'Stripe CCN', icon: CreditCard, color: 'text-orange-500',
         children: [
-          { label: 'Money Gate', href: '/dashboard/stripe-ccn/vice' },
+          { label: 'Money Gate', href: '/dashboard/stripe-ccn/vice', color: 'text-cyber-red' },
         ],
       },
       {
         label: 'Stripe Auth', icon: Shield, color: 'text-orange-500',
         children: [
-          { label: 'Auth Gate', href: '/dashboard/stripe-auth/auth' },
-          { label: 'Inferno Gate', href: '/dashboard/stripe-auth/inferno' },
-          { label: 'Sova Gate', href: '/dashboard/stripe-auth/sova' },
+          { label: 'Auth Gate', href: '/dashboard/stripe-auth/auth', color: 'text-cyber-blue' },
+          { label: 'Inferno Gate', href: '/dashboard/stripe-auth/inferno', color: 'text-cyber-red' },
+          { label: 'Sova Gate', href: '/dashboard/stripe-auth/sova', color: 'text-cyber-green' },
         ],
       },
       {
         label: 'Amazon', icon: Package, color: 'text-orange-500',
         children: [
-          { label: 'Amazon GC $5', href: '/dashboard/amazon/gc-5' },
-          { label: 'Amazon GC $10', href: '/dashboard/amazon/gc-10' },
-          { label: 'Amazon GC $25', href: '/dashboard/amazon/gc-25' },
-          { label: 'Amazon GC $50', href: '/dashboard/amazon/gc-50' },
+          { label: 'GC $5', href: '/dashboard/amazon/gc-5', color: 'text-cyber-green' },
+          { label: 'GC $10', href: '/dashboard/amazon/gc-10', color: 'text-cyber-blue' },
+          { label: 'GC $25', href: '/dashboard/amazon/gc-25', color: 'text-cyber-purple' },
+          { label: 'GC $50', href: '/dashboard/amazon/gc-50', color: 'text-cyber-yellow' },
         ],
       },
       {
@@ -69,17 +69,17 @@ export const NAV_GROUPS: NavGroup[] = [
         ],
       },
       {
-        label: 'Paypal Charge', icon: Wallet, color: 'text-cyber-blue',
+        label: 'PayPal', icon: Wallet, color: 'text-cyber-blue',
         children: [
-          { label: '5 Paypal', href: '/dashboard/paypal/5' },
-          { label: 'Paypal 1', href: '/dashboard/paypal/1' },
-          { label: '0.01 Paypal', href: '/dashboard/paypal/001' },
+          { label: '$5', href: '/dashboard/paypal/5', color: 'text-cyber-red' },
+          { label: '$1', href: '/dashboard/paypal/1', color: 'text-cyber-blue' },
+          { label: '$0.01', href: '/dashboard/paypal/001', color: 'text-cyber-green' },
         ],
       },
       {
         label: 'Gates Especiales', icon: Gem, color: 'text-orange-500',
         children: [
-          { label: 'Crypto', href: '/dashboard/special/allbirds' },
+          { label: 'Crypto', href: '/dashboard/special/allbirds', color: 'text-cyber-purple' },
         ],
       },
       {
