@@ -105,11 +105,6 @@ if (!STRIPE_SECRET_KEY) {
   console.warn('\n[!] STRIPE_SECRET_KEY no configurada — rutas de pago deshabilitadas')
 }
 
-if (STRIPE_SECRET_KEY && !STRIPE_WEBHOOK_SECRET) {
-  console.error('[!] FATAL: STRIPE_WEBHOOK_SECRET is required when STRIPE_SECRET_KEY is set (otherwise all webhook events are lost)')
-  process.exit(1)
-}
-
 const DEPLOY_VERSION = process.env.RENDER_GIT_COMMIT || process.env.DEPLOY_VERSION || String(Date.now())
 let isLiveKey = false
 let isTestKey = false
