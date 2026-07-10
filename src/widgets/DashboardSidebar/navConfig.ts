@@ -108,7 +108,7 @@ export const NAV_GROUPS: NavGroup[] = [
         ],
       },
       { label: 'Live Vault', icon: Vault, color: 'text-cyber-green', href: '/dashboard/live-vault' },
-      { label: 'Card Vault', icon: CreditCard, color: 'text-cyber-blue', href: '/dashboard/card-vault' },
+
       { label: 'Bin Lookup', icon: Search, color: 'text-cyber-blue', href: '/dashboard/bin-lookup' },
       { label: 'Random Data', icon: Database, color: 'text-cyber-green', href: '/dashboard/random-data' },
       { label: '3D Checker', icon: Crosshair, color: 'text-cyber-red', href: '/dashboard/3d-checker' },
