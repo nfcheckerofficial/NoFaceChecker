@@ -40,7 +40,7 @@ export const NAV_GROUPS: NavGroup[] = [
         ],
       },
       {
-        label: 'Stripe Auth', icon: Shield, color: 'text-cyber-blue',
+        label: 'CVV CHARGED', icon: Shield, color: 'text-cyber-blue',
         children: [
           { label: 'Auth Gate', href: '/dashboard/stripe-auth/auth', color: 'text-cyber-blue' },
           { label: 'Inferno Gate', href: '/dashboard/stripe-auth/inferno', color: 'text-cyber-red' },
