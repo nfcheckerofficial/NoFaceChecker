@@ -753,9 +753,11 @@ app.post('/api/oxapay/create-invoice', authMiddleware, async (req, res) => {
 
 // Proxy para mail.tm (Instaddr) — evita CORS desde el frontend.
 const INSTADDR_API = 'https://api.mail.tm'
-app.all('/api/instaddr/*', async (req, res) => {
+// Use app.use with a path prefix to match all /api/instaddr/* routes
+app.use('/api/instaddr', async (req, res, next) => {
+  if (req.method === 'OPTIONS') return res.sendStatus(204)
   try {
-    const path = req.params[0] || ''
+    const path = req.path.replace(/^\/+/, '') || ''
     const url = `${INSTADDR_API}/${path}`
     const fetchOpts = { method: req.method, headers: { Accept: 'application/json' } }
     const auth = req.headers.authorization
@@ -769,7 +771,7 @@ app.all('/api/instaddr/*', async (req, res) => {
     res.status(response.status).type('application/json').send(text)
   } catch (err) {
     console.error('[instaddr-proxy] error:', err.message)
-    res.status(502).json({ error: 'Instaddr proxy failed' })
+    if (!res.headersSent) res.status(502).json({ error: 'Instaddr proxy failed' })
   }
 })
 
