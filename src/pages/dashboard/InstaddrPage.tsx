@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
-import { Mail, RefreshCw, Copy, Check, Trash2, Inbox, Loader2, MessageSquare, ChevronLeft, User, Clock, Search, Download, Eye, Square, CheckSquare } from 'lucide-react'
+import { Mail, RefreshCw, Copy, Check, Trash2, Inbox, Loader2, MessageSquare, ChevronLeft, User, Clock, Search, Download, Square, CheckSquare } from 'lucide-react'
 import { clsx } from 'clsx'
 import { Section } from '@/shared/ui/Section'
 
@@ -156,9 +156,12 @@ export function InstaddrPage() {
       <Section title="Temporary Email" icon={<Mail size={14} />} accent="yellow">
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <div className="flex-1 flex items-center gap-2 px-4 py-3 bg-white/[0.03] border border-white/[0.06] rounded-xl">
-              <span className="text-sm font-mono text-cyber-text-muted/70">{login}</span>
-              <span className="text-cyber-yellow/50">@</span>
+            <div className="flex-1 flex items-center gap-1.5 px-3 py-2 bg-white/[0.03] border border-white/[0.06] rounded-xl">
+              <input type="text" value={login} onChange={e => setLogin(e.target.value.replace(/[^a-zA-Z0-9_.-]/g, '').slice(0, 30))}
+                onKeyDown={e => { if (e.key === 'Enter') { setMessages([]); setSelected(null); fetchMessages() } }}
+                className="bg-transparent text-sm font-mono text-cyber-text/90 focus:outline-none min-w-[60px] flex-1 placeholder:text-cyber-text-muted/30"
+                placeholder="tu-nombre" spellCheck={false} />
+              <span className="text-cyber-text-muted/40 text-sm">@</span>
               <select value={domain} onChange={e => { setDomain(e.target.value); setMessages([]); setSelected(null) }}
                 className="bg-transparent text-sm text-cyber-yellow/80 focus:outline-none font-mono cursor-pointer max-w-[130px]">
                 {domains.map(d => <option key={d} value={d}>{d}</option>)}
@@ -168,9 +171,13 @@ export function InstaddrPage() {
               className="w-10 h-10 flex items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.06] transition-colors shrink-0">
               {copied === 'email' ? <Check size={15} className="text-cyber-green" /> : <Copy size={15} className="text-cyber-text-muted" />}
             </button>
+            <button onClick={() => { setMessages([]); setSelected(null); setSelectedIds(new Set()); fetchMessages() }}
+              className="h-10 px-3 flex items-center gap-1.5 rounded-xl border border-cyber-green/20 bg-cyber-green/[0.04] hover:bg-cyber-green/[0.08] text-xs text-cyber-green/70 hover:text-cyber-green transition-colors shrink-0 font-mono whitespace-nowrap">
+              <Mail size={12} /> Create
+            </button>
             <button onClick={newAddress}
               className="h-10 px-3 flex items-center gap-1.5 rounded-xl border border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.06] text-xs text-cyber-text-muted/70 hover:text-cyber-text transition-colors shrink-0 font-mono">
-              <RefreshCw size={12} /> New
+              <RefreshCw size={12} /> Random
             </button>
           </div>
           <p className="text-xs text-cyber-text-muted/40 font-mono select-all px-1">{email}</p>
