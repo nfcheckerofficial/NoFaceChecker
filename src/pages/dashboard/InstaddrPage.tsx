@@ -37,11 +37,26 @@ function timeAgo(s: string): string {
   return `${Math.floor(h / 24)}d`
 }
 
+const STORAGE_KEY = 'instaddr_account'
+
+function loadAccount(): { address: string; password: string; token: string } | null {
+  try { const d = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); if (d?.address && d?.token) return d } catch {}
+  return null
+}
+
+function saveAccount(data: { address: string; password: string; token: string }) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)) } catch {}
+}
+
+function clearAccount() {
+  try { localStorage.removeItem(STORAGE_KEY) } catch {}
+}
+
 export function InstaddrPage() {
-  const [address, setAddress] = useState('')
-  const [password, setPassword] = useState('')
-  const [token, setToken] = useState('')
-  const [accountId, setAccountId] = useState('')
+  const saved = useRef(loadAccount())
+  const [address, setAddress] = useState(saved.current?.address || '')
+  const [password, setPassword] = useState(saved.current?.password || '')
+  const [token, setToken] = useState(saved.current?.token || '')
   const [messages, setMessages] = useState<Message[]>([])
   const [selected, setSelected] = useState<MessageDetail | null>(null)
   const [loading, setLoading] = useState(false)
@@ -87,13 +102,14 @@ export function InstaddrPage() {
       if (!tokRes.ok) throw new Error()
       const tok = await tokRes.json()
 
+      const finalToken = tok.token || tok
       setAddress(email)
       setPassword(pass)
-      setToken(tok.token || tok)
-      setAccountId(acc.id || '')
+      setToken(finalToken)
       setMessages([])
       setSelected(null)
       setSelectedIds(new Set())
+      saveAccount({ address: email, password: pass, token: finalToken })
     } catch {
       setApiError('Failed to create email account. Try again.')
     }
@@ -207,7 +223,7 @@ export function InstaddrPage() {
               className="w-10 h-10 flex items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.06] transition-colors shrink-0">
               {copied === 'email' ? <Check size={15} className="text-cyber-green" /> : <Copy size={15} className="text-cyber-text-muted" />}
             </button>
-            <button onClick={createAccount}
+            <button onClick={() => { clearAccount(); createAccount() }}
               className="h-10 px-3 flex items-center gap-1.5 rounded-xl border border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.06] text-xs text-cyber-text-muted/70 hover:text-cyber-text transition-colors shrink-0 font-mono whitespace-nowrap">
               <RefreshCw size={12} /> New
             </button>
