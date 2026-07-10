@@ -32,11 +32,12 @@ export function PlaceholderPage() {
     try {
       const res = await fetch(`${API}/api/tempsms/numbers`)
       if (res.ok) {
-        const data: SmsNumber[] = await res.json()
-        if (data?.length) {
-          setNumbers(data)
-          if (!selectedNumber || !data.find(n => n.NumberFlat === selectedNumber)) {
-            setSelectedNumber(data[0].NumberFlat)
+        const data = await res.json()
+        const list: SmsNumber[] = data?.items || (Array.isArray(data) ? data : [])
+        if (list.length) {
+          setNumbers(list)
+          if (!selectedNumber || !list.find(n => n.NumberFlat === selectedNumber)) {
+            setSelectedNumber(list[0].NumberFlat)
           }
         }
       }
@@ -51,7 +52,7 @@ export function PlaceholderPage() {
       const res = await fetch(`${API}/api/tempsms/sms/${selectedNumber}`)
       if (res.ok) {
         const data = await res.json()
-        setMessages(Array.isArray(data) ? data : data?.messages || [])
+        setMessages(data?.messages || (Array.isArray(data) ? data : []))
       }
     } catch {}
     if (!silent) setLoadingSms(false)
