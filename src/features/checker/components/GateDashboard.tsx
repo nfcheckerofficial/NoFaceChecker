@@ -275,8 +275,13 @@ export function GateDashboard({ gateId }: GateDashboardProps) {
           )}
 
           {/* Textarea */}
-          <div className="relative group/ta">
-            <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-r from-cyber-blue/30 via-cyber-purple/20 to-cyber-blue/30 opacity-0 group-focus-within/ta:opacity-100 transition-opacity duration-500 blur-sm" />
+          <div className="relative group/ta motion-safe:animate-slide-up">
+            {/* Floating glow orbs behind textarea */}
+            <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-cyber-purple/10 blur-2xl motion-safe:animate-orb pointer-events-none" />
+            <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-cyber-blue/10 blur-2xl motion-safe:animate-orb pointer-events-none" style={{ animationDelay: '-6s' }} />
+            {/* Gradient border glow */}
+            <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-r from-cyber-blue/40 via-cyber-purple/30 to-cyber-blue/40 opacity-0 group-focus-within/ta:opacity-100 transition-all duration-700 blur-md" />
+            <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-r from-cyber-blue/20 via-transparent to-cyber-purple/20 opacity-60" />
             <textarea
               value={isRunning ? [currentCard, ...queue].filter(Boolean).join('\n') : draft}
               onChange={e => setDraft(e.target.value)}
@@ -284,53 +289,51 @@ export function GateDashboard({ gateId }: GateDashboardProps) {
               spellCheck={false}
               placeholder={'4737029165106320|03|2028|472\n...one card per line (number|MM|YYYY|CVV)'}
               className={clsx(
-                'relative w-full h-[280px] sm:h-[340px] resize-none rounded-2xl border border-cyber-border/60 bg-gradient-to-b from-cyber-dark/90 to-cyber-panel/60 backdrop-blur-sm p-4 sm:p-5',
+                'relative w-full h-[280px] sm:h-[340px] resize-none rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.04] to-white/[0.01] backdrop-blur-sm p-4 sm:p-5',
                 'text-xs sm:text-sm font-mono text-cyber-text/90 leading-relaxed',
                 'placeholder:text-cyber-text-muted/30 placeholder:text-xs sm:placeholder:text-sm',
-                'focus:outline-none focus:border-cyber-blue/50 focus:shadow-[0_0_30px_rgba(0,212,255,0.1)]',
-                'transition-all duration-300',
+                'focus:outline-none focus:border-cyber-blue/40 focus:shadow-[0_0_40px_rgba(0,212,255,0.08)]',
+                'transition-all duration-500',
                 isRunning && 'opacity-80'
               )}
             />
           </div>
 
           {/* Controls */}
-          <div className="grid grid-cols-3 gap-2.5 sm:gap-3 mt-4 sm:mt-5">
+          <div className="grid grid-cols-3 gap-3 mt-5 motion-safe:animate-slide-up" style={{ animationDelay: '0.1s' }}>
             <button
               onClick={handleStart}
               disabled={(isRunning && !isPaused) || queue.length === 0}
               className={clsx(
-                'relative overflow-hidden group/btn flex items-center justify-center gap-1.5 sm:gap-2 py-3 sm:py-3.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300',
+                'relative overflow-hidden group/btn flex items-center justify-center gap-2 py-3.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300',
                 'disabled:opacity-35 disabled:cursor-not-allowed',
-                isPaused
-                  ? 'bg-gradient-to-r from-cyber-green-dark to-cyber-green text-white hover:shadow-[0_0_25px_rgba(0,255,136,0.3)]'
-                  : 'bg-gradient-to-r from-cyber-green-dark to-cyber-green text-white hover:shadow-[0_0_25px_rgba(0,255,136,0.3)]'
+                'bg-gradient-to-r from-cyber-green-dark to-cyber-green text-white',
+                'hover:shadow-[0_0_30px_rgba(0,255,136,0.3)] hover:scale-[1.02] active:scale-[0.98]'
               )}
             >
-              <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700" />
-              <span className="relative flex items-center gap-1.5 sm:gap-2">
+              <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700" />
+              <span className="relative flex items-center gap-2">
                 {isPaused ? 'Resume' : 'Start'}
-                <Play size={14} className="sm:hidden" />
-                <Play size={16} className="hidden sm:block" />
+                <Play size={15} />
               </span>
             </button>
             <button
               onClick={pause}
               disabled={!isRunning || isPaused}
-              className="relative overflow-hidden group/btn flex items-center justify-center gap-1.5 sm:gap-2 py-3 sm:py-3.5 rounded-xl text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-cyber-red to-cyber-red-dark hover:shadow-[0_0_25px_rgba(255,0,64,0.3)] disabled:opacity-35 disabled:cursor-not-allowed transition-all duration-300"
+              className="relative overflow-hidden group/btn flex items-center justify-center gap-2 py-3.5 rounded-xl text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-cyber-red to-cyber-red-dark hover:shadow-[0_0_30px_rgba(255,0,64,0.3)] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-35 disabled:cursor-not-allowed transition-all duration-300"
             >
-              <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700" />
-              <span className="relative flex items-center gap-1.5 sm:gap-2">
-                Pause <Pause size={14} className="sm:hidden" /><Pause size={16} className="hidden sm:block" />
+              <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700" />
+              <span className="relative flex items-center gap-2">
+                Pause <Pause size={15} />
               </span>
             </button>
             <button
               onClick={() => setGenOpen(true)}
-              className="relative overflow-hidden group/btn flex items-center justify-center gap-1.5 sm:gap-2 py-3 sm:py-3.5 rounded-xl text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-cyber-blue to-cyber-blue/80 hover:shadow-[0_0_25px_rgba(0,212,255,0.3)] transition-all duration-300"
+              className="relative overflow-hidden group/btn flex items-center justify-center gap-2 py-3.5 rounded-xl text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-cyber-blue to-cyber-blue/80 hover:shadow-[0_0_30px_rgba(0,212,255,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
             >
-              <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700" />
-              <span className="relative flex items-center gap-1.5 sm:gap-2">
-                Gen <Cpu size={14} className="sm:hidden" /><span className="hidden sm:inline">Generator</span><Cpu size={16} className="hidden sm:block" />
+              <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700" />
+              <span className="relative flex items-center gap-2">
+                <Cpu size={15} /> Generator
               </span>
             </button>
           </div>
