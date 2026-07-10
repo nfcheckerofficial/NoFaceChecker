@@ -1,98 +1,134 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
-import { Mail, RefreshCw, Copy, Check, Trash2, Inbox, Loader2, MessageSquare, ChevronLeft, User, Clock, Search, Download, Square, CheckSquare } from 'lucide-react'
+import { Mail, RefreshCw, Copy, Check, Trash2, Inbox, Loader2, ChevronLeft, User, Clock, Search, Download, Square, CheckSquare } from 'lucide-react'
 import { clsx } from 'clsx'
 import { Section } from '@/shared/ui/Section'
 
-const BASE = 'https://www.1secmail.com/api/v1'
+const API = import.meta.env.VITE_PAYMENTS_API ?? ''
 
-const DOMAINS = [
-  '1secmail.com',
-  '1secmail.net',
-  '1secmail.org',
-]
-
-interface EmailMessage {
-  id: number
-  from: string
+interface Message {
+  id: string
+  from: { address: string; name: string }
   subject: string
-  date: string
+  intro: string
+  createdAt: string
 }
 
-interface EmailDetail {
-  id: number
-  from: string
+interface MessageDetail {
+  id: string
+  from: { address: string; name: string }
   subject: string
-  date: string
-  textBody: string
-  htmlBody: string
+  text: string
+  html: string[]
+  createdAt: string
 }
 
-function randomAddr(): string {
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
-  return Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+function randomStr(n: number): string {
+  const c = 'abcdefghijklmnopqrstuvwxyz0123456789'
+  return Array.from({ length: n }, () => c[Math.floor(Math.random() * c.length)]).join('')
 }
 
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'now'
-  if (mins < 60) return `${mins}m`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h`
-  return `${Math.floor(hrs / 24)}d`
+function timeAgo(s: string): string {
+  const d = Date.now() - new Date(s).getTime()
+  const m = Math.floor(d / 60000)
+  if (m < 1) return 'now'
+  if (m < 60) return `${m}m`
+  const h = Math.floor(m / 60)
+  if (h < 24) return `${h}h`
+  return `${Math.floor(h / 24)}d`
 }
 
 export function InstaddrPage() {
-  const [login, setLogin] = useState(randomAddr)
-  const [domain, setDomain] = useState('1secmail.com')
-  const [domains, setDomains] = useState(DOMAINS)
-  const [messages, setMessages] = useState<EmailMessage[]>([])
-  const [selected, setSelected] = useState<EmailDetail | null>(null)
+  const [address, setAddress] = useState('')
+  const [password, setPassword] = useState('')
+  const [token, setToken] = useState('')
+  const [accountId, setAccountId] = useState('')
+  const [messages, setMessages] = useState<Message[]>([])
+  const [selected, setSelected] = useState<MessageDetail | null>(null)
   const [loading, setLoading] = useState(false)
   const [reading, setReading] = useState(false)
-  const [copied, setCopied] = useState<string | null>(null)
   const [autoRefresh, setAutoRefresh] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
-  const [readIds, setReadIds] = useState<Set<number>>(new Set())
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const email = `${login}@${domain}`
-
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [copied, setCopied] = useState<string | null>(null)
   const [apiError, setApiError] = useState('')
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const headers = (): Record<string, string> => ({
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  })
+
+  const createAccount = useCallback(async () => {
+    setApiError('')
+    try {
+      const domRes = await fetch(`${API}/api/instaddr/domains`, { headers: { Accept: 'application/json' } })
+      if (!domRes.ok) throw new Error()
+      const domains: { domain: string }[] = await domRes.json()
+      if (!domains?.length) throw new Error()
+      const domain = domains[0].domain
+      const user = randomStr(12)
+      const pass = randomStr(16)
+      const email = `${user}@${domain}`
+
+      const accRes = await fetch(`${API}/api/instaddr/accounts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ address: email, password: pass }),
+      })
+      if (!accRes.ok) throw new Error()
+      const acc = await accRes.json()
+
+      const tokRes = await fetch(`${API}/api/instaddr/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ address: email, password: pass }),
+      })
+      if (!tokRes.ok) throw new Error()
+      const tok = await tokRes.json()
+
+      setAddress(email)
+      setPassword(pass)
+      setToken(tok.token || tok)
+      setAccountId(acc.id || '')
+      setMessages([])
+      setSelected(null)
+      setSelectedIds(new Set())
+    } catch {
+      setApiError('Failed to create email account. Try again.')
+    }
+  }, [])
 
   const fetchMessages = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true); setApiError('')
+    if (!token) return
+    if (!silent) setLoading(true)
     try {
-      const url = `${BASE}/?action=getMessages&login=${encodeURIComponent(login)}&domain=${domain}`
-      const res = await fetch(url, { mode: 'cors' })
+      const res = await fetch(`${API}/api/instaddr/messages`, { headers: headers() })
       if (res.ok) {
-        const data: EmailMessage[] = await res.json()
-        setMessages(Array.isArray(data) ? data : [])
-      } else {
-        if (!silent) setApiError(`API error: ${res.status}`)
+        const data = await res.json()
+        setMessages(data?.hydra?.member || data || [])
       }
-    } catch {
-      if (!silent) setApiError('Connection error — check your network or try again')
-    }
+    } catch {}
     if (!silent) setLoading(false)
-  }, [login, domain])
+  }, [token])
 
-  const readMessage = async (id: number) => {
-    setReading(true); setApiError('')
+  const readMessage = async (id: string) => {
+    if (!token) return
+    setReading(true)
     try {
-      const res = await fetch(`${BASE}/?action=readMessage&login=${encodeURIComponent(login)}&domain=${domain}&id=${id}`, { mode: 'cors' })
+      const res = await fetch(`${API}/api/instaddr/messages/${id}`, { headers: headers() })
       if (res.ok) {
-        const data: EmailDetail = await res.json()
+        const data: MessageDetail = await res.json()
         setSelected(data)
-        setReadIds(prev => new Set(prev).add(id))
       }
     } catch {}
     setReading(false)
   }
 
-  const deleteMessage = async (id: number) => {
+  const deleteMessage = async (id: string) => {
+    if (!token) return
     try {
-      await fetch(`${BASE}/?action=deleteMessage&login=${encodeURIComponent(login)}&domain=${domain}&id=${id}`, { method: 'GET', mode: 'cors' })
+      await fetch(`${API}/api/instaddr/messages/${id}`, { method: 'DELETE', headers: headers() })
       setMessages(p => p.filter(m => m.id !== id))
       setSelectedIds(p => { const n = new Set(p); n.delete(id); return n })
       if (selected?.id === id) setSelected(null)
@@ -108,73 +144,77 @@ export function InstaddrPage() {
     try { await navigator.clipboard.writeText(text); setCopied(key); setTimeout(() => setCopied(null), 1500) } catch {}
   }
 
-  useEffect(() => { fetchMessages() }, [])
+  useEffect(() => { createAccount() }, [])
   useEffect(() => {
     if (intervalRef.current) clearInterval(intervalRef.current)
-    if (autoRefresh) intervalRef.current = setInterval(() => fetchMessages(true), 10000)
+    if (autoRefresh && token) intervalRef.current = setInterval(() => fetchMessages(true), 10000)
     return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
-  }, [autoRefresh, fetchMessages])
-
-  const newAddress = () => {
-    setLogin(randomAddr())
-    setMessages([])
-    setSelected(null)
-    setSelectedIds(new Set())
-  }
+  }, [autoRefresh, token, fetchMessages])
+  useEffect(() => { if (token) fetchMessages() }, [token])
 
   const filteredMessages = useMemo(() => {
     if (!searchQuery.trim()) return messages
     const q = searchQuery.toLowerCase()
-    return messages.filter(m => m.from.toLowerCase().includes(q) || m.subject.toLowerCase().includes(q))
+    return messages.filter(m => m.from?.address?.toLowerCase().includes(q) || m.subject?.toLowerCase().includes(q))
   }, [messages, searchQuery])
 
-  const toggleSelect = (id: number) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id); else next.add(id)
-      return next
-    })
+  const toggleSelect = (id: string) => {
+    setSelectedIds(p => { const n = new Set(p); if (n.has(id)) n.delete(id); else n.add(id); return n })
   }
-
   const selectAll = () => {
     if (selectedIds.size === filteredMessages.length) setSelectedIds(new Set())
     else setSelectedIds(new Set(filteredMessages.map(m => m.id)))
   }
-
   const isAllSelected = filteredMessages.length > 0 && selectedIds.size === filteredMessages.length
+
+  if (!address) {
+    return (
+      <div className="max-w-[960px] mx-auto space-y-5">
+        <Section title="Temporary Email" icon={<Mail size={14} />} accent="yellow">
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            {apiError ? (
+              <>
+                <div className="w-14 h-14 rounded-2xl bg-cyber-red/[0.06] border border-cyber-red/20 flex items-center justify-center mb-4">
+                  <Mail size={24} className="text-cyber-red/60" />
+                </div>
+                <p className="text-sm text-cyber-red/70 font-mono mb-4">{apiError}</p>
+                <button onClick={createAccount}
+                  className="px-5 py-2.5 rounded-xl bg-cyber-red/10 border border-cyber-red/30 text-sm text-cyber-red hover:bg-cyber-red/20 transition-colors font-mono">
+                  Retry
+                </button>
+              </>
+            ) : (
+              <>
+                <Loader2 size={20} className="animate-spin text-cyber-text-muted/30 mb-4" />
+                <p className="text-sm text-cyber-text-muted/50 font-mono">Creating temporary email...</p>
+              </>
+            )}
+          </div>
+        </Section>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-[960px] mx-auto space-y-5">
-
-      {/* Address card */}
       <Section title="Temporary Email" icon={<Mail size={14} />} accent="yellow">
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <div className="flex-1 flex items-center gap-1.5 px-3 py-2 bg-white/[0.03] border border-white/[0.06] rounded-xl">
-              <input type="text" value={login} onChange={e => setLogin(e.target.value.replace(/[^a-zA-Z0-9_.-]/g, '').slice(0, 30))}
-                onKeyDown={e => { if (e.key === 'Enter') { setMessages([]); setSelected(null); fetchMessages() } }}
-                className="bg-transparent text-sm font-mono text-cyber-text/90 focus:outline-none min-w-[60px] flex-1 placeholder:text-cyber-text-muted/30"
-                placeholder="tu-nombre" spellCheck={false} />
-              <span className="text-cyber-text-muted/40 text-sm">@</span>
-              <select value={domain} onChange={e => { setDomain(e.target.value); setMessages([]); setSelected(null) }}
-                className="bg-transparent text-sm text-cyber-yellow/80 focus:outline-none font-mono cursor-pointer max-w-[130px]">
-                {domains.map(d => <option key={d} value={d}>{d}</option>)}
-              </select>
+            <div className="flex-1 flex items-center gap-2 px-4 py-3 bg-white/[0.03] border border-white/[0.06] rounded-xl">
+              <span className="text-sm font-mono text-cyber-text/80">{address}</span>
             </div>
-            <button onClick={() => copyText(email, 'email')}
+            <button onClick={() => copyText(address, 'email')}
               className="w-10 h-10 flex items-center justify-center rounded-xl border border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.06] transition-colors shrink-0">
               {copied === 'email' ? <Check size={15} className="text-cyber-green" /> : <Copy size={15} className="text-cyber-text-muted" />}
             </button>
-            <button onClick={() => { setMessages([]); setSelected(null); setSelectedIds(new Set()); fetchMessages() }}
-              className="h-10 px-3 flex items-center gap-1.5 rounded-xl border border-cyber-green/20 bg-cyber-green/[0.04] hover:bg-cyber-green/[0.08] text-xs text-cyber-green/70 hover:text-cyber-green transition-colors shrink-0 font-mono whitespace-nowrap">
-              <Mail size={12} /> Create
-            </button>
-            <button onClick={newAddress}
-              className="h-10 px-3 flex items-center gap-1.5 rounded-xl border border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.06] text-xs text-cyber-text-muted/70 hover:text-cyber-text transition-colors shrink-0 font-mono">
-              <RefreshCw size={12} /> Random
+            <button onClick={createAccount}
+              className="h-10 px-3 flex items-center gap-1.5 rounded-xl border border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.06] text-xs text-cyber-text-muted/70 hover:text-cyber-text transition-colors shrink-0 font-mono whitespace-nowrap">
+              <RefreshCw size={12} /> New
             </button>
           </div>
-          <p className="text-xs text-cyber-text-muted/40 font-mono select-all px-1">{email}</p>
+          <p className="text-xs text-cyber-text-muted/30 font-mono">
+            This inbox auto-deletes after 24h. Refresh every 10s.
+          </p>
         </div>
       </Section>
 
@@ -185,9 +225,7 @@ export function InstaddrPage() {
         </div>
       )}
 
-      {/* Inbox */}
       <Section title="Inbox" icon={<Inbox size={14} />} accent="yellow">
-        {/* Toolbar */}
         <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 border-b border-white/[0.04]">
           <div className="flex items-center gap-2">
             {messages.length > 0 && (
@@ -222,7 +260,7 @@ export function InstaddrPage() {
                 <div className="relative hidden sm:block">
                   <Search size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-cyber-text-muted/30" />
                   <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                    placeholder="Search..." 
+                    placeholder="Search..."
                     className="w-28 lg:w-36 pl-7 pr-2.5 py-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] text-[11px] text-cyber-text/80 placeholder:text-cyber-text-muted/30 focus:outline-none focus:border-white/[0.12] font-mono transition-colors" />
                 </div>
                 <label className="flex items-center gap-1.5 text-[10px] text-cyber-text-muted/50 cursor-pointer select-none">
@@ -239,7 +277,6 @@ export function InstaddrPage() {
           </div>
         </div>
 
-        {/* Content */}
         {selected ? (
           <div className="p-5">
             <div className="space-y-4 mb-5 pb-5 border-b border-white/[0.04]">
@@ -248,37 +285,33 @@ export function InstaddrPage() {
                   <User size={15} className="text-cyber-yellow/70" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm text-cyber-text/90 font-mono truncate">{selected.from}</p>
+                  <p className="text-sm text-cyber-text/90 font-mono truncate">{selected.from?.address || selected.from?.name || '?'}</p>
                   <p className="text-[11px] text-cyber-text-muted/50 font-mono truncate mt-0.5">{selected.subject || '(no subject)'}</p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={() => copyText(selected.textBody || selected.htmlBody || '', 'body')}
-                    className="p-2 rounded-lg text-cyber-text-muted/40 hover:text-cyber-text hover:bg-white/[0.03] transition-colors"
-                    title="Copy body">
+                  <button onClick={() => copyText(selected.text || '', 'body')}
+                    className="p-2 rounded-lg text-cyber-text-muted/40 hover:text-cyber-text hover:bg-white/[0.03] transition-colors" title="Copy body">
                     {copied === 'body' ? <Check size={13} className="text-cyber-green" /> : <Copy size={13} />}
                   </button>
                   <button onClick={() => {
-                    const blob = new Blob([selected.textBody || selected.htmlBody || ''], { type: 'text/plain' })
-                    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `email-${selected.id}.txt`; a.click()
-                    URL.revokeObjectURL(blob as any)
-                  }}
-                    className="p-2 rounded-lg text-cyber-text-muted/40 hover:text-cyber-text hover:bg-white/[0.03] transition-colors"
-                    title="Download">
+                    const b = new Blob([selected.text || ''], { type: 'text/plain' })
+                    const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `email-${selected.id}.txt`; a.click()
+                    URL.revokeObjectURL(b as any)
+                  }} className="p-2 rounded-lg text-cyber-text-muted/40 hover:text-cyber-text hover:bg-white/[0.03] transition-colors" title="Download">
                     <Download size={13} />
                   </button>
-                  <button onClick={() => deleteMessage(selected.id)} 
-                    className="p-2 rounded-lg text-cyber-text-muted/40 hover:text-cyber-red hover:bg-cyber-red/10 transition-colors"
-                    title="Delete">
+                  <button onClick={() => deleteMessage(selected.id)}
+                    className="p-2 rounded-lg text-cyber-text-muted/40 hover:text-cyber-red hover:bg-cyber-red/10 transition-colors" title="Delete">
                     <Trash2 size={13} />
                   </button>
                 </div>
               </div>
               <p className="text-[11px] text-cyber-text-muted/40 font-mono flex items-center gap-1.5">
-                <Clock size={10} /> {selected.date}
+                <Clock size={10} /> {selected.createdAt}
               </p>
             </div>
             <div className="text-sm text-cyber-text/70 leading-relaxed whitespace-pre-wrap font-mono max-h-[420px] overflow-y-auto">
-              {selected.textBody || <span className="text-cyber-text-muted/50 italic">(empty message)</span>}
+              {selected.text || <span className="text-cyber-text-muted/50 italic">(empty message)</span>}
             </div>
           </div>
         ) : loading && messages.length === 0 ? (
@@ -295,54 +328,38 @@ export function InstaddrPage() {
             </div>
             <p className="text-sm text-cyber-text-muted/50 font-mono">No messages yet</p>
             <p className="text-xs text-cyber-text-muted/30 mt-2 font-mono max-w-xs">
-              Send an email to <span className="text-cyber-yellow/60 select-all">{email}</span> and it will appear here
+              Send an email to <span className="text-cyber-yellow/60 select-all">{address}</span>
             </p>
-            <div className="flex items-center gap-3 mt-5 text-[10px] text-cyber-text-muted/30 font-mono">
-              <span className="flex items-center gap-1"><RefreshCw size={10} /> Auto-refresh active</span>
-              <span>•</span>
-              <button onClick={newAddress} className="text-cyber-yellow/50 hover:text-cyber-yellow transition-colors">Generate new address</button>
-            </div>
           </div>
         ) : (
           <>
             {searchQuery && filteredMessages.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <Search size={20} className="text-cyber-text-muted/20 mb-3" />
-                <p className="text-sm text-cyber-text-muted/50 font-mono">No results for &quot;{searchQuery}&quot;</p>
+                <p className="text-sm text-cyber-text-muted/50 font-mono">No results</p>
               </div>
             ) : (
               <div className="divide-y divide-white/[0.03]">
                 {filteredMessages.map(msg => {
-                  const isRead = readIds.has(msg.id)
                   const isSelected = selectedIds.has(msg.id)
                   return (
                     <div key={msg.id}
-                      className={clsx(
-                        'flex items-center gap-3 px-4 py-3.5 transition-colors cursor-pointer group',
-                        isSelected ? 'bg-cyber-yellow/[0.03]' : 'hover:bg-white/[0.015]'
-                      )}>
+                      className={clsx('flex items-center gap-3 px-4 py-3.5 transition-colors cursor-pointer group',
+                        isSelected ? 'bg-cyber-yellow/[0.03]' : 'hover:bg-white/[0.015]')}>
                       <button onClick={e => { e.stopPropagation(); toggleSelect(msg.id) }}
                         className="p-1 rounded text-cyber-text-muted/30 hover:text-cyber-text transition-colors shrink-0">
                         {isSelected ? <CheckSquare size={12} /> : <Square size={12} />}
                       </button>
                       <div onClick={() => readMessage(msg.id)} className="flex items-center gap-4 flex-1 min-w-0">
-                        <div className={clsx(
-                          'w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors',
-                          isRead
-                            ? 'bg-white/[0.03] border border-white/[0.04]'
-                            : 'bg-cyber-yellow/10 border border-cyber-yellow/20'
-                        )}>
-                          <Mail size={14} className={isRead ? 'text-cyber-text-muted/30' : 'text-cyber-yellow/80'} />
+                        <div className="w-9 h-9 rounded-xl bg-cyber-yellow/10 border border-cyber-yellow/20 flex items-center justify-center shrink-0">
+                          <Mail size={14} className="text-cyber-yellow/80" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            {!isRead && <span className="w-1.5 h-1.5 rounded-full bg-cyber-yellow shrink-0" />}
-                            <p className={clsx('text-sm truncate', isRead ? 'text-cyber-text-muted/70' : 'text-cyber-text/90', 'font-mono')}>{msg.from}</p>
-                          </div>
-                          <p className={clsx('text-xs truncate mt-0.5', isRead ? 'text-cyber-text-muted/40' : 'text-cyber-text-muted/60')}>{msg.subject || '(no subject)'}</p>
+                          <p className="text-sm text-cyber-text/80 truncate font-mono">{msg.from?.address || msg.from?.name || '?'}</p>
+                          <p className="text-xs text-cyber-text-muted/50 truncate mt-0.5">{msg.subject || '(no subject)'}</p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-[10px] text-cyber-text-muted/30 whitespace-nowrap font-mono">{timeAgo(msg.date)}</span>
+                          <span className="text-[10px] text-cyber-text-muted/30 whitespace-nowrap font-mono">{timeAgo(msg.createdAt)}</span>
                           <button onClick={e => { e.stopPropagation(); deleteMessage(msg.id) }}
                             className="p-1.5 rounded-lg text-cyber-text-muted/20 hover:text-cyber-red hover:bg-cyber-red/10 transition-colors opacity-0 group-hover:opacity-100">
                             <Trash2 size={11} />

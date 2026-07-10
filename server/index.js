@@ -751,6 +751,29 @@ app.post('/api/oxapay/create-invoice', authMiddleware, async (req, res) => {
   }
 })
 
+// Proxy para mail.tm (Instaddr) — evita CORS desde el frontend.
+const INSTADDR_API = 'https://api.mail.tm'
+app.all('/api/instaddr/*', async (req, res) => {
+  try {
+    const path = req.params[0] || ''
+    const url = `${INSTADDR_API}/${path}`
+    const fetchOpts: any = { method: req.method, headers: {} as Record<string, string> }
+    fetchOpts.headers['Accept'] = 'application/json'
+    const auth = req.headers.authorization
+    if (auth) fetchOpts.headers['Authorization'] = auth
+    if (req.method !== 'GET' && req.method !== 'DELETE') {
+      fetchOpts.headers['Content-Type'] = 'application/json'
+      fetchOpts.body = JSON.stringify(req.body)
+    }
+    const response = await fetch(url, fetchOpts)
+    const text = await response.text()
+    res.status(response.status).type('application/json').send(text)
+  } catch (err) {
+    console.error('[instaddr-proxy] error:', err.message)
+    res.status(502).json({ error: 'Instaddr proxy failed' })
+  }
+})
+
 // ---------------------------------------------------------------------------
 // Validación de tarjeta SIN cobrar: SetupIntent + 3D Secure (SCA) + AVS/CVC.
 //
