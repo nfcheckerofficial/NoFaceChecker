@@ -757,8 +757,7 @@ app.all('/api/instaddr/*', async (req, res) => {
   try {
     const path = req.params[0] || ''
     const url = `${INSTADDR_API}/${path}`
-    const fetchOpts: any = { method: req.method, headers: {} as Record<string, string> }
-    fetchOpts.headers['Accept'] = 'application/json'
+    const fetchOpts = { method: req.method, headers: { Accept: 'application/json' } }
     const auth = req.headers.authorization
     if (auth) fetchOpts.headers['Authorization'] = auth
     if (req.method !== 'GET' && req.method !== 'DELETE') {
