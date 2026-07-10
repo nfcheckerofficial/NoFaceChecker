@@ -96,9 +96,9 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     items: [
       {
-        label: 'Temporary Verification', icon: MessageSquare, color: 'text-cyber-purple',
+        label: 'SMS Pool', icon: MessageSquare, color: 'text-cyber-purple',
         children: [
-          { label: 'SMS Pool', href: '/dashboard/verification/sms' },
+          { label: 'SMS Pool', href: '/dashboard/verification/sms', color: 'text-cyber-purple' },
         ],
       },
       { label: 'Live Vault', icon: Vault, color: 'text-cyber-green', href: '/dashboard/live-vault' },
