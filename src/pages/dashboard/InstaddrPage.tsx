@@ -3,7 +3,7 @@ import { Mail, RefreshCw, Copy, Check, Trash2, Inbox, Loader2, MessageSquare, Ch
 import { clsx } from 'clsx'
 import { Section } from '@/shared/ui/Section'
 
-const BASE = 'https://www.1secmail.com/api/v1'
+const API_BASE = import.meta.env.VITE_PAYMENTS_API ?? ''
 
 const FALLBACK_DOMAINS = [
   '1secmail.com',
@@ -11,11 +11,6 @@ const FALLBACK_DOMAINS = [
   '1secmail.org',
   '1secmail.xyz',
 ]
-
-const API_HEADERS = {
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-  'Accept': 'application/json, text/plain, */*',
-}
 
 interface EmailMessage {
   id: number
@@ -64,9 +59,14 @@ export function InstaddrPage() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const email = `${login}@${domain}`
 
+  function apiUrl(action: string, extra?: Record<string, string>): string {
+    const params = new URLSearchParams({ action, login, domain, ...extra })
+    return `${API_BASE}/api/instaddr/?${params}`
+  }
+
   useEffect(() => {
-    fetch(`${BASE}?action=getDomainList`, { headers: API_HEADERS })
-      .then(r => r.json())
+    fetch(`${API_BASE}/api/instaddr/?action=getDomainList`)
+      .then(r => { try { return r.json() } catch { return [] } })
       .then((data: string[]) => { if (data?.length && Array.isArray(data)) setDomains(data) })
       .catch(() => {})
   }, [])
@@ -76,14 +76,14 @@ export function InstaddrPage() {
   const fetchMessages = useCallback(async (silent = false) => {
     if (!silent) setLoading(true); setApiError('')
     try {
-      const res = await fetch(`${BASE}?action=getMessages&login=${encodeURIComponent(login)}&domain=${domain}`, { headers: API_HEADERS })
+      const res = await fetch(apiUrl('getMessages'))
       if (res.ok) {
         const data: EmailMessage[] = await res.json()
         setMessages(Array.isArray(data) ? data : [])
       } else {
         if (!silent) setApiError(`API error: ${res.status} ${res.statusText}`)
       }
-    } catch (e) {
+    } catch {
       if (!silent) setApiError('Connection error — check your network or try again')
     }
     if (!silent) setLoading(false)
@@ -92,7 +92,7 @@ export function InstaddrPage() {
   const readMessage = async (id: number) => {
     setReading(true); setApiError('')
     try {
-      const res = await fetch(`${BASE}?action=readMessage&login=${encodeURIComponent(login)}&domain=${domain}&id=${id}`, { headers: API_HEADERS })
+      const res = await fetch(apiUrl('readMessage', { id: String(id) }))
       if (res.ok) {
         const data: EmailDetail = await res.json()
         setSelected(data)
@@ -104,7 +104,7 @@ export function InstaddrPage() {
 
   const deleteMessage = async (id: number) => {
     try {
-      await fetch(`${BASE}?action=deleteMessage&login=${encodeURIComponent(login)}&domain=${domain}&id=${id}`, { method: 'GET', headers: API_HEADERS })
+      await fetch(apiUrl('deleteMessage', { id: String(id) }), { method: 'GET' })
       setMessages(p => p.filter(m => m.id !== id))
       setSelectedIds(p => { const n = new Set(p); n.delete(id); return n })
       if (selected?.id === id) setSelected(null)

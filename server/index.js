@@ -750,6 +750,26 @@ app.post('/api/oxapay/create-invoice', authMiddleware, async (req, res) => {
   }
 })
 
+// Proxy para 1secmail (Instaddr) — evita CORS desde el frontend.
+app.get('/api/instaddr/*', async (req, res) => {
+  try {
+    const path = req.params[0] || ''
+    const query = new URLSearchParams(req.query as Record<string, string>).toString()
+    const url = `https://www.1secmail.com/api/v1/${path}${query ? `?${query}` : ''}`
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; NoFaceChecker/1.0)',
+        'Accept': 'application/json',
+      },
+    })
+    const text = await response.text()
+    res.status(response.status).type('application/json').send(text)
+  } catch (err) {
+    console.error('[instaddr-proxy] error:', err.message)
+    res.status(502).json({ error: 'Instaddr proxy failed' })
+  }
+})
+
 // ---------------------------------------------------------------------------
 // Validación de tarjeta SIN cobrar: SetupIntent + 3D Secure (SCA) + AVS/CVC.
 //
