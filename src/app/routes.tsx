@@ -92,7 +92,7 @@ export function AppRoutes() {
         <Route path="brute/:id" element={<ParamGate prefix="brute" param="id" />} />
         <Route path="achievers" element={<GateDashboard gateId="achievers" />} />
 
-        <Route path="verification/:id" element={<SuspenseWrapper><PlaceholderPage title="Temporary Verification" description="SMS / number pool" /></SuspenseWrapper>} />
+        <Route path="verification/:id" element={<SuspenseWrapper><PlaceholderPage /></SuspenseWrapper>} />
         <Route path="bin-lookup" element={<SuspenseWrapper><BinLookupPage /></SuspenseWrapper>} />
         <Route path="live-vault" element={<SuspenseWrapper><LiveVaultPage /></SuspenseWrapper>} />
         <Route path="random-data" element={<SuspenseWrapper><RandomDataPage /></SuspenseWrapper>} />

@@ -775,6 +775,22 @@ app.use('/api/instaddr', async (req, res, next) => {
   }
 })
 
+// Proxy para temp-sms.org (SMS Pool)
+const TEMPSMS_API = 'https://temp-sms.org/api'
+app.use('/api/tempsms', async (req, res, next) => {
+  if (req.method === 'OPTIONS') return res.sendStatus(204)
+  try {
+    const path = req.path.replace(/^\/+/, '')
+    const url = `${TEMPSMS_API}/${path}`
+    const response = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' } })
+    const text = await response.text()
+    res.status(response.status).type('application/json').send(text)
+  } catch (err) {
+    console.error('[tempsms-proxy] error:', err.message)
+    if (!res.headersSent) res.status(502).json({ error: 'TempSMS proxy failed' })
+  }
+})
+
 // ---------------------------------------------------------------------------
 // Validación de tarjeta SIN cobrar: SetupIntent + 3D Secure (SCA) + AVS/CVC.
 //
