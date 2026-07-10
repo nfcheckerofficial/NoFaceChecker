@@ -319,43 +319,44 @@ export function GateDashboard({ gateId }: GateDashboardProps) {
           </div>
         </div>
 
-        {/* Right panel: Stats */}
-        <div className="rounded-2xl border border-cyber-border/50 bg-gradient-to-br from-cyber-panel/80 via-cyber-panel/60 to-cyber-dark/80 backdrop-blur-md p-5 sm:px-7 sm:py-7 shadow-[0_0_30px_rgba(0,0,0,0.2)]">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 sm:gap-0">
-            <CircularProgress
-              value={progress}
-              label={circLabel}
-              running={running}
-              size={140}
-            />
-            <div className="flex-1 sm:ml-6 lg:ml-8 w-full space-y-3 sm:space-y-4">
-              <StatRow color="bg-cyber-blue" label="Total" value={stats.total} />
-              <StatRow color="bg-cyber-green" label="Lives" value={stats.live} />
-              <StatRow color="bg-cyber-red" label="Dead" value={stats.dead} />
-              <StatRow color="bg-cyber-yellow" label="Checked" value={stats.checked} />
-            </div>
-          </div>
+        {/* Right panel: Stats — centered, floating, colorful */}
+        <div className="rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.03] to-white/[0.01] backdrop-blur-md p-5 sm:p-7 shadow-[0_0_40px_rgba(0,0,0,0.3)] relative overflow-hidden">
+          {/* Ambient glow */}
+          <div className="absolute -top-20 -right-20 w-60 h-60 rounded-full bg-cyber-purple/10 blur-3xl motion-safe:animate-orb pointer-events-none" />
+          <div className="absolute -bottom-20 -left-20 w-60 h-60 rounded-full bg-cyber-blue/[0.06] blur-3xl motion-safe:animate-orb pointer-events-none" style={{ animationDelay: '-6s' }} />
 
-          <div className="border-t border-cyber-border/40 my-4 sm:my-5" />
+          <div className="relative flex flex-col items-center text-center">
+            {/* Animated circular progress */}
+            <div className="motion-safe:animate-breathe">
+              <CircularProgress
+                value={progress}
+                label={circLabel}
+                running={running}
+                size={150}
+              />
+            </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-0 text-xs sm:text-sm">
-            <div className="flex items-center justify-between sm:justify-start sm:flex-col sm:gap-1 px-3 py-2 sm:py-0 rounded-lg sm:rounded-none bg-cyber-dark/50 sm:bg-transparent">
-              <span className="text-cyber-text-muted/70 flex items-center gap-1.5">
-                <Activity size={12} className="text-cyber-blue" /> Queue
-              </span>
-              <span className="text-cyber-text font-mono">{isRunning ? queue.length : (queue.length || '0')}</span>
+            {/* Stats grid — centered, with color glow */}
+            <div className="w-full mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <StatCard icon={<Activity size={14} />} label="Total" value={stats.total} accent="from-cyber-blue/20 to-cyber-blue/5" valueClass="text-cyber-blue" />
+              <StatCard icon={<Zap size={14} />} label="Lives" value={stats.live} accent="from-cyber-green/20 to-cyber-green/5" valueClass="text-cyber-green drop-shadow-[0_0_8px_rgba(0,255,136,0.3)]" />
+              <StatCard icon={<Trash2 size={14} />} label="Dead" value={stats.dead} accent="from-cyber-red/20 to-cyber-red/5" valueClass="text-cyber-red" />
+              <StatCard icon={<Activity size={14} />} label="Checked" value={stats.checked} accent="from-cyber-yellow/20 to-cyber-yellow/5" valueClass="text-cyber-yellow" />
             </div>
-            <div className="flex items-center justify-between sm:justify-start sm:flex-col sm:gap-1 px-3 py-2 sm:py-0 rounded-lg sm:rounded-none bg-cyber-dark/50 sm:bg-transparent">
-              <span className="text-cyber-text-muted/70 flex items-center gap-1.5">
-                <ArrowRight size={12} className="text-cyber-purple" /> Prev
+
+            {/* Bottom info row */}
+            <div className="w-full mt-4 flex items-center justify-center gap-6 text-[11px] font-mono">
+              <span className="flex items-center gap-1.5 text-cyber-text-muted/50">
+                <Activity size={11} className="text-cyber-blue/60" /> Queue <span className="text-cyber-text/70">{isRunning ? queue.length : (queue.length || '0')}</span>
               </span>
-              <span className="text-cyber-text font-mono truncate max-w-[120px] text-right sm:text-left">{prevCard ? prevCard.slice(0, 16) + '...' : 'None'}</span>
-            </div>
-            <div className="flex items-center justify-between sm:justify-start sm:flex-col sm:gap-1 px-3 py-2 sm:py-0 rounded-lg sm:rounded-none bg-cyber-dark/50 sm:bg-transparent">
-              <span className="text-cyber-text-muted/70 flex items-center gap-1.5">
-                <Clock size={12} className="text-cyber-yellow" /> Time
+              <span className="w-px h-4 bg-white/[0.05]" />
+              <span className="flex items-center gap-1.5 text-cyber-text-muted/50">
+                <ArrowRight size={11} className="text-cyber-purple/60" /> Prev <span className="text-cyber-text/70 max-w-[80px] truncate">{prevCard ? prevCard.slice(0, 12) + '…' : 'None'}</span>
               </span>
-              <span className="text-cyber-text font-mono">{time}</span>
+              <span className="w-px h-4 bg-white/[0.05]" />
+              <span className="flex items-center gap-1.5 text-cyber-text-muted/50">
+                <Clock size={11} className="text-cyber-yellow/60" /> <span className="text-cyber-text/70">{time}</span>
+              </span>
             </div>
           </div>
         </div>
@@ -479,14 +480,16 @@ export function GateDashboard({ gateId }: GateDashboardProps) {
   )
 }
 
-function StatRow({ color, label, value }: { color: string; label: string; value: number }) {
+function StatCard({ icon, label, value, accent, valueClass }: { icon: React.ReactNode; label: string; value: number; accent: string; valueClass: string }) {
   return (
-    <div className="flex items-center justify-between py-1">
-      <div className="flex items-center gap-2">
-        <span className={clsx('w-2 h-2 rounded-full', color, 'shadow-[0_0_6px_currentColor]')} />
-        <span className="text-xs sm:text-sm text-cyber-text/90">{label}</span>
+    <div className="rounded-xl bg-white/[0.02] border border-white/[0.04] px-3 py-3 hover:bg-white/[0.03] transition-all duration-300">
+      <div className="flex items-center gap-2 mb-1">
+        <span className={clsx('w-7 h-7 rounded-lg bg-gradient-to-br flex items-center justify-center shrink-0', accent)}>
+          {icon}
+        </span>
       </div>
-      <span className="text-xs sm:text-sm font-mono text-cyber-text font-bold tabular-nums">{value}</span>
+      <p className={clsx('text-base font-bold tabular-nums', valueClass)}>{value}</p>
+      <p className="text-[10px] text-cyber-text-muted/50 font-mono mt-0.5">{label}</p>
     </div>
   )
 }
