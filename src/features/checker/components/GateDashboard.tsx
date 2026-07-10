@@ -190,35 +190,52 @@ export function GateDashboard({ gateId }: GateDashboardProps) {
       )}
 
       {/* Credits + status bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
-        <div className="flex items-center gap-3 px-4 py-2 rounded-xl border border-cyber-border/50 bg-cyber-panel/60 backdrop-blur-sm shadow-[0_0_15px_rgba(0,0,0,0.3)]">
-          <div className="flex items-center gap-2">
-            <Zap size={14} className={credits < liveCost ? 'text-cyber-red' : 'text-cyber-green'} />
-            <span className="text-xs text-cyber-text-muted uppercase tracking-wider">Credits</span>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <div className="flex items-center gap-4 px-5 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] backdrop-blur-sm">
+          <div className="flex items-center gap-2.5">
+            <div className={clsx(
+              'w-8 h-8 rounded-lg flex items-center justify-center',
+              credits < liveCost
+                ? 'bg-cyber-red/10 text-cyber-red'
+                : 'bg-cyber-green/10 text-cyber-green'
+            )}>
+              <Zap size={15} />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] text-cyber-text-muted/50 font-mono uppercase tracking-wider">Credits</span>
+              <span className={clsx(
+                'text-sm font-bold font-mono tabular-nums',
+                credits < liveCost ? 'text-cyber-red' : 'text-cyber-green'
+              )}>
+                {credits.toLocaleString()}
+              </span>
+            </div>
           </div>
-          <span className={clsx(
-            'text-sm font-mono font-bold tabular-nums',
-            credits < liveCost ? 'text-cyber-red drop-shadow-[0_0_8px_rgba(255,0,64,0.3)]' : 'text-cyber-green'
-          )}>
-            {credits}
-          </span>
+          <div className="w-px h-8 bg-white/[0.05]" />
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-cyber-text-muted/50 font-mono uppercase tracking-wider">Cost</span>
+            <span className="text-sm font-mono font-bold text-cyber-yellow/80">{liveCost}cr</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {running && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-cyber-green/10 border border-cyber-green/30 motion-safe:animate-fade-in">
-              <span className="w-2 h-2 rounded-full bg-cyber-green motion-safe:animate-pulse shadow-[0_0_8px_rgba(0,255,136,0.5)]" />
-              <span className="text-xs text-cyber-green font-semibold uppercase tracking-wider">Processing</span>
+            <div className="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-cyber-green/10 border border-cyber-green/30 motion-safe:animate-fade-in">
+              <span className="relative flex w-2 h-2">
+                <span className="absolute inset-0 rounded-full bg-cyber-green motion-safe:animate-ping opacity-40" />
+                <span className="relative rounded-full bg-cyber-green w-2 h-2" />
+              </span>
+              <span className="text-xs text-cyber-green font-semibold uppercase tracking-wider font-mono">Processing</span>
             </div>
           )}
           {isPaused && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-cyber-yellow/10 border border-cyber-yellow/30">
+            <div className="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-cyber-yellow/10 border border-cyber-yellow/30">
               <span className="w-2 h-2 rounded-full bg-cyber-yellow" />
-              <span className="text-xs text-cyber-yellow font-semibold uppercase tracking-wider">Paused</span>
+              <span className="text-xs text-cyber-yellow font-semibold uppercase tracking-wider font-mono">Paused</span>
             </div>
           )}
         </div>
         {notice && (
-          <div className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl border border-cyber-red/40 bg-gradient-to-r from-cyber-red/10 to-transparent text-cyber-red text-sm motion-safe:animate-[fadeIn_0.3s_ease-out]">
+          <div className="w-full flex items-center gap-2.5 px-4 py-3 rounded-xl border border-cyber-red/30 bg-gradient-to-r from-cyber-red/10 to-transparent text-cyber-red text-sm motion-safe:animate-[slideUp_0.3s_ease-out] font-mono">
             <AlertTriangle size={14} className="shrink-0" />
             {notice}
           </div>

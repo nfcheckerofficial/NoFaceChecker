@@ -40,7 +40,7 @@ export const GATE_CATALOG: Record<string, GateConfig> = {
   'paypal-001': { id: 'paypal-001', name: '0.01 Paypal', liveCost: 1, deadCost: 0, liveRate: 0.10, unknownRate: 0.15, speedMs: 800 },
 
   // Gates Especiales
-  'special-allbirds': { id: 'special-allbirds', name: 'AllBirds', liveCost: 6, deadCost: 1, liveRate: 0.22, unknownRate: 0.05, speedMs: 1100 },
+  'special-allbirds': { id: 'special-allbirds', name: 'Crypto', liveCost: 6, deadCost: 1, liveRate: 0.22, unknownRate: 0.05, speedMs: 1100 },
   'special-misshopifycvv': { id: 'special-misshopifycvv', name: 'MisShopifyCVV', liveCost: 6, deadCost: 1, liveRate: 0.20, unknownRate: 0.06, speedMs: 1050 },
   'special-mejorshopify': { id: 'special-mejorshopify', name: 'MejorShopify[JOYAS]', liveCost: 7, deadCost: 1, liveRate: 0.25, unknownRate: 0.04, speedMs: 1200 },
   'special-fashionnova': { id: 'special-fashionnova', name: 'FashionNovaShopify', liveCost: 6, deadCost: 1, liveRate: 0.21, unknownRate: 0.05, speedMs: 1100 },
