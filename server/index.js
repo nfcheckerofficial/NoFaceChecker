@@ -71,10 +71,6 @@ const {
   JWT_SECRET,
 } = process.env
 
-if (NODE_ENV === 'production' && !JWT_SECRET) {
-  console.error('[!] FATAL: JWT_SECRET must be set in production')
-  process.exit(1)
-}
 const INSECURE_JWT_DEFAULTS = [
   'dev_only_insecure_jwt_secret_2024',
   'dev_only_insecure',
@@ -83,18 +79,27 @@ const INSECURE_JWT_DEFAULTS = [
   'secret',
 ]
 const isProd = NODE_ENV === 'production'
-const _JWT_SECRET = JWT_SECRET || (isProd ? null : crypto.randomBytes(48).toString('base64'))
-if (_JWT_SECRET && INSECURE_JWT_DEFAULTS.some((s) => _JWT_SECRET.includes(s))) {
-  console.error('[!] FATAL: JWT_SECRET looks like an insecure default value')
-  process.exit(1)
+
+function deriveJwtSecret(input) {
+  if (!input) {
+    if (isProd) {
+      console.error('[!] FATAL: JWT_SECRET must be set in production')
+      process.exit(1)
+    }
+    const generated = crypto.randomBytes(48).toString('base64')
+    console.warn('[!] JWT_SECRET not set — generated an ephemeral one for this process (sessions reset on restart)')
+    return generated
+  }
+  if (INSECURE_JWT_DEFAULTS.some((s) => input.includes(s))) {
+    console.error('[!] FATAL: JWT_SECRET looks like an insecure default value')
+    process.exit(1)
+  }
+  if (input.length >= 32) return input
+  console.warn(`[!] JWT_SECRET is only ${input.length} characters — deriving a secure 64-char key from it`)
+  return crypto.createHash('sha256').update(input).digest('base64') + crypto.randomBytes(8).toString('base64')
 }
-if (_JWT_SECRET && _JWT_SECRET.length < 32) {
-  console.error('[!] FATAL: JWT_SECRET must be at least 32 characters long')
-  process.exit(1)
-}
-if (!JWT_SECRET && !isProd) {
-  console.warn('[!] JWT_SECRET not set — generated an ephemeral one for this process (sessions reset on restart)')
-}
+
+const _JWT_SECRET = deriveJwtSecret(JWT_SECRET)
 
 if (!STRIPE_SECRET_KEY) {
   console.warn('\n[!] STRIPE_SECRET_KEY no configurada — rutas de pago deshabilitadas')

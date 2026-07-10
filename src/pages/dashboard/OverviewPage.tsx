@@ -55,14 +55,16 @@ export function OverviewPage() {
   const sessionStarted = useRef(Date.now())
   const prevHistoryLen = useRef(history.length)
 
-  if (history.length > prevHistoryLen.current) {
-    const newCount = history.length - prevHistoryLen.current
-    sessionTotal.current += newCount
-    for (let i = prevHistoryLen.current; i < history.length; i++) {
-      if (history[i].status === 'live') sessionLives.current++
+  useEffect(() => {
+    if (history.length > prevHistoryLen.current) {
+      const newCount = history.length - prevHistoryLen.current
+      sessionTotal.current += newCount
+      for (let i = prevHistoryLen.current; i < history.length; i++) {
+        if (history[i].status === 'live') sessionLives.current++
+      }
+      prevHistoryLen.current = history.length
     }
-    prevHistoryLen.current = history.length
-  }
+  }, [history])
 
   const gatePerf = useMemo(() => {
     const map = new Map<string, { live: number; dead: number; unknown: number }>()

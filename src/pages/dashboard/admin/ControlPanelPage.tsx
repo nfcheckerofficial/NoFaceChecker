@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react'
 import { clsx } from 'clsx'
 import { useShallow } from 'zustand/react/shallow'
 import {
-  Users, UserPlus, Ban, AlertTriangle, DollarSign, Plus,
-  Search, Edit, Trash2, Shield, Minus, Check, X,
+  Users, UserPlus, Ban, AlertTriangle, DollarSign, Plus, Minus,
+  Search, Edit, Trash2, Shield, Check, X,
   Calendar, CalendarDays,
 } from 'lucide-react'
 import { useAdminStore, type User, type GateAccessRecord } from '@/features/admin/adminStore'
 import { GATE_CATALOG } from '@/features/checker/config/gateCatalog'
+import { Modal, ModalActions, ModalBtn } from '@/shared/ui/Modal'
+import { SummaryCard } from '@/shared/ui/SummaryCard'
 
 type ModalType = 'add' | 'edit' | 'ban' | 'delete' | 'credits' | 'gate-access' | null
 
@@ -577,60 +579,12 @@ export function ControlPanelPage() {
   )
 }
 
-function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="w-full max-w-md bg-cyber-dark border border-cyber-border rounded-xl p-6 animate-fade-in" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-cyber-text">{title}</h3>
-          <button onClick={onClose} className="text-cyber-text-muted hover:text-cyber-text"><X size={18} /></button>
-        </div>
-        <div className="space-y-4">{children}</div>
-      </div>
-    </div>
-  )
-}
-
 function Input({ label, value, onChange, type = 'text' }: { label: string; value: string; onChange: (v: string) => void; type?: string }) {
   return (
     <div>
       <label className="block text-sm text-cyber-text-muted mb-1">{label}</label>
       <input type={type} value={value} onChange={(e) => onChange(e.target.value)}
         className="w-full px-3 py-2 bg-cyber-black border border-cyber-border rounded-lg text-cyber-text placeholder-cyber-text-muted focus:outline-none focus:border-cyber-blue" />
-    </div>
-  )
-}
-
-function ModalActions({ children }: { children: React.ReactNode }) {
-  return <div className="flex justify-end gap-3 mt-6">{children}</div>
-}
-
-function ModalBtn({ label, onClick, variant = 'primary', disabled }: { label: string; onClick: () => void; variant?: 'primary' | 'danger' | 'warning' | 'success' | 'ghost'; disabled?: boolean }) {
-  const variants = {
-    primary: 'bg-cyber-blue/20 border-cyber-blue/50 text-cyber-blue hover:bg-cyber-blue/30',
-    danger: 'bg-cyber-red/20 border-cyber-red/50 text-cyber-red hover:bg-cyber-red/30',
-    warning: 'bg-cyber-yellow/20 border-cyber-yellow/50 text-cyber-yellow hover:bg-cyber-yellow/30',
-    success: 'bg-cyber-green/20 border-cyber-green/50 text-cyber-green hover:bg-cyber-green/30',
-    ghost: 'border-cyber-border text-cyber-text-muted hover:text-cyber-text',
-  }
-  return (
-    <button onClick={onClick} disabled={disabled}
-      className={clsx('px-4 py-2 rounded-lg text-sm font-medium border transition-colors disabled:opacity-40 disabled:cursor-not-allowed', variants[variant])}>
-      {label}
-    </button>
-  )
-}
-
-function SummaryCard({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: string | number; color: string }) {
-  return (
-    <div className="rounded-lg border border-cyber-border bg-cyber-panel/70 backdrop-blur-sm px-4 py-4">
-      <div className="flex items-center gap-3">
-        <span className={clsx('w-11 h-11 rounded-md flex items-center justify-center text-white shrink-0', color)}>{icon}</span>
-        <div>
-          <p className="text-2xl font-bold text-cyber-text">{value}</p>
-          <p className="text-xs text-cyber-text-muted">{label}</p>
-        </div>
-      </div>
     </div>
   )
 }

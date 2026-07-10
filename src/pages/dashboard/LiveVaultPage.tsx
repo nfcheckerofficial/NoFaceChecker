@@ -1,25 +1,29 @@
 import { useMemo, useState } from 'react'
 import { clsx } from 'clsx'
-import { Vault, Copy, Check, Trash2, Search, Eye, EyeOff, Download, Filter } from 'lucide-react'
+import { Vault, Copy, Check, Trash2, Search, Eye, EyeOff, Download, Filter, X } from 'lucide-react'
 import { GateShell } from '@/widgets/GateShell/GateShell'
 import { useLivesStore } from '@/features/checker/store/livesStore'
 
+type TypeFilter = 'all' | 'debit' | 'credit'
+
 export function LiveVaultPage() {
-  const { lives, clear } = useLivesStore()
+  const { lives, remove, clear } = useLivesStore()
   const [copied, setCopied] = useState(false)
   const [search, setSearch] = useState('')
   const [showAll, setShowAll] = useState(false)
   const [filterGate, setFilterGate] = useState('')
   const [filterBank, setFilterBank] = useState('')
   const [filterCountry, setFilterCountry] = useState('')
-  const [filterType, setFilterType] = useState('')
+  const [filterType, setFilterType] = useState<TypeFilter>('all')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [showFilters, setShowFilters] = useState(false)
 
   const gates = useMemo(() => [...new Set(lives.map(l => l.gateName))].sort(), [lives])
   const banks = useMemo(() => [...new Set(lives.filter(l => l.bank).map(l => l.bank!))].sort(), [lives])
   const countries = useMemo(() => [...new Set(lives.filter(l => l.country).map(l => l.country!))].sort(), [lives])
-  const types = useMemo(() => [...new Set(lives.filter(l => l.cardType).map(l => l.cardType!))].sort(), [lives])
+
+  const debitCount = lives.filter((l) => l.cardType?.toLowerCase() === 'debit').length
+  const creditCount = lives.filter((l) => l.cardType?.toLowerCase() === 'credit').length
 
   const filtered = useMemo(() => {
     return lives.filter(l => {
@@ -33,7 +37,7 @@ export function LiveVaultPage() {
       if (filterGate && l.gateName !== filterGate) return false
       if (filterBank && l.bank !== filterBank) return false
       if (filterCountry && l.country !== filterCountry) return false
-      if (filterType && l.cardType !== filterType) return false
+      if (filterType !== 'all' && l.cardType?.toLowerCase() !== filterType) return false
       return true
     })
   }, [lives, search, filterGate, filterBank, filterCountry, filterType])
@@ -109,6 +113,17 @@ export function LiveVaultPage() {
         </button>
       </div>
 
+      {/* Type filter chips */}
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-[10px] uppercase tracking-wider text-cyber-text-muted mr-1">Type</span>
+        <FilterChip active={filterType === 'all'} onClick={() => setFilterType('all')}
+          label={`All (${lives.length})`} />
+        <FilterChip active={filterType === 'debit'} onClick={() => setFilterType('debit')}
+          label={`Debit (${debitCount})`} />
+        <FilterChip active={filterType === 'credit'} onClick={() => setFilterType('credit')}
+          label={`Credit (${creditCount})`} />
+      </div>
+
       {/* Filters panel */}
       {showFilters && (
         <div className="flex flex-wrap gap-2 mb-4 p-3 rounded-lg border border-cyber-border/30 bg-cyber-panel/40">
@@ -124,9 +139,10 @@ export function LiveVaultPage() {
             <option value="">All countries</option>
             {countries.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
-          <select value={filterType} onChange={e => setFilterType(e.target.value)} className="px-2 py-1.5 rounded border border-cyber-border/50 bg-cyber-black/60 text-xs text-cyber-text">
+          <select value={filterType === 'all' ? '' : filterType} onChange={e => setFilterType((e.target.value || 'all') as TypeFilter)} className="px-2 py-1.5 rounded border border-cyber-border/50 bg-cyber-black/60 text-xs text-cyber-text">
             <option value="">All types</option>
-            {types.map(t => <option key={t} value={t}>{t}</option>)}
+            <option value="debit">Debit</option>
+            <option value="credit">Credit</option>
           </select>
         </div>
       )}
@@ -151,28 +167,39 @@ export function LiveVaultPage() {
             )}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {filtered.map((card) => {
+              {filtered.map((card) => {
               const masked = showAll ? card.raw : card.raw.replace(/\|.*$/, '').replace(/\d(?=\d{4})/g, '*')
               const isSelected = selected.has(card.raw)
               return (
                 <div
                   key={card.raw}
-                  onClick={() => toggleSelect(card.raw)}
                   className={clsx(
-                    'rounded-xl border p-4 transition-all cursor-pointer',
+                    'rounded-xl border p-4 transition-all cursor-pointer group',
                     isSelected
                       ? 'border-cyber-green/50 bg-cyber-green/5'
                       : 'border-cyber-border/40 bg-gradient-to-br from-cyber-panel/80 to-cyber-dark/80 hover:border-cyber-green/30'
                   )}
+                  onClick={() => toggleSelect(card.raw)}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[10px] uppercase tracking-wider text-cyber-green font-semibold">{card.gateName}</span>
-                    <span className="text-[10px] text-cyber-text-muted">
-                      {new Date(card.capturedAt).toLocaleString()}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-cyber-text-muted">
+                        {new Date(card.capturedAt).toLocaleString()}
+                      </span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); remove(card.raw) }}
+                        className="text-cyber-text-muted hover:text-cyber-red opacity-0 group-hover:opacity-100 transition-all"
+                        title="Remove"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
                   </div>
                   <p className="font-mono text-xs sm:text-sm text-cyber-text break-all">{masked}</p>
-                  {card.enriched && (
+                  {!card.enriched ? (
+                    <span className="text-[11px] text-cyber-text-muted/60 italic mt-2 block">Looking up issuer…</span>
+                  ) : (
                     <div className="flex flex-wrap items-center gap-1.5 mt-2">
                       {card.brand && <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyber-blue/10 text-cyber-blue">{card.brand}</span>}
                       {card.cardType && <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyber-purple/10 text-cyber-purple">{card.cardType}</span>}
@@ -187,5 +214,21 @@ export function LiveVaultPage() {
         </>
       )}
     </GateShell>
+  )
+}
+
+function FilterChip({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className={clsx(
+        'px-3 py-1.5 rounded-full text-xs transition-colors border',
+        active
+          ? 'bg-cyber-green/15 border-cyber-green/50 text-cyber-green'
+          : 'border-cyber-border text-cyber-text-muted hover:text-cyber-text'
+      )}
+    >
+      {label}
+    </button>
   )
 }

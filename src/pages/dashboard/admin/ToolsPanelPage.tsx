@@ -3,6 +3,8 @@ import { clsx } from 'clsx'
 import { useShallow } from 'zustand/react/shallow'
 import { Database, Plus, Edit, Trash2, Search, Globe, X, Check, AlertTriangle } from 'lucide-react'
 import { useAdminStore, type Country } from '@/features/admin/adminStore'
+import { Modal, ModalActions, ModalBtn } from '@/shared/ui/Modal'
+import { SummaryCard } from '@/shared/ui/SummaryCard'
 
 type ModalType = 'add' | 'edit' | 'delete' | null
 
@@ -84,8 +86,8 @@ export function ToolsPanelPage() {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <SummaryCard icon={Globe} label="Active Countries" value={countries.filter(c => c.active).length} color="bg-cyber-green/20 text-cyber-green" />
-        <SummaryCard icon={Database} label="Total Countries" value={countries.length} color="bg-cyber-blue/20 text-cyber-blue" />
+        <SummaryCard icon={<Globe size={20} />} label="Active Countries" value={countries.filter(c => c.active).length} color="bg-cyber-green/20 text-cyber-green" />
+        <SummaryCard icon={<Database size={20} />} label="Total Countries" value={countries.length} color="bg-cyber-blue/20 text-cyber-blue" />
       </div>
 
       <div className="rounded-lg border border-cyber-border bg-cyber-panel/70 backdrop-blur-sm">
@@ -194,46 +196,7 @@ export function ToolsPanelPage() {
   )
 }
 
-function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="w-full max-w-md bg-cyber-dark border border-cyber-border rounded-xl p-6 animate-fade-in" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-cyber-text">{title}</h3>
-          <button onClick={onClose} className="text-cyber-text-muted hover:text-cyber-text"><X size={18} /></button>
-        </div>
-        <div className="space-y-4">{children}</div>
-      </div>
-    </div>
-  )
-}
 
-function ModalActions({ children }: { children: React.ReactNode }) {
-  return <div className="flex justify-end gap-3 mt-6">{children}</div>
-}
-
-function ModalBtn({ label, onClick, variant = 'primary' }: { label: string; onClick: () => void; variant?: 'primary' | 'danger' | 'ghost' }) {
-  const variants = {
-    primary: 'bg-cyber-blue/20 border-cyber-blue/50 text-cyber-blue hover:bg-cyber-blue/30',
-    danger: 'bg-cyber-red/20 border-cyber-red/50 text-cyber-red hover:bg-cyber-red/30',
-    ghost: 'border-cyber-border text-cyber-text-muted hover:text-cyber-text',
-  }
-  return <button onClick={onClick} className={clsx('px-4 py-2 rounded-lg text-sm font-medium border transition-colors', variants[variant])}>{label}</button>
-}
-
-function SummaryCard({ icon: Icon, label, value, color }: { icon: React.ComponentType<{ size?: number }>; label: string; value: number; color: string }) {
-  return (
-    <div className="rounded-lg border border-cyber-border bg-cyber-panel/70 backdrop-blur-sm px-4 py-4">
-      <div className="flex items-center gap-3">
-        <span className={clsx('w-11 h-11 rounded-md flex items-center justify-center shrink-0', color)}><Icon size={20} /></span>
-        <div>
-          <p className="text-2xl font-bold text-cyber-text">{value}</p>
-          <p className="text-xs text-cyber-text-muted">{label}</p>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function getFlagEmoji(countryCode: string): string {
   const codePoints = countryCode.toUpperCase().split('').map(char => 127397 + char.charCodeAt(0))

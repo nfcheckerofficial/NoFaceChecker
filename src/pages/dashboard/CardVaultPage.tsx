@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, useStripe } from '@stripe/react-stripe-js'
-import { ShieldCheck, CreditCard, RefreshCw, Loader2, Receipt } from 'lucide-react'
+import { ShieldCheck, CreditCard, RefreshCw, Loader2, Receipt, X } from 'lucide-react'
 import { CardValidator } from '@/features/payments/CardValidator'
 import {
   fetchSavedCards,
@@ -62,25 +62,38 @@ function VaultInner() {
     load()
   }, [])
 
+  const [chargeModal, setChargeModal] = useState<{ card: SavedCard; amount: string } | null>(null)
+
   const handleCharge = async (card: SavedCard) => {
     if (!card.customerId) {
       setNotice({ kind: 'err', text: 'This card has no customer reference.' })
       return
     }
-    const input = window.prompt('Amount to charge (USD):', '9.99')
-    if (input == null) return
-    const amount = Number(input)
-    if (!Number.isFinite(amount) || amount <= 0) {
-      setNotice({ kind: 'err', text: 'Invalid amount.' })
+    setChargeModal({ card, amount: '9.99' })
+  }
+
+  const confirmCharge = async () => {
+    if (!chargeModal) return
+    const { card, amount: amountStr } = chargeModal
+    if (!card.customerId) {
+      setNotice({ kind: 'err', text: 'This card has no customer reference.' })
+      setChargeModal(null)
       return
     }
+    const amount = Number(amountStr)
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setNotice({ kind: 'err', text: 'Invalid amount.' })
+      setChargeModal(null)
+      return
+    }
+    setChargeModal(null)
 
     setBusyId(card.id)
     setNotice(null)
     try {
       const result = await chargeSavedCard({
         paymentMethodId: card.paymentMethodId,
-        customerId: card.customerId,
+        customerId: card.customerId!,
         amount,
         description: `Vault charge · ${card.brand} ····${card.last4}`,
       })
@@ -255,6 +268,55 @@ function VaultInner() {
           </div>
         )}
       </div>
+
+      {/* Charge Modal */}
+      {chargeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setChargeModal(null)}>
+          <div className="w-full max-w-sm bg-cyber-dark border border-cyber-border rounded-xl p-6 animate-fade-in" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-cyber-text">Charge Card</h3>
+              <button onClick={() => setChargeModal(null)} className="text-cyber-text-muted hover:text-cyber-text">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div className="p-3 bg-cyber-panel rounded-lg border border-cyber-border">
+                <p className="text-sm font-mono text-cyber-text">
+                  {chargeModal.card.brand?.toUpperCase()} ···· {chargeModal.card.last4}
+                </p>
+              </div>
+              <div>
+                <label className="block text-xs uppercase tracking-wider text-cyber-text-muted mb-1.5">
+                  Amount (USD)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  value={chargeModal.amount}
+                  onChange={(e) => setChargeModal(prev => prev ? { ...prev, amount: e.target.value } : null)}
+                  className="w-full px-3 py-2 bg-cyber-black border border-cyber-border rounded-lg text-cyber-text font-mono focus:outline-none focus:border-cyber-green"
+                  autoFocus
+                />
+              </div>
+              <div className="flex justify-end gap-3 mt-4">
+                <button
+                  onClick={() => setChargeModal(null)}
+                  className="px-4 py-2 border border-cyber-border rounded-lg text-sm text-cyber-text-muted hover:text-cyber-text transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmCharge}
+                  className="px-4 py-2 bg-cyber-green/90 text-cyber-black rounded-lg text-sm font-semibold hover:bg-cyber-green transition-colors"
+                >
+                  Charge ${Number(chargeModal.amount) > 0 ? Number(chargeModal.amount).toFixed(2) : '0.00'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

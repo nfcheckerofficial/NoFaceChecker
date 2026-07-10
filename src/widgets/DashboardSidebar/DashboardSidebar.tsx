@@ -2,19 +2,67 @@ import { useState, useMemo, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { clsx } from 'clsx'
 import { useShallow } from 'zustand/react/shallow'
-import { ChevronRight, X } from 'lucide-react'
+import { ChevronDown, LogOut, User, DollarSign, Minimize2, Maximize2 } from 'lucide-react'
 import { NAV_GROUPS, type NavItem } from './navConfig'
 import { useAuthStore } from '@/features/auth/authStore'
 
-/** Mapea el color de texto del icono a su círculo de relleno sólido. */
-const CIRCLE_BG: Record<string, string> = {
-  'text-cyber-blue': 'bg-cyber-blue shadow-[0_0_12px_rgba(0,212,255,0.5)]',
-  'text-cyber-green': 'bg-cyber-green shadow-[0_0_12px_rgba(0,255,136,0.5)]',
-  'text-cyber-red': 'bg-cyber-red shadow-[0_0_12px_rgba(255,0,64,0.5)]',
-  'text-cyber-purple': 'bg-cyber-purple shadow-[0_0_12px_rgba(157,0,255,0.5)]',
-  'text-cyber-yellow': 'bg-cyber-yellow shadow-[0_0_12px_rgba(255,204,0,0.5)]',
-  'text-orange-500': 'bg-orange-500 shadow-[0_0_12px_rgba(249,115,22,0.5)]',
-  'text-cyber-text-muted': 'bg-cyber-text-muted/70',
+const GROUP_LABELS: Record<number, string> = {
+  0: 'PRIMARY',
+  1: 'GATES',
+  2: 'TOOLS',
+  3: 'INFO',
+  4: 'ADMIN',
+}
+
+function getIconBg(iconColor: string): string {
+  const map: Record<string, string> = {
+    'text-cyber-blue': 'from-cyber-blue/20 to-cyber-blue/5 border-cyber-blue/30',
+    'text-cyber-green': 'from-cyber-green/20 to-cyber-green/5 border-cyber-green/30',
+    'text-cyber-red': 'from-cyber-red/20 to-cyber-red/5 border-cyber-red/30',
+    'text-cyber-purple': 'from-cyber-purple/20 to-cyber-purple/5 border-cyber-purple/30',
+    'text-cyber-yellow': 'from-cyber-yellow/20 to-cyber-yellow/5 border-cyber-yellow/30',
+    'text-orange-500': 'from-orange-500/20 to-orange-500/5 border-orange-500/30',
+    'text-cyber-text-muted': 'from-white/10 to-white/5 border-white/10',
+  }
+  return map[iconColor] ?? 'from-white/10 to-white/5 border-white/10'
+}
+
+function getActiveGlow(iconColor: string): string {
+  const map: Record<string, string> = {
+    'text-cyber-blue': 'shadow-[0_0_20px_rgba(0,212,255,0.25)]',
+    'text-cyber-green': 'shadow-[0_0_20px_rgba(0,255,136,0.25)]',
+    'text-cyber-red': 'shadow-[0_0_20px_rgba(255,0,64,0.25)]',
+    'text-cyber-purple': 'shadow-[0_0_20px_rgba(157,0,255,0.25)]',
+    'text-cyber-yellow': 'shadow-[0_0_20px_rgba(255,204,0,0.25)]',
+    'text-orange-500': 'shadow-[0_0_20px_rgba(249,115,22,0.25)]',
+  }
+  return map[iconColor] ?? ''
+}
+
+function getAccentColor(iconColor: string): string {
+  const map: Record<string, string> = {
+    'text-cyber-blue': 'bg-cyber-blue',
+    'text-cyber-green': 'bg-cyber-green',
+    'text-cyber-red': 'bg-cyber-red',
+    'text-cyber-purple': 'bg-cyber-purple',
+    'text-cyber-yellow': 'bg-cyber-yellow',
+    'text-orange-500': 'bg-orange-500',
+    'text-cyber-text-muted': 'bg-cyber-text-muted',
+  }
+  return map[iconColor] ?? 'bg-white'
+}
+
+function getActiveTextColor(iconColor: string): string {
+  const map: Record<string, string> = {
+    'text-cyber-blue': 'text-cyber-blue',
+    'text-cyber-green': 'text-cyber-green',
+    'text-cyber-red': 'text-cyber-red',
+    'text-cyber-purple': 'text-cyber-purple',
+    'text-cyber-yellow': 'text-cyber-yellow',
+    'text-orange-500': 'text-orange-400',
+    'text-cyber-text-muted': 'text-cyber-text',
+  }
+  return map[iconColor] ?? 'text-cyber-text'
 }
 
 interface DashboardSidebarProps {
@@ -26,13 +74,15 @@ interface DashboardSidebarProps {
 export function DashboardSidebar({ open, onClose, className }: DashboardSidebarProps) {
   const location = useLocation()
   const [expanded, setExpanded] = useState<string | null>(null)
-  const user = useAuthStore((s) => s.user)
+  const [collapsed, setCollapsed] = useState(false)
+  const { user, logout } = useAuthStore(useShallow((s) => ({
+    user: s.user,
+    logout: s.logout,
+  })))
   const isAdmin = user?.role === 'admin'
 
-  // Close sidebar on route change (mobile)
   useEffect(() => {
     onClose?.()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname])
 
   const groups = useMemo(() => {
@@ -50,51 +100,113 @@ export function DashboardSidebar({ open, onClose, className }: DashboardSidebarP
       ? location.pathname === '/dashboard'
       : location.pathname.startsWith(href))
 
-  const handleNav = () => onClose?.()
+  const handleNav = () => {
+    if (!collapsed) onClose?.()
+  }
+
+  const userCredits = user?.credits ?? 0
+  const username = user?.username ?? 'User'
 
   return (
-      <aside
-        className={clsx(
-          'flex-col w-[280px] shrink-0',
-          'overflow-x-hidden overflow-y-auto',
-          // Desktop: always visible
-          'lg:flex lg:sticky lg:top-0 lg:max-h-screen',
-          // Mobile: overlay when open, hidden when closed
-          open
-            ? 'fixed inset-y-0 left-0 z-50 flex max-h-screen motion-safe:animate-[slideInLeft_0.25s_ease-out]'
-            : 'hidden',
-          'bg-gradient-to-b from-cyber-dark/95 via-cyber-panel/90 to-cyber-black/95',
-          'backdrop-blur-xl border-r border-cyber-border/50',
-          className
-        )}
-      >
-      {/* Mobile header */}
-      <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 bg-cyber-dark/90 backdrop-blur-md border-b border-cyber-border/30 lg:hidden">
-        <span className="font-orbitron text-sm font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyber-red to-cyber-purple">
-          NO FACE
-        </span>
-        <button
-          onClick={onClose}
-          className="flex items-center justify-center w-8 h-8 rounded-lg text-cyber-text-muted hover:text-cyber-text hover:bg-cyber-panel transition-all"
-        >
-          <X size={18} />
-        </button>
+    <aside
+      className={clsx(
+        'flex-col shrink-0 overflow-y-auto overflow-x-hidden',
+        'transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
+        collapsed ? 'w-[72px]' : 'w-[270px]',
+        'lg:flex lg:sticky lg:top-0 lg:max-h-screen',
+        open
+          ? 'fixed inset-y-0 left-0 z-50 flex max-h-screen motion-safe:animate-[slideInLeft_0.25s_ease-out]'
+          : 'hidden',
+        'bg-gradient-to-b from-[#0a0a14] via-[#0d0d1a] to-[#08080f]',
+        'border-r border-white/5',
+        className
+      )}
+    >
+      {/* Logo */}
+      <div className="sticky top-0 z-20 bg-[#0a0a14]/90 backdrop-blur-xl border-b border-white/[0.04]">
+        <div className={clsx(
+          'flex items-center h-16',
+          collapsed ? 'justify-center px-2' : 'px-5'
+        )}>
+          {collapsed ? (
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyber-red to-cyber-purple flex items-center justify-center shadow-[0_0_20px_rgba(255,0,64,0.3)]">
+              <span className="text-xs font-black text-white tracking-tighter">NF</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyber-red to-cyber-purple flex items-center justify-center shadow-[0_0_20px_rgba(255,0,64,0.3)] shrink-0">
+                <span className="text-xs font-black text-white tracking-tighter">NF</span>
+              </div>
+              <div className="flex flex-col">
+                <h1 className="text-sm font-orbitron font-bold tracking-wider bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent leading-tight">
+                  NO FACE
+                </h1>
+                <span className="text-[9px] tracking-[0.25em] text-cyber-text-muted/50 uppercase font-mono">
+                  {isAdmin ? 'Admin Terminal' : 'Operator Hub'}
+                </span>
+              </div>
+              <button
+                onClick={() => setCollapsed(!collapsed)}
+                className="ml-auto p-1.5 rounded-lg text-cyber-text-muted/40 hover:text-cyber-text hover:bg-white/5 transition-all"
+                title={collapsed ? 'Expand' : 'Collapse'}
+              >
+                {collapsed ? <Maximize2 size={14} /> : <Minimize2 size={14} />}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
-      <nav className="flex flex-col py-3 lg:py-4">
+      {/* User badge */}
+      {!collapsed && (
+        <div className="mx-3 mt-3 mb-2 p-3 rounded-xl bg-gradient-to-br from-white/[0.04] to-white/[0.01] border border-white/[0.06]">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-cyber-purple/40 to-cyber-red/20 border border-white/10 flex items-center justify-center shrink-0">
+              <User size={16} className="text-cyber-text" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-cyber-text truncate leading-tight">{username}</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <DollarSign size={10} className="text-cyber-green" />
+                <span className="text-[11px] font-medium text-cyber-green">{userCredits.toLocaleString()} cr</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {collapsed && (
+        <div className="flex justify-center py-3">
+          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-cyber-purple/40 to-cyber-red/20 border border-white/10 flex items-center justify-center">
+            <User size={15} className="text-cyber-text" />
+          </div>
+        </div>
+      )}
+
+      {/* Navigation */}
+      <nav className="flex-1 py-1">
         {groups.map((group, gi) => (
-          <div key={gi}>
-            {gi > 0 && <div className="my-2 lg:my-3 mx-4 border-t border-cyber-border/40" />}
-            <div className="flex flex-col gap-0.5 px-2 lg:px-3">
+          <div key={gi} className="mb-1">
+            {!collapsed && (
+              <div className="flex items-center gap-2 px-5 py-2">
+                <span className="text-[9px] tracking-[0.2em] text-cyber-text-muted/30 font-mono font-semibold">
+                  {GROUP_LABELS[gi] ?? ''}
+                </span>
+                <div className="flex-1 h-px bg-gradient-to-r from-white/[0.04] to-transparent" />
+              </div>
+            )}
+            <div className={clsx(
+              'flex flex-col gap-0.5',
+              collapsed ? 'items-center px-2' : 'px-2.5'
+            )}>
               {group.items.map(item => (
                 <SidebarRow
                   key={item.label}
                   item={item}
+                  collapsed={collapsed}
                   active={!!isActive(item.href)}
                   isOpen={expanded === item.label}
-                  onToggle={() =>
-                    setExpanded(prev => (prev === item.label ? null : item.label))
-                  }
+                  onToggle={() => setExpanded(prev => (prev === item.label ? null : item.label))}
                   childActive={(href) => location.pathname === href}
                   onClick={handleNav}
                 />
@@ -103,14 +215,39 @@ export function DashboardSidebar({ open, onClose, className }: DashboardSidebarP
           </div>
         ))}
       </nav>
+
+      {/* Bottom actions */}
+      <div className={clsx(
+        'sticky bottom-0 bg-[#0a0a14]/90 backdrop-blur-xl border-t border-white/[0.04] py-2',
+        collapsed ? 'px-2' : 'px-3'
+      )}>
+        {collapsed ? (
+          <button
+            onClick={logout}
+            className="w-full flex items-center justify-center p-2.5 rounded-xl text-cyber-text-muted/50 hover:text-cyber-red hover:bg-cyber-red/5 transition-all"
+            title="Logout"
+          >
+            <LogOut size={16} />
+          </button>
+        ) : (
+          <button
+            onClick={logout}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-cyber-text-muted/60 hover:text-cyber-red hover:bg-cyber-red/5 transition-all group"
+          >
+            <LogOut size={15} className="transition-transform group-hover:-translate-x-0.5" />
+            <span>Logout</span>
+          </button>
+        )}
+      </div>
     </aside>
   )
 }
 
 function SidebarRow({
-  item, active, isOpen, onToggle, childActive, onClick,
+  item, collapsed, active, isOpen, onToggle, childActive, onClick,
 }: {
   item: NavItem
+  collapsed: boolean
   active: boolean
   isOpen: boolean
   onToggle: () => void
@@ -119,60 +256,103 @@ function SidebarRow({
 }) {
   const Icon = item.icon
   const hasChildren = !!item.children?.length
-  const circle = CIRCLE_BG[item.color] ?? CIRCLE_BG['text-cyber-text-muted']
+  const iconBg = getIconBg(item.color)
+  const activeGlow = getActiveGlow(item.color)
+  const accentColor = getAccentColor(item.color)
+  const activeText = getActiveTextColor(item.color)
 
-  const content = (
-    <>
-      <span
-        className={clsx(
-          'flex items-center justify-center w-7 h-7 lg:w-8 lg:h-8 rounded-full shrink-0 transition-all duration-300',
-          active ? clsx(circle, 'scale-110') : circle
-        )}
-      >
-        <Icon size={14} className="lg:hidden shrink-0 text-white" strokeWidth={2.5} />
-        <Icon size={16} className="hidden lg:block shrink-0 text-white" strokeWidth={2.25} />
-      </span>
-      <span className={clsx('flex-1 truncate text-xs lg:text-sm', active && 'font-semibold')}>
+  const iconEl = (
+    <div className={clsx(
+      'relative flex items-center justify-center w-8 h-8 rounded-xl shrink-0 transition-all duration-300',
+      'bg-gradient-to-br border',
+      iconBg,
+      active && clsx(accentColor.replace('bg-', 'bg-').replace('bg-', 'shadow-'), activeGlow)
+    )}>
+      {active && (
+        <span className={clsx(
+          'absolute inset-0 rounded-xl opacity-20 animate-pulse',
+          accentColor
+        )} />
+      )}
+      <Icon size={15} className={clsx(
+        'relative z-10 transition-colors',
+        active ? 'text-white' : 'text-cyber-text-muted/70 group-hover:text-cyber-text/90'
+      )} strokeWidth={2} />
+    </div>
+  )
+
+  const content = collapsed ? iconEl : (
+    <div className="flex items-center gap-2.5 w-full">
+      {iconEl}
+      <span className={clsx(
+        'flex-1 text-xs font-medium truncate transition-colors',
+        active ? activeText : 'text-cyber-text-muted/80 group-hover:text-cyber-text/90'
+      )}>
         {item.label}
       </span>
       {hasChildren && (
-        <ChevronRight
-          size={13}
-          className={clsx('shrink-0 transition-transform duration-300 text-cyber-text-muted/70', isOpen && 'rotate-90')}
+        <ChevronDown
+          size={12}
+          className={clsx(
+            'shrink-0 transition-transform duration-300',
+            isOpen ? 'rotate-180' : 'rotate-0',
+            active ? 'text-white/60' : 'text-cyber-text-muted/30'
+          )}
         />
       )}
-    </>
+    </div>
   )
 
   const baseClasses = clsx(
-    'flex items-center gap-2.5 lg:gap-3 px-3 lg:px-2.5 py-2.5 lg:py-2 rounded-lg text-sm transition-all duration-200 w-full text-left',
-    'active:scale-[0.98]',
-    active
-      ? 'bg-gradient-to-r from-cyber-red/10 to-cyber-purple/10 text-cyber-text border border-cyber-red/30 shadow-[0_0_15px_rgba(255,0,64,0.08)]'
-      : 'text-cyber-text-muted hover:bg-cyber-panel-light/50 hover:text-cyber-text/90 border border-transparent'
+    'group relative flex items-center rounded-xl transition-all duration-200',
+    collapsed ? 'justify-center p-2 w-12 h-12 mx-auto' : 'w-full px-2.5 py-2',
+    'hover:bg-white/[0.03]',
+    active && !collapsed && clsx(
+      'bg-gradient-to-r from-white/[0.06] to-transparent',
+      'shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]'
+    ),
+    active && collapsed && clsx(
+      'bg-white/[0.06]',
+      'shadow-[0_0_15px_rgba(255,255,255,0.06)]'
+    )
   )
+
+  const renderActiveBar = () => {
+    if (!active || collapsed) return null
+    return (
+      <span className={clsx(
+        'absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full',
+        accentColor,
+        'shadow-[0_0_8px_rgba(255,255,255,0.15)]'
+      )} />
+    )
+  }
 
   if (hasChildren) {
     return (
-      <div>
+      <div className={clsx(collapsed ? 'w-full flex justify-center' : 'w-full')}>
         <button onClick={onToggle} className={baseClasses}>
+          {renderActiveBar()}
           {content}
         </button>
-        {isOpen && (
-          <div className="ml-9 lg:ml-11 mt-0.5 flex flex-col gap-0.5 border-l border-cyber-border/50 pl-2.5 lg:pl-3">
+        {isOpen && !collapsed && (
+          <div className="ml-10 pl-3 mt-0.5 flex flex-col gap-0.5 border-l border-white/[0.06]">
             {item.children!.map(child => (
               <Link
                 key={child.href}
                 to={child.href}
                 onClick={onClick}
                 className={clsx(
-                  'px-2.5 lg:px-2 py-2 lg:py-1.5 rounded text-xs lg:text-[13px] transition-all duration-200',
-                  'hover:bg-cyber-panel-light/30',
+                  'relative pl-2.5 pr-2 py-1.5 rounded-lg text-xs transition-all duration-200',
+                  'hover:bg-white/[0.03]',
                   childActive(child.href)
                     ? 'text-cyber-red font-semibold bg-cyber-red/5'
-                    : 'text-cyber-text-muted/80 hover:text-cyber-text'
+                    : 'text-cyber-text-muted/60 hover:text-cyber-text/80'
                 )}
               >
+                {childActive(child.href) && (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-3 rounded-r-full bg-cyber-red shadow-[0_0_6px_rgba(255,0,64,0.5)]" />
+                )}
                 {child.label}
               </Link>
             ))}
@@ -183,8 +363,11 @@ function SidebarRow({
   }
 
   return (
-    <Link to={item.href ?? '#'} onClick={onClick} className={baseClasses}>
-      {content}
+    <Link to={item.href ?? '#'} onClick={onClick} className={clsx(collapsed ? 'w-full flex justify-center' : 'w-full')}>
+      <div className={baseClasses}>
+        {renderActiveBar()}
+        {content}
+      </div>
     </Link>
   )
 }
