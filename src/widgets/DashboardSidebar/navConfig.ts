@@ -34,13 +34,13 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     items: [
       {
-        label: 'Stripe CCN', icon: CreditCard, color: 'text-orange-500',
+        label: 'Stripe CCN', icon: CreditCard, color: 'text-cyber-red',
         children: [
           { label: 'Money Gate', href: '/dashboard/stripe-ccn/vice', color: 'text-cyber-red' },
         ],
       },
       {
-        label: 'Stripe Auth', icon: Shield, color: 'text-orange-500',
+        label: 'Stripe Auth', icon: Shield, color: 'text-cyber-blue',
         children: [
           { label: 'Auth Gate', href: '/dashboard/stripe-auth/auth', color: 'text-cyber-blue' },
           { label: 'Inferno Gate', href: '/dashboard/stripe-auth/inferno', color: 'text-cyber-red' },
@@ -48,7 +48,7 @@ export const NAV_GROUPS: NavGroup[] = [
         ],
       },
       {
-        label: 'Amazon', icon: Package, color: 'text-orange-500',
+        label: 'Amazon', icon: Package, color: 'text-cyber-green',
         children: [
           { label: 'GC $5', href: '/dashboard/amazon/gc-5', color: 'text-cyber-green' },
           { label: 'GC $10', href: '/dashboard/amazon/gc-10', color: 'text-cyber-blue' },
@@ -57,7 +57,7 @@ export const NAV_GROUPS: NavGroup[] = [
         ],
       },
       {
-        label: 'Charge Gates', icon: Swords, color: 'text-orange-500',
+        label: 'Charge Gates', icon: Swords, color: 'text-cyber-yellow',
         children: [
           { label: 'Horus Gate', href: '/dashboard/charge/horus', color: 'text-cyber-red' },
           { label: 'Payflow 3', href: '/dashboard/charge/payflow3', color: 'text-cyber-blue' },
@@ -77,7 +77,7 @@ export const NAV_GROUPS: NavGroup[] = [
         ],
       },
       {
-        label: 'Gates Especiales', icon: Gem, color: 'text-orange-500',
+        label: 'Gates Especiales', icon: Gem, color: 'text-cyber-purple',
         children: [
           { label: 'Crypto', href: '/dashboard/special/allbirds', color: 'text-cyber-purple' },
         ],
