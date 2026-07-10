@@ -174,6 +174,7 @@ app.use(helmet({
         'https://data.handyapi.com',
         'https://bins.antipublic.cc',
         'https://lookup.binlist.net',
+        'https://www.1secmail.com',
         'https://api.oxapay.com',
         CLIENT_URL,
       ],
@@ -747,26 +748,6 @@ app.post('/api/oxapay/create-invoice', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error('[oxapay] create-invoice error:', err.message)
     res.status(500).json({ error: 'Could not create Oxapay invoice' })
-  }
-})
-
-// Proxy para 1secmail (Instaddr) — evita CORS desde el frontend.
-app.get('/api/instaddr/*', async (req, res) => {
-  try {
-    const path = req.params[0] || ''
-    const query = new URLSearchParams(req.query as Record<string, string>).toString()
-    const url = `https://www.1secmail.com/api/v1/${path}${query ? `?${query}` : ''}`
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; NoFaceChecker/1.0)',
-        'Accept': 'application/json',
-      },
-    })
-    const text = await response.text()
-    res.status(response.status).type('application/json').send(text)
-  } catch (err) {
-    console.error('[instaddr-proxy] error:', err.message)
-    res.status(502).json({ error: 'Instaddr proxy failed' })
   }
 })
 

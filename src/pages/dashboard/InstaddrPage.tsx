@@ -3,13 +3,12 @@ import { Mail, RefreshCw, Copy, Check, Trash2, Inbox, Loader2, MessageSquare, Ch
 import { clsx } from 'clsx'
 import { Section } from '@/shared/ui/Section'
 
-const API_BASE = import.meta.env.VITE_PAYMENTS_API ?? ''
+const BASE = 'https://www.1secmail.com/api/v1'
 
-const FALLBACK_DOMAINS = [
+const DOMAINS = [
   '1secmail.com',
   '1secmail.net',
   '1secmail.org',
-  '1secmail.xyz',
 ]
 
 interface EmailMessage {
@@ -46,7 +45,7 @@ function timeAgo(dateStr: string): string {
 export function InstaddrPage() {
   const [login, setLogin] = useState(randomAddr)
   const [domain, setDomain] = useState('1secmail.com')
-  const [domains, setDomains] = useState(FALLBACK_DOMAINS)
+  const [domains, setDomains] = useState(DOMAINS)
   const [messages, setMessages] = useState<EmailMessage[]>([])
   const [selected, setSelected] = useState<EmailDetail | null>(null)
   const [loading, setLoading] = useState(false)
@@ -59,29 +58,18 @@ export function InstaddrPage() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const email = `${login}@${domain}`
 
-  function apiUrl(action: string, extra?: Record<string, string>): string {
-    const params = new URLSearchParams({ action, login, domain, ...extra })
-    return `${API_BASE}/api/instaddr/?${params}`
-  }
-
-  useEffect(() => {
-    fetch(`${API_BASE}/api/instaddr/?action=getDomainList`)
-      .then(r => { try { return r.json() } catch { return [] } })
-      .then((data: string[]) => { if (data?.length && Array.isArray(data)) setDomains(data) })
-      .catch(() => {})
-  }, [])
-
   const [apiError, setApiError] = useState('')
 
   const fetchMessages = useCallback(async (silent = false) => {
     if (!silent) setLoading(true); setApiError('')
     try {
-      const res = await fetch(apiUrl('getMessages'))
+      const url = `${BASE}/?action=getMessages&login=${encodeURIComponent(login)}&domain=${domain}`
+      const res = await fetch(url, { mode: 'cors' })
       if (res.ok) {
         const data: EmailMessage[] = await res.json()
         setMessages(Array.isArray(data) ? data : [])
       } else {
-        if (!silent) setApiError(`API error: ${res.status} ${res.statusText}`)
+        if (!silent) setApiError(`API error: ${res.status}`)
       }
     } catch {
       if (!silent) setApiError('Connection error — check your network or try again')
@@ -92,7 +80,7 @@ export function InstaddrPage() {
   const readMessage = async (id: number) => {
     setReading(true); setApiError('')
     try {
-      const res = await fetch(apiUrl('readMessage', { id: String(id) }))
+      const res = await fetch(`${BASE}/?action=readMessage&login=${encodeURIComponent(login)}&domain=${domain}&id=${id}`, { mode: 'cors' })
       if (res.ok) {
         const data: EmailDetail = await res.json()
         setSelected(data)
@@ -104,7 +92,7 @@ export function InstaddrPage() {
 
   const deleteMessage = async (id: number) => {
     try {
-      await fetch(apiUrl('deleteMessage', { id: String(id) }), { method: 'GET' })
+      await fetch(`${BASE}/?action=deleteMessage&login=${encodeURIComponent(login)}&domain=${domain}&id=${id}`, { method: 'GET', mode: 'cors' })
       setMessages(p => p.filter(m => m.id !== id))
       setSelectedIds(p => { const n = new Set(p); n.delete(id); return n })
       if (selected?.id === id) setSelected(null)
