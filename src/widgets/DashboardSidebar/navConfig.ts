@@ -79,13 +79,7 @@ export const NAV_GROUPS: NavGroup[] = [
       {
         label: 'Gates Especiales', icon: Gem, color: 'text-orange-500',
         children: [
-          { label: 'AllBirds', href: '/dashboard/special/allbirds' },
-          { label: 'MisShopifyCVV', href: '/dashboard/special/misshopifycvv' },
-          { label: 'MejorShopify[JOYAS]', href: '/dashboard/special/mejorshopify' },
-          { label: 'FashionNovaShopify', href: '/dashboard/special/fashionnova' },
-          { label: 'RedBull', href: '/dashboard/special/redbull' },
-          { label: 'Shopify[GOLD]', href: '/dashboard/special/shopifygold' },
-          { label: 'Adobe', href: '/dashboard/special/adobe' },
+          { label: 'Crypto', href: '/dashboard/special/allbirds' },
         ],
       },
       {
