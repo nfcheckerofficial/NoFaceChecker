@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { clsx } from 'clsx'
-import { Check, Loader2, Zap, AlertTriangle } from 'lucide-react'
+import { Check, Loader2, Zap, AlertTriangle, CreditCard, Bitcoin } from 'lucide-react'
 import { GateShell } from '@/widgets/GateShell/GateShell'
 import {
-  fetchPackages, startCheckout, paymentsHealth,
+  fetchPackages, startCheckout, createOxapayInvoice, paymentsHealth,
   type CreditPackage,
 } from '@/features/payments/paymentsApi'
+
+type PayMethod = 'stripe' | 'crypto'
 
 const HIGHLIGHT = 'pro'
 
@@ -15,6 +17,7 @@ export function PricingPage() {
   const [serverUp, setServerUp] = useState<boolean | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState('')
+  const [payMethod, setPayMethod] = useState<PayMethod>('stripe')
 
   useEffect(() => {
     let alive = true
@@ -39,8 +42,10 @@ export function PricingPage() {
     setBusy(id)
     setError('')
     try {
-      const url = await startCheckout(id)
-      window.location.href = url // redirige a Stripe Checkout (test)
+      const url = payMethod === 'stripe'
+        ? await startCheckout(id)
+        : (await createOxapayInvoice(id)).url
+      window.location.href = url
     } catch {
       setError('Could not start checkout. Is the payments server running?')
       setBusy(null)
@@ -48,16 +53,45 @@ export function PricingPage() {
   }
 
   return (
-    <GateShell title="Pricing" subtitle="Top up credits · Stripe test mode (no real charges)">
+    <GateShell title="Pricing" subtitle="Top up credits">
       {serverUp === false && (
         <div className="mb-5 flex items-start gap-3 rounded-lg border border-cyber-yellow/40 bg-cyber-yellow/10 px-4 py-3 text-cyber-yellow text-sm">
           <AlertTriangle size={18} className="shrink-0 mt-0.5" />
           <div>
             <p className="font-semibold">Payments server is offline.</p>
             <p className="text-cyber-yellow/80 text-xs mt-0.5">
-              Run <code className="font-mono">npm run server</code> and add your Stripe test keys to <code className="font-mono">.env</code>.
+              Run <code className="font-mono">npm run server</code> and add your API keys to <code className="font-mono">.env</code>.
             </p>
           </div>
+        </div>
+      )}
+
+      {serverUp !== false && (
+        <div className="flex items-center justify-center gap-2 mb-6">
+          <button
+            onClick={() => setPayMethod('stripe')}
+            className={clsx(
+              'flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all border',
+              payMethod === 'stripe'
+                ? 'bg-cyber-blue/20 border-cyber-blue/50 text-cyber-blue'
+                : 'border-cyber-border text-cyber-text-muted hover:text-cyber-text'
+            )}
+          >
+            <CreditCard size={16} />
+            Card (Stripe)
+          </button>
+          <button
+            onClick={() => setPayMethod('crypto')}
+            className={clsx(
+              'flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all border',
+              payMethod === 'crypto'
+                ? 'bg-cyber-purple/20 border-cyber-purple/50 text-cyber-purple'
+                : 'border-cyber-border text-cyber-text-muted hover:text-cyber-text'
+            )}
+          >
+            <Bitcoin size={16} />
+            Crypto (Oxapay)
+          </button>
         </div>
       )}
 
@@ -114,7 +148,7 @@ export function PricingPage() {
                   )}
                 >
                   {busy === pkg.id ? <Loader2 size={16} className="animate-spin" /> : null}
-                  Buy now
+                  {payMethod === 'crypto' ? 'Pay with Crypto' : 'Buy now'}
                 </button>
               </div>
             )
@@ -125,7 +159,9 @@ export function PricingPage() {
       {error && <p className="text-sm text-cyber-red mt-4 text-center">{error}</p>}
 
       <p className="text-xs text-cyber-text-muted/70 text-center mt-8">
-        Test mode: use card <code className="font-mono text-cyber-text">4242 4242 4242 4242</code>, any future date, any CVC.
+        {payMethod === 'stripe'
+          ? 'Test mode: use card 4242 4242 4242 4242, any future date, any CVC.'
+          : 'Powered by Oxapay — Bitcoin, USDT, ETH, and 100+ cryptocurrencies.'}
       </p>
     </GateShell>
   )

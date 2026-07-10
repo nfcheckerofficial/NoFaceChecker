@@ -25,6 +25,8 @@ services:
         generateValue: true
       - key: ADMIN_SETUP_KEY
         sync: false
+      - key: OXAPAY_API_KEY
+        sync: false
 
   - type: static_site
     name: chk-no-face-clan

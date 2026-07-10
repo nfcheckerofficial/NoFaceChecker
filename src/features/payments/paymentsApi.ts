@@ -171,3 +171,15 @@ export async function paymentsHealth(): Promise<boolean> {
     return false
   }
 }
+
+/** Crea una factura de Oxapay (crypto) y devuelve la URL de pago. */
+export async function createOxapayInvoice(packageId: string): Promise<{ url: string; trackId: string }> {
+  const token = localStorage.getItem('auth_token')
+  const res = await fetch(`${API_BASE}/api/oxapay/create-invoice`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ packageId }),
+  })
+  if (!res.ok) throw new Error('Could not create Oxapay invoice')
+  return res.json()
+}

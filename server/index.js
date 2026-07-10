@@ -69,6 +69,7 @@ const {
   PORT = 4242,
   NODE_ENV = 'development',
   JWT_SECRET,
+  OXAPAY_API_KEY,
 } = process.env
 
 const INSECURE_JWT_DEFAULTS = [
@@ -136,6 +137,16 @@ if (STRIPE_SECRET_KEY) {
   }
 }
 
+// --- Oxapay (crypto payments) ---
+const OXAPAY_API = 'https://api.oxapay.com/v1'
+let oxapayConfigured = false
+if (OXAPAY_API_KEY) {
+  oxapayConfigured = true
+  console.log('[i] Oxapay crypto payments enabled')
+} else {
+  console.warn('[!] OXAPAY_API_KEY no configurada — pagos crypto deshabilitados')
+}
+
 const app = express()
 
 // Detras de Render/proxy: confiar en X-Forwarded-* para que express-rate-limit
@@ -163,9 +174,10 @@ app.use(helmet({
         'https://data.handyapi.com',
         'https://bins.antipublic.cc',
         'https://lookup.binlist.net',
+        'https://api.oxapay.com',
         CLIENT_URL,
       ],
-      frameSrc: ['https://js.stripe.com', 'https://hooks.stripe.com'],
+      frameSrc: ['https://js.stripe.com', 'https://hooks.stripe.com', 'https://pay.oxapay.com'],
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
       formAction: ["'self'"],
@@ -238,6 +250,50 @@ app.post(
     )
 
     res.json({ received: true })
+  }
+)
+
+// Webhook de Oxapay (crypto) — también necesita body CRUDO para HMAC
+app.post(
+  '/api/oxapay/webhook',
+  express.raw({ type: 'application/json' }),
+  async (req, res) => {
+    if (!oxapayConfigured) {
+      return res.status(503).json({ error: 'Oxapay not configured' })
+    }
+    try {
+      const signature = req.headers['hmac']
+      if (!signature) {
+        return res.status(400).send('Missing HMAC signature')
+      }
+      const expected = crypto
+        .createHmac('sha512', OXAPAY_API_KEY)
+        .update(req.body)
+        .digest('hex')
+      if (signature !== expected) {
+        console.error('[oxapay-webhook] firma inválida')
+        return res.status(400).send('Invalid HMAC signature')
+      }
+      const payload = JSON.parse(req.body.toString('utf8'))
+      console.log('[oxapay-webhook] evento recibido:', payload.status, 'order:', payload.order_id)
+
+      if (payload.status === 'Paid' && payload.order_id) {
+        const parts = payload.order_id.split(':')
+        if (parts.length === 2) {
+          const userId = Number(parts[0])
+          const packageId = parts[1]
+          const pkg = PACKAGES[packageId]
+          if (pkg && Number.isFinite(userId)) {
+            await addCredits(userId, pkg.credits)
+            console.log(`[oxapay-webhook] ✓ Acreditados ${pkg.credits} créditos al usuario ${userId}`)
+          }
+        }
+      }
+      res.status(200).send('ok')
+    } catch (err) {
+      console.error('[oxapay-webhook] error:', err.message)
+      res.status(500).send('Internal error')
+    }
   }
 )
 
@@ -650,6 +706,43 @@ app.get('/api/checkout-session/:id', async (req, res) => {
   } catch (err) {
     console.error('checkout-session error:', err.message)
     res.status(404).json({ error: 'Session not found' })
+  }
+})
+
+// Crea una factura de Oxapay para pago con crypto.
+app.post('/api/oxapay/create-invoice', authMiddleware, async (req, res) => {
+  try {
+    const { packageId } = req.body
+    const pkg = PACKAGES[packageId]
+    if (!pkg) return res.status(400).json({ error: 'Invalid package' })
+
+    const orderId = `${req.user.id}:${packageId}`
+    const oxaRes = await fetch(`${OXAPAY_API}/payment/invoice`, {
+      method: 'POST',
+      headers: {
+        'merchant_api_key': OXAPAY_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        amount: pkg.amount / 100,
+        currency: 'USD',
+        order_id: orderId,
+        callback_url: `${CLIENT_URL}/api/oxapay/webhook`,
+        return_url: `${CLIENT_URL}/dashboard/pay/success?oxapay=1`,
+        description: pkg.name,
+        lifetime: 60,
+        sandbox: !isProd,
+      }),
+    })
+    const oxaData = await oxaRes.json()
+    if (!oxaRes.ok || oxaData.error) {
+      console.error('[oxapay] error:', oxaData)
+      return res.status(500).json({ error: 'Oxapay invoice creation failed' })
+    }
+    res.json({ url: oxaData.data.payment_url, trackId: oxaData.data.track_id })
+  } catch (err) {
+    console.error('[oxapay] create-invoice error:', err.message)
+    res.status(500).json({ error: 'Could not create Oxapay invoice' })
   }
 })
 

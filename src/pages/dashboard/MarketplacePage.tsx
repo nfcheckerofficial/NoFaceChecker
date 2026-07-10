@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react'
 import { clsx } from 'clsx'
 import {
   ShoppingCart, CreditCard, Package, Star, Check, X,
-  DollarSign, Shield, Zap, Loader2, AlertTriangle,
+  DollarSign, Shield, Zap, Loader2, AlertTriangle, Bitcoin,
 } from 'lucide-react'
 import {
-  fetchPackages, startCheckout, paymentsHealth,
+  fetchPackages, startCheckout, createOxapayInvoice, paymentsHealth,
   type CreditPackage,
 } from '@/features/payments/paymentsApi'
 import { useUserStore } from '@/features/checker/store/userStore'
@@ -21,6 +21,7 @@ export function MarketplacePage() {
   const [error, setError] = useState('')
   const [showConfirm, setShowConfirm] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<CreditPackage | null>(null)
+  const [payMethod, setPayMethod] = useState<'stripe' | 'crypto'>('stripe')
 
   useEffect(() => {
     let alive = true
@@ -51,7 +52,9 @@ export function MarketplacePage() {
     setBusy(selectedProduct.id)
     setError('')
     try {
-      const url = await startCheckout(selectedProduct.id)
+      const url = payMethod === 'stripe'
+        ? await startCheckout(selectedProduct.id)
+        : (await createOxapayInvoice(selectedProduct.id)).url
       window.location.href = url
     } catch {
       setError('Could not start checkout. Is the payments server running?')
@@ -80,9 +83,38 @@ export function MarketplacePage() {
           <div>
             <p className="font-semibold">Payments server is offline.</p>
             <p className="text-cyber-yellow/80 text-xs mt-0.5">
-              Run <code className="font-mono">npm run server</code> and add your Stripe test keys to <code className="font-mono">.env</code>.
+              Run <code className="font-mono">npm run server</code> and add your API keys to <code className="font-mono">.env</code>.
             </p>
           </div>
+        </div>
+      )}
+
+      {serverUp !== false && (
+        <div className="flex items-center justify-center gap-2 mb-5">
+          <button
+            onClick={() => setPayMethod('stripe')}
+            className={clsx(
+              'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all border',
+              payMethod === 'stripe'
+                ? 'bg-cyber-blue/20 border-cyber-blue/50 text-cyber-blue'
+                : 'border-cyber-border text-cyber-text-muted hover:text-cyber-text'
+            )}
+          >
+            <CreditCard size={15} />
+            Card
+          </button>
+          <button
+            onClick={() => setPayMethod('crypto')}
+            className={clsx(
+              'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all border',
+              payMethod === 'crypto'
+                ? 'bg-cyber-purple/20 border-cyber-purple/50 text-cyber-purple'
+                : 'border-cyber-border text-cyber-text-muted hover:text-cyber-text'
+            )}
+          >
+            <Bitcoin size={15} />
+            Crypto
+          </button>
         </div>
       )}
 
@@ -216,8 +248,8 @@ export function MarketplacePage() {
                   disabled={busy === selectedProduct.id}
                   className="px-4 py-2 bg-cyber-green/20 border border-cyber-green/50 rounded-lg text-cyber-green hover:bg-cyber-green/30 transition-colors flex items-center gap-2 disabled:opacity-40"
                 >
-                  {busy === selectedProduct.id ? <Loader2 size={14} className="animate-spin" /> : <CreditCard size={14} />}
-                  {busy === selectedProduct.id ? 'Redirecting...' : `Pay $${selectedProduct.price.toFixed(2)}`}
+                  {busy === selectedProduct.id ? <Loader2 size={14} className="animate-spin" /> : payMethod === 'crypto' ? <Bitcoin size={14} /> : <CreditCard size={14} />}
+                  {busy === selectedProduct.id ? 'Redirecting...' : payMethod === 'crypto' ? `Pay Crypto $${selectedProduct.price.toFixed(2)}` : `Pay $${selectedProduct.price.toFixed(2)}`}
                 </button>
               </div>
             </div>
