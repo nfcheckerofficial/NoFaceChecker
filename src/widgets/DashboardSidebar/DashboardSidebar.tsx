@@ -336,26 +336,48 @@ function SidebarRow({
           {content}
         </button>
         {isOpen && !collapsed && (
-          <div className="ml-10 pl-3 mt-0.5 flex flex-col gap-0.5 border-l border-white/[0.06]">
-            {item.children!.map(child => (
-              <Link
-                key={child.href}
-                to={child.href}
-                onClick={onClick}
-                className={clsx(
-                  'relative pl-2.5 pr-2 py-1.5 rounded-lg text-xs transition-all duration-200',
-                  'hover:bg-white/[0.03]',
-                  childActive(child.href)
-                    ? 'text-cyber-red font-semibold bg-cyber-red/5'
-                    : 'text-cyber-text-muted/60 hover:text-cyber-text/80'
-                )}
-              >
-                {childActive(child.href) && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-3 rounded-r-full bg-cyber-red shadow-[0_0_6px_rgba(255,0,64,0.5)]" />
-                )}
-                {child.label}
-              </Link>
-            ))}
+          <div className="ml-10 pl-3 mt-0.5 flex flex-col gap-1 border-l border-white/[0.06]">
+            {item.children!.map(child => {
+              const childColor = (child as any).color || 'text-cyber-text-muted'
+              const active = childActive(child.href)
+              const dotColors: Record<string, string> = {
+                'text-cyber-red': 'bg-cyber-red shadow-[0_0_6px_rgba(255,0,64,0.5)]',
+                'text-cyber-blue': 'bg-cyber-blue shadow-[0_0_6px_rgba(0,212,255,0.5)]',
+                'text-cyber-green': 'bg-cyber-green shadow-[0_0_6px_rgba(0,255,136,0.5)]',
+                'text-cyber-purple': 'bg-cyber-purple shadow-[0_0_6px_rgba(157,0,255,0.5)]',
+                'text-cyber-yellow': 'bg-cyber-yellow shadow-[0_0_6px_rgba(255,204,0,0.5)]',
+                'text-orange-500': 'bg-orange-500 shadow-[0_0_6px_rgba(249,115,22,0.5)]',
+              }
+              return (
+                <Link
+                  key={child.href}
+                  to={child.href}
+                  onClick={onClick}
+                  className={clsx(
+                    'relative flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs transition-all duration-300',
+                    'hover:bg-white/[0.03]',
+                    active
+                      ? `${childColor} font-semibold bg-white/[0.04]`
+                      : 'text-cyber-text-muted/60 hover:text-cyber-text/80'
+                  )}
+                >
+                  <span className={clsx(
+                    'w-1.5 h-1.5 rounded-full shrink-0 transition-all duration-300',
+                    dotColors[childColor] || 'bg-cyber-text-muted/30',
+                    active && 'scale-125'
+                  )} />
+                  {active && (
+                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-4 rounded-r-full bg-current opacity-60 shadow-[0_0_6px_currentColor]" />
+                  )}
+                  <span className={clsx(
+                    'transition-all duration-300',
+                    active ? childColor : ''
+                  )}>
+                    {child.label}
+                  </span>
+                </Link>
+              )
+            })}
           </div>
         )}
       </div>

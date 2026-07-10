@@ -14,7 +14,7 @@ export interface NavItem {
   color: string
   /** Ruta relativa bajo /dashboard. Si tiene hijos, es expandible. */
   href?: string
-  children?: { label: string; href: string }[]
+  children?: { label: string; href: string; color?: string }[]
   /** Solo visible para admins. */
   adminOnly?: boolean
 }
@@ -59,13 +59,13 @@ export const NAV_GROUPS: NavGroup[] = [
       {
         label: 'Charge Gates', icon: Swords, color: 'text-orange-500',
         children: [
-          { label: 'Horus Gate (Paypal)', href: '/dashboard/charge/horus' },
-          { label: 'Payflow 3', href: '/dashboard/charge/payflow3' },
-          { label: 'Payflow 2', href: '/dashboard/charge/payflow2' },
-          { label: 'Payflow', href: '/dashboard/charge/payflow' },
-          { label: 'B3 Gate 2', href: '/dashboard/charge/b3gate2' },
-          { label: 'B3 Gate', href: '/dashboard/charge/b3gate' },
-          { label: 'Bird Gate (Authorize)', href: '/dashboard/charge/bird' },
+          { label: 'Horus Gate', href: '/dashboard/charge/horus', color: 'text-cyber-red' },
+          { label: 'Payflow 3', href: '/dashboard/charge/payflow3', color: 'text-cyber-blue' },
+          { label: 'Payflow 2', href: '/dashboard/charge/payflow2', color: 'text-cyber-green' },
+          { label: 'Payflow', href: '/dashboard/charge/payflow', color: 'text-cyber-purple' },
+          { label: 'B3 Gate 2', href: '/dashboard/charge/b3gate2', color: 'text-cyber-yellow' },
+          { label: 'B3 Gate', href: '/dashboard/charge/b3gate', color: 'text-orange-500' },
+          { label: 'Bird Gate', href: '/dashboard/charge/bird', color: 'text-cyber-blue' },
         ],
       },
       {
