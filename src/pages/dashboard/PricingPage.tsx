@@ -120,100 +120,65 @@ export function PricingPage() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-[1100px] mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-[900px] mx-auto">
           {packages.map((pkg) => {
             const featured = pkg.id === HIGHLIGHT
             return (
-              <div key={pkg.id}
-                className={clsx(
-                  'relative rounded-2xl overflow-hidden transition-all duration-500',
-                  'backdrop-blur-sm',
-                  featured ? 'scale-[1.02] md:scale-105' : 'hover:scale-[1.02]'
-                )}>
-                {/* Gradient border */}
+              <div key={pkg.id} className={clsx(
+                'relative rounded-2xl overflow-hidden transition-all duration-300 backdrop-blur-sm',
+                featured ? 'ring-1 ring-cyber-purple/40' : 'hover:ring-1 hover:ring-white/[0.08]'
+              )}>
                 <div className={clsx(
-                  'absolute inset-0 rounded-2xl p-[1px]',
-                  'bg-gradient-to-b',
-                  GRADIENT_BORDER[pkg.id] || 'from-white/10 to-transparent'
-                )}>
-                  <div className="absolute inset-0 rounded-2xl bg-[#08080f]" />
-                </div>
-
-                {/* Content */}
-                <div className={clsx(
-                  'relative h-full rounded-2xl p-6 sm:p-7 flex flex-col',
+                  'relative h-full rounded-2xl p-5 flex flex-col',
                   'bg-gradient-to-b',
                   GRADIENT_BG[pkg.id] || 'from-white/[0.02] to-transparent'
                 )}>
-                  {/* Popular badge */}
                   {featured && (
-                    <div className="absolute -top-px left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-b-xl bg-gradient-to-r from-cyber-purple to-cyber-red text-white text-[10px] font-bold uppercase tracking-widest font-mono shadow-[0_0_20px_rgba(157,0,255,0.3)]">
-                      Most Popular
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 px-3 py-1 rounded-b-lg bg-gradient-to-r from-cyber-purple to-cyber-red text-white text-[9px] font-bold uppercase tracking-widest font-mono shadow-[0_0_15px_rgba(157,0,255,0.25)]">
+                      Popular
                     </div>
                   )}
 
-                  {/* Header */}
-                  <div className="flex items-center gap-3 mb-1">
-                    <span className={clsx(
-                      'w-9 h-9 rounded-xl flex items-center justify-center',
-                      featured ? 'text-cyber-purple bg-cyber-purple/10' : 'text-cyber-text-muted/50 bg-white/[0.03]'
-                    )}>
-                      {CARD_ICON[pkg.id] || <Zap size={16} />}
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <span className={clsx('w-8 h-8 rounded-lg flex items-center justify-center', featured ? 'text-cyber-purple bg-cyber-purple/10' : 'text-cyber-text-muted/50 bg-white/[0.03]')}>
+                      {CARD_ICON[pkg.id] || <Zap size={15} />}
                     </span>
-                    <div>
-                      <h3 className={clsx(
-                        'text-base font-bold font-mono',
-                        featured ? 'text-cyber-text' : 'text-cyber-text/80'
-                      )}>{pkg.name}</h3>
-                    </div>
+                    <h3 className={clsx('text-sm font-bold font-mono', featured ? 'text-cyber-text' : 'text-cyber-text/80')}>{pkg.name}</h3>
                   </div>
 
-                  {/* Price */}
-                  <div className="my-5">
+                  <div className="mb-4">
                     <div className="flex items-baseline gap-1">
-                      <span className={clsx(
-                        'text-4xl font-bold font-mono',
-                        featured ? 'text-cyber-text' : 'text-cyber-text/90'
-                      )}>${pkg.price.toFixed(2)}</span>
-                      <span className="text-xs text-cyber-text-muted/50 font-mono">/ one-time</span>
+                      <span className={clsx('text-3xl font-bold font-mono', featured ? 'text-cyber-text' : 'text-cyber-text/90')}>${pkg.price.toFixed(2)}</span>
+                      <span className="text-[10px] text-cyber-text-muted/50 font-mono">/ one</span>
                     </div>
-                    <div className="mt-1.5 flex items-center gap-1.5">
-                      <Zap size={12} className={featured ? 'text-cyber-purple' : 'text-cyber-yellow/60'} />
-                      <span className={clsx(
-                        'text-sm font-semibold font-mono',
-                        featured ? 'text-cyber-purple' : 'text-cyber-yellow/80'
-                      )}>{pkg.credits.toLocaleString()} credits</span>
+                    <div className="mt-1 flex items-center gap-1">
+                      <Zap size={11} className={featured ? 'text-cyber-purple' : 'text-cyber-yellow/60'} />
+                      <span className={clsx('text-xs font-semibold font-mono', featured ? 'text-cyber-purple' : 'text-cyber-yellow/80')}>{pkg.credits.toLocaleString()} credits</span>
                     </div>
                   </div>
 
-                  {/* Benefits */}
-                  <ul className="space-y-2.5 mb-6 flex-1">
-                    <li className="flex items-center gap-2.5 text-sm font-mono">
-                      <Check size={14} className={clsx('shrink-0', featured ? 'text-cyber-purple' : 'text-cyber-green')} />
+                  <ul className="space-y-2 mb-5 flex-1">
+                    <li className="flex items-center gap-2 text-xs font-mono">
+                      <Check size={12} className={clsx('shrink-0', featured ? 'text-cyber-purple' : 'text-cyber-green')} />
                       <span className="text-cyber-text-muted/80">{pkg.credits.toLocaleString()} Credits</span>
                     </li>
                     {BENEFITS.map((b, i) => (
-                      <li key={i} className="flex items-center gap-2.5 text-sm font-mono">
-                        <Check size={14} className={clsx('shrink-0', featured ? 'text-cyber-purple' : 'text-cyber-green/70')} />
+                      <li key={i} className="flex items-center gap-2 text-xs font-mono">
+                        <Check size={12} className={clsx('shrink-0', featured ? 'text-cyber-purple' : 'text-cyber-green/70')} />
                         <span className="text-cyber-text-muted/70">{b}</span>
                       </li>
                     ))}
                   </ul>
 
-                  {/* Buy button */}
                   <button onClick={() => buy(pkg.id)} disabled={!serverUp || busy !== null}
                     className={clsx(
-                      'relative w-full py-3 rounded-xl text-sm font-bold font-mono transition-all duration-300',
-                      'disabled:opacity-40 disabled:cursor-not-allowed',
-                      'overflow-hidden group/btn',
-                      featured
-                        ? 'bg-gradient-to-r from-cyber-purple to-cyber-red text-white hover:shadow-[0_0_30px_rgba(157,0,255,0.3)]'
-                        : 'border border-white/[0.08] text-cyber-text/80 hover:bg-white/[0.04] hover:border-white/[0.15]'
+                      'relative w-full py-2.5 rounded-xl text-xs font-bold font-mono transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed overflow-hidden group/btn',
+                      featured ? 'bg-gradient-to-r from-cyber-purple to-cyber-red text-white hover:shadow-[0_0_25px_rgba(157,0,255,0.25)]' : 'border border-white/[0.08] text-cyber-text/80 hover:bg-white/[0.04]'
                     )}>
                     <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700" />
-                    <span className="relative flex items-center justify-center gap-2">
-                      {busy === pkg.id ? <Loader2 size={14} className="animate-spin" /> : payMethod === 'crypto' ? <Bitcoin size={14} /> : <CreditCard size={14} />}
-                      {busy === pkg.id ? 'Processing...' : payMethod === 'crypto' ? 'Pay with Crypto' : 'Buy Now'}
+                    <span className="relative flex items-center justify-center gap-1.5">
+                      {busy === pkg.id ? <Loader2 size={12} className="animate-spin" /> : payMethod === 'crypto' ? <Bitcoin size={12} /> : <CreditCard size={12} />}
+                      {busy === pkg.id ? '...' : payMethod === 'crypto' ? 'Pay Crypto' : 'Buy Now'}
                     </span>
                   </button>
                 </div>
