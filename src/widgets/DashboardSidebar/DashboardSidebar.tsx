@@ -336,25 +336,25 @@ function SidebarRow({
           {content}
         </button>
         {isOpen && !collapsed && (
-          <div className="ml-9 pl-2 mt-1 flex flex-col gap-1.5 border-l border-white/0">
+          <div className="flex flex-col items-center gap-2 px-2 pt-2 pb-1">
             {item.children!.map((child, ci) => {
               const childColor = (child as any).color || 'text-cyber-text-muted'
               const active = childActive(child.href)
-              const dotColors: Record<string, string> = {
-                'text-cyber-red': 'bg-cyber-red shadow-[0_0_8px_rgba(255,0,64,0.5)]',
-                'text-cyber-blue': 'bg-cyber-blue shadow-[0_0_8px_rgba(0,212,255,0.5)]',
-                'text-cyber-green': 'bg-cyber-green shadow-[0_0_8px_rgba(0,255,136,0.5)]',
-                'text-cyber-purple': 'bg-cyber-purple shadow-[0_0_8px_rgba(157,0,255,0.5)]',
-                'text-cyber-yellow': 'bg-cyber-yellow shadow-[0_0_8px_rgba(255,204,0,0.5)]',
-                'text-orange-500': 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]',
+              const glowColor: Record<string, string> = {
+                'text-cyber-red': 'shadow-cyber-red/20',
+                'text-cyber-blue': 'shadow-cyber-blue/20',
+                'text-cyber-green': 'shadow-cyber-green/20',
+                'text-cyber-purple': 'shadow-cyber-purple/20',
+                'text-cyber-yellow': 'shadow-cyber-yellow/20',
+                'text-orange-500': 'shadow-orange-500/20',
               }
-              const bgColor: Record<string, string> = {
-                'text-cyber-red': 'from-cyber-red/10 to-cyber-red/5 border-cyber-red/20',
-                'text-cyber-blue': 'from-cyber-blue/10 to-cyber-blue/5 border-cyber-blue/20',
-                'text-cyber-green': 'from-cyber-green/10 to-cyber-green/5 border-cyber-green/20',
-                'text-cyber-purple': 'from-cyber-purple/10 to-cyber-purple/5 border-cyber-purple/20',
-                'text-cyber-yellow': 'from-cyber-yellow/10 to-cyber-yellow/5 border-cyber-yellow/20',
-                'text-orange-500': 'from-orange-500/10 to-orange-500/5 border-orange-500/20',
+              const borderActive: Record<string, string> = {
+                'text-cyber-red': 'border-cyber-red/40',
+                'text-cyber-blue': 'border-cyber-blue/40',
+                'text-cyber-green': 'border-cyber-green/40',
+                'text-cyber-purple': 'border-cyber-purple/40',
+                'text-cyber-yellow': 'border-cyber-yellow/40',
+                'text-orange-500': 'border-orange-500/40',
               }
               return (
                 <Link
@@ -362,29 +362,37 @@ function SidebarRow({
                   to={child.href}
                   onClick={onClick}
                   className={clsx(
-                    'relative flex items-center justify-center gap-2.5 px-3 py-2.5 rounded-xl text-xs transition-all duration-300',
-                    'border backdrop-blur-sm',
+                    'relative w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-2xl text-xs font-mono transition-all duration-300',
+                    'backdrop-blur-sm motion-safe:animate-slide-up hover:-translate-y-0.5',
                     active
-                      ? clsx('bg-gradient-to-br', bgColor[childColor] || 'from-white/10 to-white/5', childColor, 'font-semibold shadow-[0_0_15px_rgba(0,0,0,0.2)]')
-                      : 'border-white/[0.04] bg-white/[0.02] text-cyber-text-muted/60 hover:bg-white/[0.04] hover:text-cyber-text/80 hover:border-white/[0.08] hover:shadow-[0_0_20px_rgba(0,0,0,0.15)]',
-                    'motion-safe:animate-slide-up'
+                      ? clsx(
+                          'bg-gradient-to-br from-white/[0.06] to-white/[0.02] border',
+                          borderActive[childColor] || 'border-white/20',
+                          childColor, 'font-semibold',
+                          'shadow-[0_0_20px_rgba(0,0,0,0.3)]'
+                        )
+                      : 'bg-white/[0.02] border border-white/[0.04] text-cyber-text-muted/50',
+                    'hover:bg-white/[0.04] hover:border-white/[0.10] hover:text-cyber-text/80',
+                    'hover:shadow-[0_4px_20px_rgba(0,0,0,0.2)]'
                   )}
-                  style={{ animationDelay: `${ci * 0.05}s` }}
+                  style={{ animationDelay: `${ci * 0.06}s` }}
                 >
-                  <span className={clsx(
-                    'w-2 h-2 rounded-full shrink-0 transition-all duration-300',
-                    dotColors[childColor] || 'bg-cyber-text-muted/30',
-                    active && 'scale-125'
-                  )} />
-                  <span className={clsx(
-                    'transition-all duration-300',
-                    active ? childColor : ''
-                  )}>
-                    {child.label}
-                  </span>
                   {active && (
-                    <span className={clsx('absolute inset-0 rounded-xl ring-1 ring-inset ring-current/20')} />
+                    <span className={clsx(
+                      'absolute -inset-[1px] rounded-2xl opacity-40 blur-sm',
+                      `bg-gradient-to-r from-transparent via-current/20 to-transparent`
+                    )} />
                   )}
+                  <span className="relative flex items-center gap-2.5">
+                    <span className={clsx(
+                      'w-2 h-2 rounded-full shrink-0 transition-all duration-300',
+                      active ? childColor.replace('text', 'bg') : 'bg-white/20',
+                      active && 'shadow-[0_0_10px_currentColor]'
+                    )} />
+                    <span className={clsx('transition-all duration-300', active ? childColor : '')}>
+                      {child.label}
+                    </span>
+                  </span>
                 </Link>
               )
             })}
