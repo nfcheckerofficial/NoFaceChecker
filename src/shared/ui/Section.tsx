@@ -10,11 +10,19 @@ interface SectionProps {
 }
 
 const ACCENT_LINE: Record<string, string> = {
-  red: 'bg-cyber-red/30',
-  purple: 'bg-cyber-purple/30',
-  blue: 'bg-cyber-blue/30',
-  green: 'bg-cyber-green/30',
-  yellow: 'bg-cyber-yellow/30',
+  red: 'border-cyber-red/30',
+  purple: 'border-cyber-purple/30',
+  blue: 'border-cyber-blue/30',
+  green: 'border-cyber-green/30',
+  yellow: 'border-cyber-yellow/30',
+}
+
+const ACCENT_ICON: Record<string, string> = {
+  red: 'text-cyber-red/70',
+  purple: 'text-cyber-text-muted/70',
+  blue: 'text-cyber-blue/70',
+  green: 'text-cyber-green/70',
+  yellow: 'text-cyber-yellow/70',
 }
 
 export function Section({ title, icon, children, className, accent = 'purple', transparent }: SectionProps) {
@@ -25,10 +33,9 @@ export function Section({ title, icon, children, className, accent = 'purple', t
       className
     )}>
       {title && (
-        <div className="flex items-center gap-2 px-5 py-3.5 border-b border-white/[0.04]">
-          {icon && <span className="text-cyber-text-muted/70">{icon}</span>}
+        <div className={clsx('flex items-center gap-2 px-5 py-3.5 border-b', ACCENT_LINE[accent] || 'border-white/[0.04]')}>
+          {icon && <span className={ACCENT_ICON[accent] || 'text-cyber-text-muted/70'}>{icon}</span>}
           <h2 className="text-xs font-semibold text-cyber-text/80 uppercase tracking-wider font-mono">{title}</h2>
-          <div className={clsx('flex-1 h-px ml-auto bg-gradient-to-r from-white/[0.04] to-transparent')} />
         </div>
       )}
       <div className={clsx(title ? 'p-5' : 'p-0')}>
